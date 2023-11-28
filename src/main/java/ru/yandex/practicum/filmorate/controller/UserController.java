@@ -29,7 +29,8 @@ public class UserController {
             log.error("Пользователь не прошёл валидацию.");
             throw new ValidationException("Пользователь не прошёл валидацию.");
         }
-        user.setId(generatedId++);
+        user.setId(generatedId);
+        generatedId++;
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }

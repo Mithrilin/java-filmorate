@@ -32,7 +32,8 @@ public class FilmController {
             log.error("Фильм не прошёл валидацию.");
             throw new ValidationException("Фильм не прошёл валидацию.");
         }
-        film.setId(generatedId++);
+        film.setId(generatedId);
+        generatedId++;
         log.info("Добавлен новый фильм с ID = {}", film.getId());
         films.put(film.getId(), film);
         return film;

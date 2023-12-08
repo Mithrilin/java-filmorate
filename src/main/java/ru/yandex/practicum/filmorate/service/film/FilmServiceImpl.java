@@ -4,13 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
-import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -54,8 +53,16 @@ public class FilmServiceImpl implements FilmService {
         return films;
     }
 
+    @Override
+    public void addLike(int id, int userId) {
+        log.info("Пользователь с id {} лайкнул фильм с id {}.", userId, id);
+        Film film = isIdValid(id);
+        film.getLikes().add(userId);
+    }
+
     private Film isIdValid(int id) {
         if (!filmStorage.getAllFilms().containsKey(id)) {
+            log.error("Фильм с id " + id + " не найден.");
             throw new FilmNotFoundException("Фильм с id " + id + " не найден.");
         }
         return filmStorage.getAllFilms().get(id);

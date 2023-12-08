@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service.user;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -57,9 +58,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void addFriend(int id, int friendId) {
+        User user = isIdValid(id);
+        User friend = isIdValid(friendId);
         log.info("Пользователи с id {} и с id {} стали друзьями.", id, friendId);
-        userStorage.getAllUsers().get(id).getFriends().add(friendId);
-        userStorage.getAllUsers().get(friendId).getFriends().add(id);
+        user.getFriends().add(friendId);
+        friend.getFriends().add(id);
     }
 
     @Override
@@ -69,5 +72,13 @@ public class UserServiceImpl implements UserService {
         log.info("Пользователи с id {} и с id {} перестали быть друзьями.", id, friendId);
         user.getFriends().remove(friendId);
         friend.getFriends().remove(id);
+    }
+
+    private User isIdValid(int id) {
+        List<User> users = userStorage.getAllUsers();
+        return users.stream()
+                .filter(u -> u.getId() == id)
+                .findFirst()
+                .orElseThrow(() -> new UserNotFoundException("Пользователь с id " + id + " не найден."));
     }
 }

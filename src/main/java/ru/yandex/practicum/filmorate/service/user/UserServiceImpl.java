@@ -61,4 +61,13 @@ public class UserServiceImpl implements UserService {
         userStorage.getAllUsers().get(id).getFriends().add(friendId);
         userStorage.getAllUsers().get(friendId).getFriends().add(id);
     }
+
+    @Override
+    public void deleteFriend(int id, int friendId) {
+        User user = isIdValid(id);
+        User friend = isIdValid(friendId);
+        log.info("Пользователи с id {} и с id {} перестали быть друзьями.", id, friendId);
+        user.getFriends().remove(friendId);
+        friend.getFriends().remove(id);
+    }
 }

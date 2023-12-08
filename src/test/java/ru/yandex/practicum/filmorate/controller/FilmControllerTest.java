@@ -3,6 +3,8 @@ package ru.yandex.practicum.filmorate.controller;
 import org.junit.jupiter.api.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.film.FilmServiceImpl;
+import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
@@ -26,16 +28,16 @@ class FilmControllerTest {
 
     @BeforeEach
     void setUp() {
-        filmController = new FilmController();
+        filmController = new FilmController(new FilmServiceImpl(new InMemoryFilmStorage()));
     }
 
     @Test
     @DisplayName("Успешное создание фильма с ID 1")
     void shouldReturn1WhenValidFilmCreate() {
         int expectedId = 1;
-        int duration = 120;
+        Integer duration = 120;
         LocalDate releaseDate = LocalDate.of(1986, 10, 25);
-        Film film = filmController.create(new Film("Тестовый фильм", "Описание", releaseDate, duration));
+        Film film = filmController.createFilm(new Film("Тестовый фильм", "Описание", releaseDate, duration));
 
         assertEquals(expectedId, film.getId());
     }
@@ -46,8 +48,8 @@ class FilmControllerTest {
         int duration = 120;
         LocalDate releaseDate = LocalDate.of(1986, 10, 25);
         Film film = new Film("Тестовый фильм", "Описание", releaseDate, duration);
-        filmController.create(film);
-        List<Film> filmList = filmController.findAll();
+        filmController.createFilm(film);
+        List<Film> filmList = filmController.findAllFilms();
 
         assertEquals(film, filmList.get(0));
     }
@@ -57,11 +59,11 @@ class FilmControllerTest {
     void shouldBeNotEqualsWhenValidFilmUpdate() {
         int duration = 120;
         LocalDate releaseDate = LocalDate.of(1986, 10, 25);
-        Film film = filmController.create(new Film("Тестовый фильм", "Описание", releaseDate, duration));
+        Film film = filmController.createFilm(new Film("Тестовый фильм", "Описание", releaseDate, duration));
         Film updateFilm = new Film("Обновлённый фильм", "Описание", releaseDate, duration);
         updateFilm.setId(film.getId());
-        filmController.update(updateFilm);
-        List<Film> filmList = filmController.findAll();
+        filmController.updateFilm(updateFilm);
+        List<Film> filmList = filmController.findAllFilms();
 
         assertNotEquals(film, filmList.get(0));
     }
@@ -122,7 +124,7 @@ class FilmControllerTest {
         LocalDate releaseDate = LocalDate.of(1786, 10, 25);
         ValidationException exception = assertThrows(
                 ValidationException.class,
-                () -> filmController.create(new Film("Тестовый фильм", "Описание", releaseDate,
+                () -> filmController.createFilm(new Film("Тестовый фильм", "Описание", releaseDate,
                         duration)));
 
         assertEquals("Фильм не прошёл валидацию.", exception.getMessage());
@@ -135,7 +137,7 @@ class FilmControllerTest {
         LocalDate releaseDate = LocalDate.of(1986, 10, 25);
         ValidationException exception = assertThrows(
                 ValidationException.class,
-                () -> filmController.update(new Film("Тестовый фильм", "Описание", releaseDate,
+                () -> filmController.updateFilm(new Film("Тестовый фильм", "Описание", releaseDate,
                         duration)));
 
         assertEquals("Фильм не прошёл валидацию.", exception.getMessage());

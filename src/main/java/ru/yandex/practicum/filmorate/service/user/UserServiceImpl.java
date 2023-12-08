@@ -54,4 +54,11 @@ public class UserServiceImpl implements UserService {
         log.info("Текущее количество пользователей: {}", users.size());
         return users;
     }
+
+    @Override
+    public void addFriend(int id, int friendId) {
+        log.info("Пользователи с id {} и с id {} стали друзьями.", id, friendId);
+        userStorage.getAllUsers().get(id).getFriends().add(friendId);
+        userStorage.getAllUsers().get(friendId).getFriends().add(id);
+    }
 }

@@ -12,4 +12,6 @@ public interface UserService {
     void deleteUser(User user);
 
     List<User> getAllUsers();
+
+    void addFriend(int id, int friendId);
 }

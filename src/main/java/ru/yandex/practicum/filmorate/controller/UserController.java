@@ -28,4 +28,9 @@ public class UserController {
     public User updateUser(@RequestBody @Valid User user) {
         return userService.updateUser(user);
     }
+
+    @PutMapping("/{id}/friends/{friendId}")
+    public void addFriend(@PathVariable int id, @PathVariable int friendId) {
+        userService.addFriend(id, friendId);
+    }
 }

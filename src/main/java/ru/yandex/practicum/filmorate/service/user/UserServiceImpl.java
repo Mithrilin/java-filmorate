@@ -84,6 +84,16 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<User> getAllCommonFriends(int id, int otherId) {
+        User user = isIdValid(id);
+        User otherUser = isIdValid(otherId);
+        return user.getFriends().stream()
+                .filter(friendId -> otherUser.getFriends().contains(friendId))
+                .map(otherFriendId -> userStorage.getAllUsers().get(otherFriendId))
+                .collect(Collectors.toList());
+    }
+
     private User isIdValid(int id) {
         if (!userStorage.getAllUsers().containsKey(id)) {
             throw new UserNotFoundException("Пользователь с id " + id + " не найден.");

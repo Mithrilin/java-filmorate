@@ -49,16 +49,15 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public List<Film> getAllFilms() {
-        List<Film> films = filmStorage.getAllFilms();
+        List<Film> films = new ArrayList<>(filmStorage.getAllFilms().values());
         log.info("Текущее количество фильмов: {}", films.size());
         return films;
     }
 
     private Film isIdValid(int id) {
-        List<Film> films = filmStorage.getAllFilms();
-        return films.stream()
-                .filter(u -> u.getId() == id)
-                .findFirst()
-                .orElseThrow(() -> new FilmNotFoundException("Фильм с id " + id + " не найден."));
+        if (!filmStorage.getAllFilms().containsKey(id)) {
+            throw new FilmNotFoundException("Фильм с id " + id + " не найден.");
+        }
+        return filmStorage.getAllFilms().get(id);
     }
 }

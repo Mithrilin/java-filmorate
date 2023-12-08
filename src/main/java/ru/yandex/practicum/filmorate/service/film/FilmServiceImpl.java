@@ -3,8 +3,11 @@ package ru.yandex.practicum.filmorate.service.film;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
@@ -29,8 +32,8 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Film updateFilm(Film film) {
-        List<Film> films = filmStorage.getAllFilms();
-        if (!films.contains(film) || film.getReleaseDate().isBefore(INITIAL_RELEASE_DATE)) {
+        isIdValid(film.getId());
+        if (film.getReleaseDate().isBefore(INITIAL_RELEASE_DATE)) {
             log.error("Фильм не прошёл валидацию.");
             throw new ValidationException("Фильм не прошёл валидацию.");
         }
@@ -49,5 +52,13 @@ public class FilmServiceImpl implements FilmService {
         List<Film> films = filmStorage.getAllFilms();
         log.info("Текущее количество фильмов: {}", films.size());
         return films;
+    }
+
+    private Film isIdValid(int id) {
+        List<Film> films = filmStorage.getAllFilms();
+        return films.stream()
+                .filter(u -> u.getId() == id)
+                .findFirst()
+                .orElseThrow(() -> new FilmNotFoundException("Фильм с id " + id + " не найден."));
     }
 }

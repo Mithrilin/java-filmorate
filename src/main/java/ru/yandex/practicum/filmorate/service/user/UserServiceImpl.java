@@ -31,8 +31,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User updateUser(User user) {
-        List<User> users = userStorage.getAllUsers();
-        if (user.getLogin().contains(" ") || !users.contains(user)) {
+        isIdValid(user.getId());
+        if (user.getLogin().contains(" ")) {
             log.error("Пользователь не прошёл валидацию.");
             throw new ValidationException("Пользователь не прошёл валидацию.");
         }

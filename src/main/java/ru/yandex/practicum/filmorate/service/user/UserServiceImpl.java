@@ -8,7 +8,9 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -51,7 +53,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllUsers() {
-        List<User> users = userStorage.getAllUsers();
+        List<User> users = new ArrayList<>(userStorage.getAllUsers().values());
         log.info("Текущее количество пользователей: {}", users.size());
         return users;
     }
@@ -75,10 +77,9 @@ public class UserServiceImpl implements UserService {
     }
 
     private User isIdValid(int id) {
-        List<User> users = userStorage.getAllUsers();
-        return users.stream()
-                .filter(u -> u.getId() == id)
-                .findFirst()
-                .orElseThrow(() -> new UserNotFoundException("Пользователь с id " + id + " не найден."));
+        if (!userStorage.getAllUsers().containsKey(id)) {
+            throw new UserNotFoundException("Пользователь с id " + id + " не найден.");
+        }
+        return userStorage.getAllUsers().get(id);
     }
 }

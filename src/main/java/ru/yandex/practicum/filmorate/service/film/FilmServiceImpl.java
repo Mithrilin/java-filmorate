@@ -67,6 +67,11 @@ public class FilmServiceImpl implements FilmService {
         film.getLikes().remove(userId);
     }
 
+    @Override
+    public Film getFilmById(int id) {
+        return isIdValid(id);
+    }
+
     private Film isIdValid(int id) {
         if (!filmStorage.getAllFilms().containsKey(id)) {
             log.error("Фильм с id " + id + " не найден.");

@@ -55,9 +55,16 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public void addLike(int id, int userId) {
-        log.info("Пользователь с id {} лайкнул фильм с id {}.", userId, id);
         Film film = isIdValid(id);
+        log.info("Пользователь с id {} лайкнул фильм с id {}.", userId, id);
         film.getLikes().add(userId);
+    }
+
+    @Override
+    public void deleteLike(int id, int userId) {
+        Film film = isIdValid(id);
+        log.info("Пользователь с id {} удалил лайк к фильму с id {}.", userId, id);
+        film.getLikes().remove(userId);
     }
 
     private Film isIdValid(int id) {

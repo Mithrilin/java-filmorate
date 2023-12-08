@@ -94,6 +94,11 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public User getUserById(int id) {
+        return isIdValid(id);
+    }
+
     private User isIdValid(int id) {
         if (!userStorage.getAllUsers().containsKey(id)) {
             throw new UserNotFoundException("Пользователь с id " + id + " не найден.");

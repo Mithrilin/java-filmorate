@@ -48,4 +48,9 @@ public class UserController {
     public List<User> findAllCommonFriends(@PathVariable int id, @PathVariable int otherId) {
         return userService.getAllCommonFriends(id, otherId);
     }
+
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable int id) {
+        return userService.getUserById(id);
+    }
 }

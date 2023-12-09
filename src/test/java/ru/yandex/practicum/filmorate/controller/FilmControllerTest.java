@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import org.junit.jupiter.api.*;
+import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.film.FilmServiceImpl;
@@ -131,15 +132,17 @@ class FilmControllerTest {
     }
 
     @Test
-    @DisplayName("ID у фильма отсутствует при обновлении")
+    @DisplayName("ID у фильма неправильное при обновлении")
     void shouldThrowExceptionWhenWrongId() {
         int duration = 120;
+        int wrongId = 999;
         LocalDate releaseDate = LocalDate.of(1986, 10, 25);
-        ValidationException exception = assertThrows(
-                ValidationException.class,
-                () -> filmController.updateFilm(new Film("Тестовый фильм", "Описание", releaseDate,
-                        duration)));
+        Film film = new Film("Тестовый фильм", "Описание", releaseDate, duration);
+        film.setId(wrongId);
+        FilmNotFoundException exception = assertThrows(
+                FilmNotFoundException.class,
+                () -> filmController.updateFilm(film));
 
-        assertEquals("Фильм не прошёл валидацию.", exception.getMessage());
+        assertEquals("Фильм с id 999 не найден.", exception.getMessage());
     }
 }

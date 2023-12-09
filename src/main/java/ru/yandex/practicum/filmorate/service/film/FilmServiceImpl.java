@@ -45,6 +45,7 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public void deleteFilm(Film film) {
+        isIdValid(film.getId());
         log.info("Фильм с ID {} удалён.", film.getId());
         filmStorage.deleteFilm(film);
     }

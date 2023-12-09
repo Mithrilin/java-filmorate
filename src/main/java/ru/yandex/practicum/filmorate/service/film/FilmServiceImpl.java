@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -63,6 +64,9 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public void deleteLike(int id, int userId) {
         Film film = isIdValid(id);
+        if (!film.getLikes().contains(userId)) {
+            throw new UserNotFoundException("Пользователь с id " + id + " не найден.");
+        }
         log.info("Пользователь с id {} удалил лайк к фильму с id {}.", userId, id);
         film.getLikes().remove(userId);
     }

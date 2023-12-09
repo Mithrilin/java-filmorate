@@ -53,7 +53,7 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public List<Film> getAllFilms() {
         List<Film> films = new ArrayList<>(filmStorage.getAllFilms().values());
-        log.info("Текущее количество фильмов: {}", films.size());
+        log.info("Текущее количество фильмов: {}. Список возвращён.", films.size());
         return films;
     }
 
@@ -76,6 +76,7 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Film getFilmById(int id) {
+        log.info("Фильм с id {} возвращён.", id);
         return isIdValid(id);
     }
 
@@ -86,6 +87,7 @@ public class FilmServiceImpl implements FilmService {
             length = Integer.parseInt(count);
         }
         List<Film> films = new ArrayList<>(filmStorage.getAllFilms().values());
+        log.info("Список популярных фильмов размером {} возвращён.", length);
         return films.stream().sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
                 .limit(length).collect(Collectors.toList());
     }

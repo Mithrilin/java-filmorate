@@ -27,8 +27,9 @@ public class UserServiceImpl implements UserService {
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
+        user = userStorage.addUser(user);
         log.info("Добавлен новый пользователь с ID = {}", user.getId());
-        return userStorage.addUser(user);
+        return user;
     }
 
     @Override
@@ -54,7 +55,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>(userStorage.getAllUsers().values());
-        log.info("Текущее количество пользователей: {}", users.size());
+        log.info("Текущее количество пользователей: {}. Список возвращён.", users.size());
         return users;
     }
 
@@ -79,6 +80,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> getAllFriends(int id) {
         User user = isIdValid(id);
+        log.info("Список друзей пользователя с id {} возвращён.", id);
         return user.getFriends().stream()
                 .map(friendId -> userStorage.getAllUsers().get(friendId))
                 .collect(Collectors.toList());
@@ -88,6 +90,7 @@ public class UserServiceImpl implements UserService {
     public List<User> getAllCommonFriends(int id, int otherId) {
         User user = isIdValid(id);
         User otherUser = isIdValid(otherId);
+        log.info("Список общих друзей пользователей с id {} и с id {} возвращён.", id, otherId);
         return user.getFriends().stream()
                 .filter(friendId -> otherUser.getFriends().contains(friendId))
                 .map(otherFriendId -> userStorage.getAllUsers().get(otherFriendId))
@@ -96,6 +99,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserById(int id) {
+        log.info("Пользователь с id {} возвращён.", id);
         return isIdValid(id);
     }
 

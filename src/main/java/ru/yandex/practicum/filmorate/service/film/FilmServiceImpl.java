@@ -11,7 +11,9 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -74,6 +76,17 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public Film getFilmById(int id) {
         return isIdValid(id);
+    }
+
+    @Override
+    public List<Film> getPopularFilms(String count) {
+        int length = 10;
+        if (count != null) {
+            length = Integer.parseInt(count);
+        }
+        List<Film> films = new ArrayList<>(filmStorage.getAllFilms().values());
+        return films.stream().sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
+                .limit(length).collect(Collectors.toList());
     }
 
     private Film isIdValid(int id) {

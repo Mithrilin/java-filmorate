@@ -1,52 +1,68 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.film.FilmService;
 
 import javax.validation.Valid;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @RestController
+@AllArgsConstructor
 @RequestMapping("/films")
 public class FilmController {
-    private static final LocalDate INITIAL_RELEASE_DATE = LocalDate.of(1895, 12, 28);
-    private final Map<Integer, Film> films = new HashMap<>();
-    private int generatedId = 1;
+    private final FilmService filmService;
 
     @GetMapping
-    public List<Film> findAll() {
-        log.info("Текущее количество фильмов: {}", films.size());
-        return new ArrayList<>(films.values());
+    public List<Film> findAllFilms() {
+        return filmService.getAllFilms();
     }
 
     @PostMapping
-    public Film create(@RequestBody @Valid Film film) {
-        if (film.getReleaseDate().isBefore(INITIAL_RELEASE_DATE)) {
-            log.error("Фильм не прошёл валидацию.");
-            throw new ValidationException("Фильм не прошёл валидацию.");
-        }
-        film.setId(generatedId);
-        generatedId++;
-        log.info("Добавлен новый фильм с ID = {}", film.getId());
-        films.put(film.getId(), film);
-        return film;
+    public Film createFilm(@RequestBody @Valid Film film) {
+        return filmService.addFilm(film);
     }
 
     @PutMapping
-    public Film update(@RequestBody @Valid Film film) {
-        if (!films.containsKey(film.getId()) || film.getReleaseDate().isBefore(INITIAL_RELEASE_DATE)) {
-            log.error("Фильм не прошёл валидацию.");
-            throw new ValidationException("Фильм не прошёл валидацию.");
-        }
-        log.info("Фильм с ID {} обновлён.", film.getId());
-        films.put(film.getId(), film);
-        return film;
+    public Film updateFilm(@RequestBody @Valid Film film) {
+        return filmService.updateFilm(film);
+    }
+
+    @PutMapping("/{id}/like/{userId}")
+    public void addLike(@PathVariable int id, @PathVariable int userId) {
+        filmService.addLike(id, userId);
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    public void deleteLike(@PathVariable int id, @PathVariable int userId) {
+        filmService.deleteLike(id, userId);
+    }
+
+    @GetMapping("/{id}")
+    public Film getFilmById(@PathVariable int id) {
+        return filmService.getFilmById(id);
+    }
+
+    @GetMapping("/popular")
+    public List<Film> getPopularFilms(@RequestParam(required = false) String count) {
+        return filmService.getPopularFilms(count);
+    }
+
+    @ExceptionHandler({UserNotFoundException.class, FilmNotFoundException.class})
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, String> handleFilmOrUserNotFound(final RuntimeException e) {
+        return Map.of("errorMessage", e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleFilmNotValid(final ValidationException e) {
+        return Map.of("errorMessage", e.getMessage());
     }
 }

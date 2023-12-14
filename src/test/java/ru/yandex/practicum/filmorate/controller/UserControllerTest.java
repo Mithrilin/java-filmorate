@@ -1,8 +1,11 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import org.junit.jupiter.api.*;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.user.UserServiceImpl;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
@@ -26,7 +29,7 @@ class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        userController = new UserController();
+        userController = new UserController(new UserServiceImpl(new InMemoryUserStorage()));
     }
 
     @Test
@@ -67,7 +70,7 @@ class UserControllerTest {
         LocalDate birthday = LocalDate.of(1986, 10, 25);
         User user = new User("mail@mail.ru", "dolore", "Nick Name", birthday);
         userController.createUser(user);
-        List<User> userList = userController.findAll();
+        List<User> userList = userController.findAllUsers();
 
         assertEquals(user, userList.get(0));
     }
@@ -79,8 +82,8 @@ class UserControllerTest {
         User user = userController.createUser(new User("mail@mail.ru", "dolore", "Nick Name", birthday));
         User updateUser = new User("mail@mail.ru", "dolore", "Update Name", birthday);
         updateUser.setId(user.getId());
-        userController.update(updateUser);
-        List<User> userList = userController.findAll();
+        userController.updateUser(updateUser);
+        List<User> userList = userController.findAllUsers();
 
         assertNotEquals(user, userList.get(0));
     }
@@ -92,8 +95,8 @@ class UserControllerTest {
         User user = userController.createUser(new User("mail@mail.ru", "dolore", "Nick Name", birthday));
         User updateUser = new User("mail@mail.ru", "dolore", "", birthday);
         updateUser.setId(user.getId());
-        userController.update(updateUser);
-        List<User> userList = userController.findAll();
+        userController.updateUser(updateUser);
+        List<User> userList = userController.findAllUsers();
 
         assertNotEquals(user, userList.get(0));
     }
@@ -105,8 +108,8 @@ class UserControllerTest {
         User user = userController.createUser(new User("mail@mail.ru", "dolore", "Nick Name", birthday));
         User updateUser = new User("mail@mail.ru", "dolore", null, birthday);
         updateUser.setId(user.getId());
-        userController.update(updateUser);
-        List<User> userList = userController.findAll();
+        userController.updateUser(updateUser);
+        List<User> userList = userController.findAllUsers();
 
         assertNotEquals(user, userList.get(0));
     }
@@ -163,7 +166,7 @@ class UserControllerTest {
         updateUser.setId(user.getId());
         ValidationException exception = assertThrows(
                 ValidationException.class,
-                () -> userController.update(updateUser));
+                () -> userController.updateUser(updateUser));
 
         assertEquals("Пользователь не прошёл валидацию.", exception.getMessage());
     }
@@ -176,10 +179,10 @@ class UserControllerTest {
                 birthday));
         User updateUser = new User("mail@mail.ru", "Wrong Login", "Nick Name", birthday);
         updateUser.setId(999);
-        ValidationException exception = assertThrows(
-                ValidationException.class,
-                () -> userController.update(updateUser));
+        UserNotFoundException exception = assertThrows(
+                UserNotFoundException.class,
+                () -> userController.updateUser(updateUser));
 
-        assertEquals("Пользователь не прошёл валидацию.", exception.getMessage());
+        assertEquals("Пользователь с id 999 не найден.", exception.getMessage());
     }
 }

@@ -1,55 +1,72 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.user.UserService;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @RestController
+@AllArgsConstructor
+@RequestMapping("/users")
 public class UserController {
-    private final Map<Integer, User> users = new HashMap<>();
-    private int generatedId = 1;
+    private final UserService userService;
 
-    @GetMapping("/users")
-    public List<User> findAll() {
-        log.info("Текущее количество пользователей: {}", users.size());
-        return new ArrayList<>(users.values());
+    @GetMapping
+    public List<User> findAllUsers() {
+        return userService.getAllUsers();
     }
 
-    @PostMapping(value = "/users")
+    @PostMapping
     public User createUser(@RequestBody @Valid User user) {
-        if (user.getLogin().contains(" ")) {
-            log.error("Пользователь не прошёл валидацию.");
-            throw new ValidationException("Пользователь не прошёл валидацию.");
-        }
-        user.setId(generatedId);
-        generatedId++;
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-        log.info("Добавлен новый пользователь");
-        users.put(user.getId(), user);
-        return user;
+        return userService.addUser(user);
     }
 
-    @PutMapping(value = "/users")
-    public User update(@RequestBody @Valid User user) {
-        if (user.getLogin().contains(" ") || !users.containsKey(user.getId())) {
-            log.error("Пользователь не прошёл валидацию.");
-            throw new ValidationException("Пользователь не прошёл валидацию.");
-        }
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-        log.info("Пользователь обновлён.");
-        users.put(user.getId(), user);
-        return user;
+    @PutMapping
+    public User updateUser(@RequestBody @Valid User user) {
+        return userService.updateUser(user);
+    }
+
+    @PutMapping("/{id}/friends/{friendId}")
+    public void addFriend(@PathVariable int id, @PathVariable int friendId) {
+        userService.addFriend(id, friendId);
+    }
+
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public void deleteFriend(@PathVariable int id, @PathVariable int friendId) {
+        userService.deleteFriend(id, friendId);
+    }
+
+    @GetMapping("/{id}/friends")
+    public List<User> findAllFriends(@PathVariable int id) {
+        return userService.getAllFriends(id);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public List<User> findAllCommonFriends(@PathVariable int id, @PathVariable int otherId) {
+        return userService.getAllCommonFriends(id, otherId);
+    }
+
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable int id) {
+        return userService.getUserById(id);
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, String> handleUserNotFound(final UserNotFoundException e) {
+        return Map.of("errorMessage", e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleUserNotValid(final ValidationException e) {
+        return Map.of("errorMessage", e.getMessage());
     }
 }

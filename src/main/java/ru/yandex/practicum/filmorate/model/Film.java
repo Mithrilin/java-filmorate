@@ -12,11 +12,12 @@ import java.util.Set;
 
 @Data
 public class Film {
+    private static final int MAX_DESCRIPTION_SIZE = 200;
     private Integer id;
     @NotBlank
     @NonNull
     private final String name;
-    @Size(max = 200)
+    @Size(max = MAX_DESCRIPTION_SIZE)
     private final String description;
     private final LocalDate releaseDate;
     @Positive

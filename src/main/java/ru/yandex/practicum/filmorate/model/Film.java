@@ -1,9 +1,9 @@
 package ru.yandex.practicum.filmorate.model;
 
 import lombok.Data;
-import lombok.NonNull;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
@@ -15,7 +15,7 @@ public class Film {
     private static final int MAX_DESCRIPTION_SIZE = 200;
     private Integer id;
     @NotBlank
-    @NonNull
+    @NotNull
     private final String name;
     @Size(max = MAX_DESCRIPTION_SIZE)
     private final String description;

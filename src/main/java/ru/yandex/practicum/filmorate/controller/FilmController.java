@@ -53,16 +53,4 @@ public class FilmController {
     public List<Film> getPopularFilms(@RequestParam(required = false) String count) {
         return filmService.getPopularFilms(count);
     }
-
-    @ExceptionHandler({UserNotFoundException.class, FilmNotFoundException.class})
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, String> handleFilmOrUserNotFound(final RuntimeException e) {
-        return Map.of("errorMessage", e.getMessage());
-    }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleFilmNotValid(final ValidationException e) {
-        return Map.of("errorMessage", e.getMessage());
-    }
 }

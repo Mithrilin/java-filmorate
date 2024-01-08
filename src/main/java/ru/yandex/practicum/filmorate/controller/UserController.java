@@ -57,16 +57,4 @@ public class UserController {
     public User getUserById(@PathVariable int id) {
         return userService.getUserById(id);
     }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, String> handleUserNotFound(final UserNotFoundException e) {
-        return Map.of("errorMessage", e.getMessage());
-    }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleUserNotValid(final ValidationException e) {
-        return Map.of("errorMessage", e.getMessage());
-    }
 }

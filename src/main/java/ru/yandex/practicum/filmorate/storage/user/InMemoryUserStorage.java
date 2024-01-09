@@ -31,6 +31,11 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
+    public User getUserById(int id) {
+        return users.get(id);
+    }
+
+    @Override
     public Map<Integer, User> getAllUsers() {
         return new HashMap<>(users);
     }

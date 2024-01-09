@@ -14,14 +14,14 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
 
-    @GetMapping
-    public List<User> findAllUsers() {
-        return userService.getAllUsers();
-    }
-
     @PostMapping
     public User createUser(@RequestBody @Valid User user) {
         return userService.addUser(user);
+    }
+
+    @GetMapping
+    public List<User> findAllUsers() {
+        return userService.getAllUsers();
     }
 
     @PutMapping

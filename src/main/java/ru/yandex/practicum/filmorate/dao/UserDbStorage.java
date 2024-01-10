@@ -1,10 +1,16 @@
 package ru.yandex.practicum.filmorate.dao;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Map;
 
 @Component("userDbStorage")
@@ -17,9 +23,19 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User addUser(User user) {
+        jdbcTemplate.update("insert into users (login, name, email, birthday) values (?, ?, ?, ?);",
+                user.getLogin(), user.getName(), user.getEmail(), user.getBirthday());
+        KeyHolder key = new GeneratedKeyHolder();
+        String sql = "insert into users (login, name, email, birthday) values (?, ?, ?, ?);";
 
-
-        return null;
+        jdbcTemplate.update(new PreparedStatementCreator() {
+            @Override
+            public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+                    return null;
+            }
+        }, key);
+        user.setId(key.getKey().intValue());
+        return user;
     }
 
     @Override

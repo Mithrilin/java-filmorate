@@ -62,7 +62,15 @@ public class UserDbStorage implements UserStorage {
     public Optional<User> getUserById(int id) {
         String sql = "select * from users u " +
                 "left outer join friends f on u.id = f.user_id where u.id = ?";
-        List<User> users = jdbcTemplate.query(sql, (rs, rowNum) -> {
+        List<User> users = jdbcTemplate.query(sql, userRowMapper(), id);
+        if (users.size() != 1) {
+            return Optional.empty();
+        }
+        return Optional.of(users.get(0));
+    }
+
+    private RowMapper<User> userRowMapper() {
+        return (rs, rowNum) -> {
             User user = new User(
                     rs.getString("email"),
                     rs.getString("login"),
@@ -73,10 +81,6 @@ public class UserDbStorage implements UserStorage {
                 user.getFriends().add(rs.getInt("friend_id"));
             } while (rs.next());
             return user;
-        }, id);
-        if (users.size() != 1) {
-            return Optional.empty();
-        }
-        return Optional.of(users.get(0));
+        };
     }
 }

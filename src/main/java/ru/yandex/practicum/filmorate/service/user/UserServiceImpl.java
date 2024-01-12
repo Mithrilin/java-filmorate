@@ -9,8 +9,8 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -52,9 +52,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteUser(User user) {
-        log.info("Пользователь с ID {} удалён.", user.getId());
-        userStorage.deleteUser(user);
+    public User getUserById(int id) {
+        User user = isIdValid(id);
+        log.info("Пользователь с id {} возвращён.", user.getId());
+        return user;
     }
 
     @Override
@@ -102,16 +103,13 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public User getUserById(int id) {
-        log.info("Пользователь с id {} возвращён.", id);
-        return userStorage.getUserById(id);
-    }
+
 
     private User isIdValid(int id) {
-        if (!userStorage.getAllUsers().containsKey(id)) {
+        Optional<User> user = userStorage.getUserById(id);
+        if (user.isEmpty()) {
             throw new UserNotFoundException("Пользователь с id " + id + " не найден.");
         }
-        return userStorage.getAllUsers().get(id);
+        return user.get();
     }
 }

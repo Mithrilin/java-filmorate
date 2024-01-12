@@ -8,9 +8,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Component("userDbStorage")
 public class UserDbStorage implements UserStorage {
@@ -49,20 +47,24 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public Map<Integer, User> getAllUsers() {
-        return null;
-    }
-
-    @Override
-    public User getUserById(int id) {
-        return jdbcTemplate.queryForObject("select * from users where id = ?", (rs, rowNum) -> {
+    public Optional<User> getUserById(int id) {
+        String sql = "select * from users u " +
+                "left outer join friends f on u.id = f.user_id where u.id = ?";
+        List<User> users = jdbcTemplate.query(sql, (rs, rowNum) -> {
             User user = new User(
                     rs.getString("email"),
                     rs.getString("login"),
                     rs.getString("name"),
                     rs.getDate("birthday").toLocalDate());
             user.setId(rs.getInt("id"));
+            do {
+                user.getFriends().add(rs.getInt("friend_id"));
+            } while (rs.next());
             return user;
         }, id);
+        if (users.size() != 1) {
+            return Optional.empty();
+        }
+        return Optional.of(users.get(0));
     }
 }

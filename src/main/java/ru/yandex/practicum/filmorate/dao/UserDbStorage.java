@@ -33,16 +33,18 @@ public class UserDbStorage implements UserStorage {
         return user;
     }
 
-        jdbcTemplate.update(connection -> {
-            PreparedStatement statement = connection.prepareStatement(sqlQuery, new String[]{"id"});
+    @Override
+    public User updateUser(User user) {
+        String sql = "update users set login = ?, name = ?, email = ?, birthday = ? where id = ?";
+        jdbcTemplate.update(con -> {
+            PreparedStatement statement = con.prepareStatement(sql);
             statement.setString(1, user.getLogin());
             statement.setString(2, user.getName());
             statement.setString(3, user.getEmail());
             statement.setDate(4, Date.valueOf(user.getBirthday()));
+            statement.setInt(5, user.getId());
             return statement;
-        }, key);
-
-        user.setId(Objects.requireNonNull(key.getKey()).intValue());
+        });
         return user;
     }
 

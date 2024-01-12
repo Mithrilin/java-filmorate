@@ -39,7 +39,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User updateUser(User user) {
-        isIdValid(user.getId());
         if (user.getLogin().contains(" ")) {
             log.error("Пользователь не прошёл валидацию.");
             throw new ValidationException("Пользователь не прошёл валидацию.");
@@ -47,8 +46,10 @@ public class UserServiceImpl implements UserService {
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
+        isIdValid(user.getId());
+        userStorage.updateUser(user);
         log.info("Пользователь с ID {} обновлён.", user.getId());
-        return userStorage.updateUser(user);
+        return user;
     }
 
     @Override

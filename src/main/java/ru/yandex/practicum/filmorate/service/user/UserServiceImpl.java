@@ -61,7 +61,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllUsers() {
-        List<User> users = new ArrayList<>(userStorage.getAllUsers().values());
+        List<User> users = userStorage.getAllUsers();
         log.info("Текущее количество пользователей: {}. Список возвращён.", users.size());
         return users;
     }

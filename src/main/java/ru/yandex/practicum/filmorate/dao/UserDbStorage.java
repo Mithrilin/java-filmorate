@@ -49,8 +49,28 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public User updateUser(User user) {
-        return null;
+    public List<User> getAllUsers() {
+        Map<Integer, User> temp = new HashMap<>();
+        List<User> users = jdbcTemplate.query("select * from users", (rs, rowNum) -> {
+            int userId = rs.getInt("id");
+            User user = new User(
+                    rs.getString("email"),
+                    rs.getString("login"),
+                    rs.getString("name"),
+                    rs.getDate("birthday").toLocalDate());
+            user.setId(userId);
+            temp.put(userId, user);
+            return user;
+        });
+        jdbcTemplate.query("select * from friends", (RowMapper<Integer>) (rs, rowNum) -> {
+            int userId;
+            do {
+                userId = rs.getInt("user_id");
+                temp.get(userId).getFriends().add(rs.getInt("friend_id"));
+            } while (rs.next());
+            return null;
+        });
+        return users;
     }
 
     @Override

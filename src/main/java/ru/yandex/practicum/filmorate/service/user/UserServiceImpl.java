@@ -10,7 +10,6 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -70,11 +69,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteFriend(int id, int friendId) {
-        User user = isIdValid(id);
-        User friend = isIdValid(friendId);
+        userStorage.deleteFriend(id, friendId);
         log.info("Пользователи с id {} и с id {} перестали быть друзьями.", id, friendId);
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(id);
     }
 
     @Override

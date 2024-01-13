@@ -87,8 +87,12 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void addFriend(int id, int friendId) {
-        String sql = "insert into friends (user_id, friend_id) values (?, ?);";
-        jdbcTemplate.update(sql, id, friendId);
+        jdbcTemplate.update("insert into friends (user_id, friend_id) values (?, ?);", id, friendId);
+    }
+
+    @Override
+    public void deleteFriend(int id, int friendId) {
+        jdbcTemplate.update("delete from friends where user_id = ? and friend_id = ?", id, friendId);
     }
 
     private RowMapper<User> userRowMapper() {

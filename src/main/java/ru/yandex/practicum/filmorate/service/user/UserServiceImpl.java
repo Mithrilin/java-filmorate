@@ -25,13 +25,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User addUser(User user) {
-        if (user.getLogin().contains(" ")) {
-            log.error("Пользователь не прошёл валидацию.");
-            throw new ValidationException("Пользователь не прошёл валидацию.");
-        }
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
+        isUserValid(user);
         user = userStorage.addUser(user);
         log.info("Добавлен новый пользователь с ID = {}", user.getId());
         return user;
@@ -39,13 +33,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User updateUser(User user) {
-        if (user.getLogin().contains(" ")) {
-            log.error("Пользователь не прошёл валидацию.");
-            throw new ValidationException("Пользователь не прошёл валидацию.");
-        }
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
+        isUserValid(user);
         isIdValid(user.getId());
         userStorage.updateUser(user);
         log.info("Пользователь с ID {} обновлён.", user.getId());
@@ -112,12 +100,21 @@ public class UserServiceImpl implements UserService {
     }
 
 
-
     private User isIdValid(int id) {
         Optional<User> user = userStorage.getUserById(id);
         if (user.isEmpty()) {
             throw new UserNotFoundException("Пользователь с id " + id + " не найден.");
         }
         return user.get();
+    }
+
+    private void isUserValid(User user) {
+        if (user.getLogin().contains(" ")) {
+            log.error("Пользователь не прошёл валидацию.");
+            throw new ValidationException("Пользователь не прошёл валидацию.");
+        }
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
     }
 }

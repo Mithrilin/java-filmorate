@@ -30,6 +30,10 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
+    public void addFriend(int id, int friendId) {
+    }
+
+    @Override
     public List<User> getUserById(int id) {
         List<User> user = new ArrayList<>();
         user.add(users.get(id));

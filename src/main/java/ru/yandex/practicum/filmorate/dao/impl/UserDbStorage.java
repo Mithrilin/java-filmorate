@@ -85,6 +85,12 @@ public class UserDbStorage implements UserStorage {
         jdbcTemplate.update("delete from users where id = ?", id);
     }
 
+    @Override
+    public void addFriend(int id, int friendId) {
+        String sql = "insert into friends (user_id, friend_id) values (?, ?);";
+        jdbcTemplate.update(sql, id, friendId);
+    }
+
     private RowMapper<User> userRowMapper() {
         return (rs, rowNum) -> {
             User user = new User(

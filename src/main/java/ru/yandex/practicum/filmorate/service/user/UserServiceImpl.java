@@ -64,11 +64,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void addFriend(int id, int friendId) {
-        User user = isIdValid(id);
-        User friend = isIdValid(friendId);
+        userStorage.addFriend(id, friendId);
         log.info("Пользователи с id {} и с id {} стали друзьями.", id, friendId);
-        user.getFriends().add(friendId);
-        friend.getFriends().add(id);
     }
 
     @Override

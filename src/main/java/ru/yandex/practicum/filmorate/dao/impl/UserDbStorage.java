@@ -104,6 +104,24 @@ public class UserDbStorage implements UserStorage {
         return users;
     }
 
+    @Override
+    public List<User> getAllCommonFriends(int id, int otherId) {
+        Map<Integer, User> usersMap = new HashMap<>();
+        String sql = "select * from users where id in (?, ?);";
+        List<User> users = jdbcTemplate.query(sql, usersListRowMapper(usersMap), id, otherId);
+        jdbcTemplate.query("select * from friends;", (RowMapper<Integer>) (rs, rowNum) -> {
+            int userId;
+            do {
+                userId = rs.getInt("user_id");
+                if (usersMap.containsKey(userId)) {
+                    usersMap.get(userId).getFriends().add(rs.getInt("friend_id"));
+                }
+            } while (rs.next());
+            return null;
+        });
+        return users;
+    }
+
     private RowMapper<User> usersListRowMapper(Map<Integer, User> usersMap) {
         return (rs, rowNum) -> {
             int userId = rs.getInt("id");

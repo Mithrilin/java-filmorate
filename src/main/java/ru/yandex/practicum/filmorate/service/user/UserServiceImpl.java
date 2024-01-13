@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -82,13 +83,18 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllCommonFriends(int id, int otherId) {
-        User user = isIdValid(id);
-        User otherUser = isIdValid(otherId);
+        List<User> users = userStorage.getAllCommonFriends(id, otherId);
+        User user = users.get(0);
+        User otherUser = users.get(1);
+        List<User> commonFriends = new ArrayList<>();
+        for (Integer friendId : user.getFriends()) {
+            if (otherUser.getFriends().contains(friendId)) {
+                User user1 = userStorage.getAllUsers().get(friendId);
+                commonFriends.add(user1);
+            }
+        }
         log.info("Список общих друзей пользователей с id {} и с id {} возвращён.", id, otherId);
-        return user.getFriends().stream()
-                .filter(friendId -> otherUser.getFriends().contains(friendId))
-                .map(otherFriendId -> userStorage.getAllUsers().get(otherFriendId))
-                .collect(Collectors.toList());
+        return commonFriends;
     }
 
     private void isUserValid(User user) {

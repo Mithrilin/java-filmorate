@@ -19,6 +19,16 @@ public class UserController {
         return userService.addUser(user);
     }
 
+    @PutMapping
+    public User updateUser(@RequestBody @Valid User user) {
+        return userService.updateUser(user);
+    }
+
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable int id) {
+        return userService.getUserById(id);
+    }
+
     @GetMapping
     public List<User> findAllUsers() {
         return userService.getAllUsers();
@@ -47,10 +57,5 @@ public class UserController {
     @GetMapping("/{id}/friends/common/{otherId}")
     public List<User> findAllCommonFriends(@PathVariable int id, @PathVariable int otherId) {
         return userService.getAllCommonFriends(id, otherId);
-    }
-
-    @GetMapping("/{id}")
-    public User getUserById(@PathVariable int id) {
-        return userService.getUserById(id);
     }
 }

@@ -58,7 +58,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(int id) {
-        isIdValid(id);
         userStorage.deleteUser(id);
         log.info("Пользователь с ID {} удалён.", id);
     }

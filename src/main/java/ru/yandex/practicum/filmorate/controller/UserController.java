@@ -24,9 +24,9 @@ public class UserController {
         return userService.getAllUsers();
     }
 
-    @PutMapping
-    public User updateUser(@RequestBody @Valid User user) {
-        return userService.updateUser(user);
+    @DeleteMapping("/{id}")
+    public void deleteUser(@PathVariable int id) {
+        userService.deleteUser(id);
     }
 
     @PutMapping("/{id}/friends/{friendId}")

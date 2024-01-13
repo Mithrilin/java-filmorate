@@ -30,8 +30,10 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public Optional<User> getUserById(int id) {
-        return Optional.of(users.get(id));
+    public List<User> getUserById(int id) {
+        List<User> user = new ArrayList<>();
+        user.add(users.get(id));
+        return user;
     }
 
     @Override

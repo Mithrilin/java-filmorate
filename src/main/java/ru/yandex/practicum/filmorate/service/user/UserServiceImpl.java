@@ -10,7 +10,6 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,7 +40,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserById(int id) {
-        User user = isIdValid(id);
+        List<User> users = userStorage.getUserById(id);
+        if (users.isEmpty()) {
+            throw new UserNotFoundException("Пользователь с id " + id + " не найден.");
+        }
+        User user = users.get(0);
         log.info("Пользователь с id {} возвращён.", user.getId());
         return user;
     }
@@ -96,15 +99,6 @@ public class UserServiceImpl implements UserService {
                 .filter(friendId -> otherUser.getFriends().contains(friendId))
                 .map(otherFriendId -> userStorage.getAllUsers().get(otherFriendId))
                 .collect(Collectors.toList());
-    }
-
-
-    private User isIdValid(int id) {
-        Optional<User> user = userStorage.getUserById(id);
-        if (user.isEmpty()) {
-            throw new UserNotFoundException("Пользователь с id " + id + " не найден.");
-        }
-        return user.get();
     }
 
     private void isUserValid(User user) {

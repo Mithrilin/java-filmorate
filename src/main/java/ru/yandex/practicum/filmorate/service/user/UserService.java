@@ -9,6 +9,8 @@ public interface UserService {
 
     User updateUser(User user);
 
+    User getUserById(int id);
+
     void deleteUser(int id);
 
     List<User> getAllUsers();
@@ -20,6 +22,4 @@ public interface UserService {
     List<User> getAllFriends(int id);
 
     List<User> getAllCommonFriends(int id, int otherId);
-
-    User getUserById(int id);
 }

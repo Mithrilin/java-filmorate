@@ -49,8 +49,15 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
+    public List<User> getUserById(int id) {
+        String sql = "select * from users u " +
+                "left outer join friends f on u.id = f.user_id where u.id = ?";
+        return jdbcTemplate.query(sql, userRowMapper(), id);
+    }
+
+    @Override
     public List<User> getAllUsers() {
-        Map<Integer, User> temp = new HashMap<>();
+        Map<Integer, User> usersMap = new HashMap<>();
         List<User> users = jdbcTemplate.query("select * from users", (rs, rowNum) -> {
             int userId = rs.getInt("id");
             User user = new User(
@@ -59,14 +66,14 @@ public class UserDbStorage implements UserStorage {
                     rs.getString("name"),
                     rs.getDate("birthday").toLocalDate());
             user.setId(userId);
-            temp.put(userId, user);
+            usersMap.put(userId, user);
             return user;
         });
         jdbcTemplate.query("select * from friends", (RowMapper<Integer>) (rs, rowNum) -> {
             int userId;
             do {
                 userId = rs.getInt("user_id");
-                temp.get(userId).getFriends().add(rs.getInt("friend_id"));
+                usersMap.get(userId).getFriends().add(rs.getInt("friend_id"));
             } while (rs.next());
             return null;
         });
@@ -76,17 +83,6 @@ public class UserDbStorage implements UserStorage {
     @Override
     public void deleteUser(int id) {
         jdbcTemplate.update("delete from users where id = ?", id);
-    }
-
-    @Override
-    public Optional<User> getUserById(int id) {
-        String sql = "select * from users u " +
-                "left outer join friends f on u.id = f.user_id where u.id = ?";
-        List<User> users = jdbcTemplate.query(sql, userRowMapper(), id);
-        if (users.size() != 1) {
-            return Optional.empty();
-        }
-        return Optional.of(users.get(0));
     }
 
     private RowMapper<User> userRowMapper() {

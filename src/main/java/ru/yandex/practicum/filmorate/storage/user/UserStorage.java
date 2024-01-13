@@ -12,7 +12,7 @@ public interface UserStorage {
 
     List<User> getUserById(int id);
 
-    void deleteUser(int id);
-
     List<User> getAllUsers();
+
+    void deleteUser(int id);
 }

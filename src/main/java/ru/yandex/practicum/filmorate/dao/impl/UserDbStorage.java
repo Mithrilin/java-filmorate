@@ -35,7 +35,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User updateUser(User user) {
-        String sql = "update users set login = ?, name = ?, email = ?, birthday = ? where id = ?";
+        String sql = "update users set login = ?, name = ?, email = ?, birthday = ? where id = ?;";
         jdbcTemplate.update(con -> {
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setString(1, user.getLogin());
@@ -51,25 +51,16 @@ public class UserDbStorage implements UserStorage {
     @Override
     public List<User> getUserById(int id) {
         String sql = "select * from users u " +
-                "left outer join friends f on u.id = f.user_id where u.id = ?";
+                "left outer join friends f on u.id = f.user_id where u.id = ?;";
         return jdbcTemplate.query(sql, userRowMapper(), id);
     }
 
     @Override
     public List<User> getAllUsers() {
         Map<Integer, User> usersMap = new HashMap<>();
-        List<User> users = jdbcTemplate.query("select * from users", (rs, rowNum) -> {
-            int userId = rs.getInt("id");
-            User user = new User(
-                    rs.getString("email"),
-                    rs.getString("login"),
-                    rs.getString("name"),
-                    rs.getDate("birthday").toLocalDate());
-            user.setId(userId);
-            usersMap.put(userId, user);
-            return user;
-        });
-        jdbcTemplate.query("select * from friends", (RowMapper<Integer>) (rs, rowNum) -> {
+        String sql = "select * from users;";
+        List<User> users = jdbcTemplate.query(sql, usersListRowMapper(usersMap));
+        jdbcTemplate.query("select * from friends;", (RowMapper<Integer>) (rs, rowNum) -> {
             int userId;
             do {
                 userId = rs.getInt("user_id");
@@ -93,6 +84,38 @@ public class UserDbStorage implements UserStorage {
     @Override
     public void deleteFriend(int id, int friendId) {
         jdbcTemplate.update("delete from friends where user_id = ? and friend_id = ?", id, friendId);
+    }
+
+    @Override
+    public List<User> getAllFriends(int id) {
+        Map<Integer, User> usersMap = new HashMap<>();
+        String sql = "select * from friends f join users u on f.friend_id = u.id where f.user_id = ?;";
+        List<User> users = jdbcTemplate.query(sql, usersListRowMapper(usersMap), id);
+        jdbcTemplate.query("select * from friends;", (RowMapper<Integer>) (rs, rowNum) -> {
+            int userId;
+            do {
+                userId = rs.getInt("user_id");
+                if (usersMap.containsKey(userId)) {
+                    usersMap.get(userId).getFriends().add(rs.getInt("friend_id"));
+                }
+            } while (rs.next());
+            return null;
+        });
+        return users;
+    }
+
+    private RowMapper<User> usersListRowMapper(Map<Integer, User> usersMap) {
+        return (rs, rowNum) -> {
+            int userId = rs.getInt("id");
+            User user = new User(
+                    rs.getString("email"),
+                    rs.getString("login"),
+                    rs.getString("name"),
+                    rs.getDate("birthday").toLocalDate());
+            user.setId(userId);
+            usersMap.put(userId, user);
+            return user;
+        };
     }
 
     private RowMapper<User> userRowMapper() {

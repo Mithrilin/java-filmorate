@@ -75,11 +75,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllFriends(int id) {
-        User user = isIdValid(id);
+        List<User> users = userStorage.getAllFriends(id);
         log.info("Список друзей пользователя с id {} возвращён.", id);
-        return user.getFriends().stream()
-                .map(friendId -> userStorage.getAllUsers().get(friendId))
-                .collect(Collectors.toList());
+        return users;
     }
 
     @Override

@@ -1,13 +1,18 @@
 package ru.yandex.practicum.filmorate.dao.impl;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Objects;
 
@@ -49,6 +54,35 @@ public class FilmDbStorage implements FilmStorage {
             return statement;
         });
         return film;
+    }
+
+    @Override
+    public Film getFilmById(int id) {
+        String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
+                "m.name as mpa_name, g.id as genre_id, g.name as genre_name " +
+                "from films f " +
+                "left outer join mpa m on f.mpa_id = m.id " +
+                "left outer join film_genres fg on f.id = fg.film_id " +
+                "left outer join genres g on fg.genre_id = g.id where f.id = ?;";
+        return jdbcTemplate.queryForObject(sql, new RowMapper<Film>() {
+            @Override
+            public Film mapRow(ResultSet rs, int rowNum) throws SQLException {
+                Film film = new Film(
+                        rs.getString("name"),
+                        rs.getString("description"),
+                        rs.getDate("releasedate").toLocalDate(),
+                        rs.getInt("duration"),
+                        new Mpa(rs.getInt("mpa_id"),
+                                rs.getString("mpa_name"))
+                );
+                film.setId(rs.getInt("id"));
+                do {
+                    film.getGenres().add(new Genre(rs.getInt("genre_id"),
+                            rs.getString("genre_name")));
+                } while (rs.next());
+                return film;
+            }
+        }, id);
     }
 
     @Override

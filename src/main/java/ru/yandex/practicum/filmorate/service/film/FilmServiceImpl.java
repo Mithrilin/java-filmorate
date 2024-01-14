@@ -41,6 +41,13 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
+    public Film getFilmById(int id) {
+        Film film = filmStorage.getFilmById(id);
+        log.info("Фильм с id {} возвращён.", id);
+        return film;
+    }
+
+    @Override
     public void deleteFilm(Film film) {
         isIdValid(film.getId());
         log.info("Фильм с ID {} удалён.", film.getId());
@@ -69,12 +76,6 @@ public class FilmServiceImpl implements FilmService {
         }
         log.info("Пользователь с id {} удалил лайк к фильму с id {}.", userId, id);
         film.getLikes().remove(userId);
-    }
-
-    @Override
-    public Film getFilmById(int id) {
-        log.info("Фильм с id {} возвращён.", id);
-        return isIdValid(id);
     }
 
     @Override

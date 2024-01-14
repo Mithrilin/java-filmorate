@@ -9,6 +9,8 @@ public interface FilmService {
 
     Film updateFilm(Film film);
 
+    Film getFilmById(int id);
+
     void deleteFilm(Film film);
 
     List<Film> getAllFilms();
@@ -16,8 +18,6 @@ public interface FilmService {
     void addLike(int id, int userId);
 
     void deleteLike(int id, int userId);
-
-    Film getFilmById(int id);
 
     List<Film> getPopularFilms(String count);
 }

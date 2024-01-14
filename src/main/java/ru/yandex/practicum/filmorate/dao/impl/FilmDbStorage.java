@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
+import java.sql.Date;
+import java.sql.PreparedStatement;
 import java.util.Map;
 import java.util.Objects;
 
@@ -34,7 +36,19 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film updateFilm(Film film) {
-        return null;
+        String sql = "update films set name = ?, releaseDate = ?, description = ?, " +
+                "duration = ?, mpa_id = ? where id = ?;";
+        jdbcTemplate.update(con -> {
+            PreparedStatement statement = con.prepareStatement(sql);
+            statement.setString(1, film.getName());
+            statement.setDate(2, Date.valueOf(film.getReleaseDate()));
+            statement.setString(3, film.getDescription());
+            statement.setInt(4, film.getDuration());
+            statement.setInt(5, film.getMpa().getId());
+            statement.setInt(6, film.getId());
+            return statement;
+        });
+        return film;
     }
 
     @Override

@@ -19,8 +19,7 @@ create table if not exists films (
 	releaseDate date not null,
 	description varchar(200),
 	duration integer not null,
-	mpa_id integer not null references mpa(id),
-	likes integer
+	mpa_id integer not null references mpa(id)
 );
 
 create table if not exists likes (

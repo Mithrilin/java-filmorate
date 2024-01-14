@@ -4,11 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.GenreDao;
-import ru.yandex.practicum.filmorate.exception.GenreNotFoundException;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -18,21 +16,15 @@ public class GenreServiceImpl implements GenreService{
 
     @Override
     public Genre getGenreById(int id) {
-        Genre genre = isIdValid(id);
+        Genre genre = genreDao.getGenreById(id);
         log.info("Жанр с id {} возвращён.", genre.getId());
         return genre;
     }
 
     @Override
     public List<Genre> getAllGenres() {
-        return null;
-    }
-
-    private Genre isIdValid(int id) {
-        Optional<Genre> genre = genreDao.getGenreById(id);
-        if (genre.isEmpty()) {
-            throw new GenreNotFoundException("Жанр с id " + id + " не найден.");
-        }
-        return genre.get();
+        List<Genre> genres = genreDao.getAllGenres();
+        log.info("Текущее количество жанров: {}. Список возвращён.", genres.size());
+        return genres;
     }
 }

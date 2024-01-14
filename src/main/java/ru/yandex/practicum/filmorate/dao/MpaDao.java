@@ -6,5 +6,6 @@ import java.util.List;
 
 public interface MpaDao {
     Mpa getMpaById(int id);
+
     List<Mpa> getAllMpa();
 }

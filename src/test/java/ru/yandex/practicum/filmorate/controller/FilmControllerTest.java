@@ -4,6 +4,7 @@ import org.junit.jupiter.api.*;
 import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.service.film.FilmServiceImpl;
 import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
 
@@ -20,11 +21,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class FilmControllerTest {
     private FilmController filmController;
     private static Validator validator;
+    private static Mpa mpa;
 
     @BeforeAll
     static void beforeAll() {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
+        mpa = new Mpa(1, "G");
     }
 
     @BeforeEach
@@ -38,7 +41,7 @@ class FilmControllerTest {
         int expectedId = 1;
         Integer duration = 120;
         LocalDate releaseDate = LocalDate.of(1986, 10, 25);
-        Film film = filmController.createFilm(new Film("Тестовый фильм", "Описание", releaseDate, duration));
+        Film film = filmController.createFilm(new Film("Тестовый фильм", "Описание", releaseDate, duration, mpa));
 
         assertEquals(expectedId, film.getId());
     }
@@ -48,7 +51,7 @@ class FilmControllerTest {
     void shouldBeEqualsWhenValidFilm() {
         int duration = 120;
         LocalDate releaseDate = LocalDate.of(1986, 10, 25);
-        Film film = new Film("Тестовый фильм", "Описание", releaseDate, duration);
+        Film film = new Film("Тестовый фильм", "Описание", releaseDate, duration, mpa);
         filmController.createFilm(film);
         List<Film> filmList = filmController.findAllFilms();
 
@@ -60,8 +63,8 @@ class FilmControllerTest {
     void shouldBeNotEqualsWhenValidFilmUpdate() {
         int duration = 120;
         LocalDate releaseDate = LocalDate.of(1986, 10, 25);
-        Film film = filmController.createFilm(new Film("Тестовый фильм", "Описание", releaseDate, duration));
-        Film updateFilm = new Film("Обновлённый фильм", "Описание", releaseDate, duration);
+        Film film = filmController.createFilm(new Film("Тестовый фильм", "Описание", releaseDate, duration, mpa));
+        Film updateFilm = new Film("Обновлённый фильм", "Описание", releaseDate, duration, mpa);
         updateFilm.setId(film.getId());
         filmController.updateFilm(updateFilm);
         List<Film> filmList = filmController.findAllFilms();
@@ -75,7 +78,7 @@ class FilmControllerTest {
         int duration = 120;
         LocalDate releaseDate = LocalDate.of(1986, 10, 25);
         Set<ConstraintViolation<Film>> violations = validator.validate(
-                new Film("", "Описание", releaseDate, duration));
+                new Film("", "Описание", releaseDate, duration, mpa));
 
         assertFalse(violations.isEmpty());
     }
@@ -86,7 +89,7 @@ class FilmControllerTest {
         int duration = 120;
         LocalDate releaseDate = LocalDate.of(1986, 10, 25);
         Set<ConstraintViolation<Film>> violations = validator.validate(
-                new Film(null, "Описание", releaseDate, duration));
+                new Film(null, "Описание", releaseDate, duration, mpa));
 
         assertFalse(violations.isEmpty());
     }
@@ -102,7 +105,7 @@ class FilmControllerTest {
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
                 "a";
         Set<ConstraintViolation<Film>> violations = validator.validate(
-                new Film("Тестовый фильм", description, releaseDate, duration));
+                new Film("Тестовый фильм", description, releaseDate, duration, mpa));
 
         assertFalse(violations.isEmpty());
     }
@@ -113,7 +116,7 @@ class FilmControllerTest {
         int duration = -120;
         LocalDate releaseDate = LocalDate.of(1986, 10, 25);
         Set<ConstraintViolation<Film>> violations = validator.validate(
-                new Film("Тестовый фильм", "Описание", releaseDate, duration));
+                new Film("Тестовый фильм", "Описание", releaseDate, duration, mpa));
 
         assertFalse(violations.isEmpty());
     }
@@ -126,7 +129,7 @@ class FilmControllerTest {
         ValidationException exception = assertThrows(
                 ValidationException.class,
                 () -> filmController.createFilm(new Film("Тестовый фильм", "Описание", releaseDate,
-                        duration)));
+                        duration, mpa)));
 
         assertEquals("Фильм не прошёл валидацию.", exception.getMessage());
     }
@@ -137,7 +140,7 @@ class FilmControllerTest {
         int duration = 120;
         int wrongId = 999;
         LocalDate releaseDate = LocalDate.of(1986, 10, 25);
-        Film film = new Film("Тестовый фильм", "Описание", releaseDate, duration);
+        Film film = new Film("Тестовый фильм", "Описание", releaseDate, duration, mpa);
         film.setId(wrongId);
         FilmNotFoundException exception = assertThrows(
                 FilmNotFoundException.class,

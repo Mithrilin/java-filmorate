@@ -1,33 +1,32 @@
 package ru.yandex.practicum.filmorate.service.film;
 
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
-import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@AllArgsConstructor
+@Component
 public class FilmServiceImpl implements FilmService {
     private static final LocalDate INITIAL_RELEASE_DATE = LocalDate.of(1895, 12, 28);
     private final FilmStorage filmStorage;
 
+    public FilmServiceImpl(@Qualifier("filmDbStorage") FilmStorage filmStorage) {
+        this.filmStorage = filmStorage;
+    }
+
     @Override
     public Film addFilm(Film film) {
-        if (film.getReleaseDate().isBefore(INITIAL_RELEASE_DATE)) {
-            log.error("Фильм не прошёл валидацию.");
-            throw new ValidationException("Фильм не прошёл валидацию.");
-        }
+        isFilmValid(film);
         film = filmStorage.addFilm(film);
         log.info("Добавлен новый фильм с ID = {}", film.getId());
         return film;
@@ -35,11 +34,7 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Film updateFilm(Film film) {
-        isIdValid(film.getId());
-        if (film.getReleaseDate().isBefore(INITIAL_RELEASE_DATE)) {
-            log.error("Фильм не прошёл валидацию.");
-            throw new ValidationException("Фильм не прошёл валидацию.");
-        }
+        isFilmValid(film);
         log.info("Фильм с ID {} обновлён.", film.getId());
         return filmStorage.updateFilm(film);
     }
@@ -99,5 +94,12 @@ public class FilmServiceImpl implements FilmService {
             throw new FilmNotFoundException("Фильм с id " + id + " не найден.");
         }
         return filmStorage.getAllFilms().get(id);
+    }
+
+    private void isFilmValid(Film film) {
+        if (film.getReleaseDate().isBefore(INITIAL_RELEASE_DATE)) {
+            log.error("Фильм не прошёл валидацию. Дата релиза меньше минимального значения.");
+            throw new ValidationException("Фильм не прошёл валидацию.");
+        }
     }
 }

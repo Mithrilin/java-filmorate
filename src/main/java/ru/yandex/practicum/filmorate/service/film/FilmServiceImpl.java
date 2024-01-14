@@ -28,8 +28,9 @@ public class FilmServiceImpl implements FilmService {
             log.error("Фильм не прошёл валидацию.");
             throw new ValidationException("Фильм не прошёл валидацию.");
         }
+        film = filmStorage.addFilm(film);
         log.info("Добавлен новый фильм с ID = {}", film.getId());
-        return filmStorage.addFilm(film);
+        return film;
     }
 
     @Override

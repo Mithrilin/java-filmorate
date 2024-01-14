@@ -19,6 +19,8 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 class FilmControllerTest {
+    private static final int MPA_ID = 1;
+    private static final String MPA_NAME = "G";
     private FilmController filmController;
     private static Validator validator;
     private static Mpa mpa;
@@ -27,7 +29,9 @@ class FilmControllerTest {
     static void beforeAll() {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
-        mpa = new Mpa(1, "G");
+        mpa = new Mpa();
+        mpa.setId(MPA_ID);
+        mpa.setName(MPA_NAME);
     }
 
     @BeforeEach

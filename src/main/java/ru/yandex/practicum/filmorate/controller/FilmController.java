@@ -14,11 +14,6 @@ import java.util.List;
 public class FilmController {
     private final FilmService filmService;
 
-    @GetMapping
-    public List<Film> findAllFilms() {
-        return filmService.getAllFilms();
-    }
-
     @PostMapping
     public Film createFilm(@RequestBody @Valid Film film) {
         return filmService.addFilm(film);
@@ -29,6 +24,16 @@ public class FilmController {
         return filmService.updateFilm(film);
     }
 
+    @GetMapping("/{id}")
+    public Film getFilmById(@PathVariable int id) {
+        return filmService.getFilmById(id);
+    }
+
+    @GetMapping
+    public List<Film> findAllFilms() {
+        return filmService.getAllFilms();
+    }
+
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable int id, @PathVariable int userId) {
         filmService.addLike(id, userId);
@@ -37,11 +42,6 @@ public class FilmController {
     @DeleteMapping("/{id}/like/{userId}")
     public void deleteLike(@PathVariable int id, @PathVariable int userId) {
         filmService.deleteLike(id, userId);
-    }
-
-    @GetMapping("/{id}")
-    public Film getFilmById(@PathVariable int id) {
-        return filmService.getFilmById(id);
     }
 
     @GetMapping("/popular")

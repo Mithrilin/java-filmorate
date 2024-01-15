@@ -122,6 +122,17 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
+    public void deleteLike(int id, int userId) {
+        String sql = "delete from likes where user_id = ? and film_id = ?;";
+        jdbcTemplate.update(con -> {
+            PreparedStatement statement = con.prepareStatement(sql);
+            statement.setInt(1, userId);
+            statement.setInt(2, id);
+            return statement;
+        });
+    }
+
+    @Override
     public void deleteFilm(Film film) {
 
     }

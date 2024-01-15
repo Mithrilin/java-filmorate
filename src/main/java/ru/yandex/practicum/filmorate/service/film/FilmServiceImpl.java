@@ -59,22 +59,16 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
+    public void deleteLike(int id, int userId) {
+        filmStorage.deleteLike(id, userId);
+        log.info("Пользователь с id {} удалил лайк к фильму с id {}.", userId, id);
+    }
+
+    @Override
     public void deleteFilm(Film film) {
         isIdValid(film.getId());
         log.info("Фильм с ID {} удалён.", film.getId());
         filmStorage.deleteFilm(film);
-    }
-
-
-
-    @Override
-    public void deleteLike(int id, int userId) {
-        Film film = isIdValid(id);
-        if (!film.getLikes().contains(userId)) {
-            throw new UserNotFoundException("Пользователь с id " + id + " не найден.");
-        }
-        log.info("Пользователь с id {} удалил лайк к фильму с id {}.", userId, id);
-        film.getLikes().remove(userId);
     }
 
     @Override

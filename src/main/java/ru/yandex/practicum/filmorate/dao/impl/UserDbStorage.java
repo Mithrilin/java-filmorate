@@ -92,12 +92,8 @@ public class UserDbStorage implements UserStorage {
         String sql = "select * from friends f join users u on f.friend_id = u.id where f.user_id = ?;";
         List<User> users = jdbcTemplate.query(sql, usersListRowMapper(usersMap), id);
         jdbcTemplate.query("select * from friends;", (RowMapper<Integer>) (rs, rowNum) -> {
-            int userId;
             do {
-                userId = rs.getInt("user_id");
-                if (usersMap.containsKey(userId)) {
-                    usersMap.get(userId).getFriends().add(rs.getInt("friend_id"));
-                }
+                usersMap.get(rs.getInt("user_id")).getFriends().add(rs.getInt("friend_id"));
             } while (rs.next());
             return null;
         });

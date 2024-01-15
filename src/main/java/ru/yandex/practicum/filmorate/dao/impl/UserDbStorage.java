@@ -50,8 +50,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public List<User> getUserById(int id) {
-        String sql = "select * from users u " +
-                "left outer join friends f on u.id = f.user_id where u.id = ?;";
+        String sql = "select * from users u left outer join friends f on u.id = f.user_id where u.id = ?;";
         return jdbcTemplate.query(sql, userRowMapper(), id);
     }
 
@@ -61,10 +60,8 @@ public class UserDbStorage implements UserStorage {
         String sql = "select * from users;";
         List<User> users = jdbcTemplate.query(sql, usersListRowMapper(usersMap));
         jdbcTemplate.query("select * from friends;", (RowMapper<Integer>) (rs, rowNum) -> {
-            int userId;
             do {
-                userId = rs.getInt("user_id");
-                usersMap.get(userId).getFriends().add(rs.getInt("friend_id"));
+                usersMap.get(rs.getInt("user_id")).getFriends().add(rs.getInt("friend_id"));
             } while (rs.next());
             return null;
         });

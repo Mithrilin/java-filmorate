@@ -48,17 +48,17 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
+    public List<Film> getAllFilms() {
+        List<Film> films = filmStorage.getAllFilms();
+        log.info("Текущее количество фильмов: {}. Список возвращён.", films.size());
+        return films;
+    }
+
+    @Override
     public void deleteFilm(Film film) {
         isIdValid(film.getId());
         log.info("Фильм с ID {} удалён.", film.getId());
         filmStorage.deleteFilm(film);
-    }
-
-    @Override
-    public List<Film> getAllFilms() {
-        List<Film> films = new ArrayList<>(filmStorage.getAllFilms().values());
-        log.info("Текущее количество фильмов: {}. Список возвращён.", films.size());
-        return films;
     }
 
     @Override

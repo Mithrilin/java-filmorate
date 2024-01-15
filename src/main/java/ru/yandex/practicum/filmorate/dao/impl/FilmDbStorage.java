@@ -86,8 +86,23 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public void deleteFilm(Film film) {
-
+    public List<Film> getAllFilms() {
+        Map<Integer, Film> filmMap = new HashMap<>();
+        String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
+                "m.name as mpa_name, g.id as genre_id, g.name as genre_name " +
+                "from films f " +
+                "left outer join mpa m on f.mpa_id = m.id " +
+                "left outer join film_genres fg on f.id = fg.film_id " +
+                "left outer join genres g on fg.genre_id = g.id order by f.id;";
+        List<Film> films = jdbcTemplate.query(sql, filmsListRowMapper(filmMap));
+        jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by film_id;",
+                (RowMapper<Film>) (rs, rowNum) -> {
+            do {
+                filmMap.get(rs.getInt("film_id")).setLike(rs.getInt("count"));
+            } while (rs.next());
+            return null;
+        });
+        return films;
     }
 
     @Override

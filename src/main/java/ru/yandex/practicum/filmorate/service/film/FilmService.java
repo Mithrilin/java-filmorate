@@ -11,9 +11,9 @@ public interface FilmService {
 
     Film getFilmById(int id);
 
-    void deleteFilm(Film film);
-
     List<Film> getAllFilms();
+
+    void deleteFilm(Film film);
 
     void addLike(int id, int userId);
 

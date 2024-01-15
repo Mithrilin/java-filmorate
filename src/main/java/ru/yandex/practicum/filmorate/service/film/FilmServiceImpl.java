@@ -4,13 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -55,18 +53,19 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
+    public void addLike(int id, int userId) {
+        filmStorage.addLike(id, userId);
+        log.info("Пользователь с id {} лайкнул фильм с id {}.", userId, id);
+    }
+
+    @Override
     public void deleteFilm(Film film) {
         isIdValid(film.getId());
         log.info("Фильм с ID {} удалён.", film.getId());
         filmStorage.deleteFilm(film);
     }
 
-    @Override
-    public void addLike(int id, int userId) {
-        Film film = isIdValid(id);
-        log.info("Пользователь с id {} лайкнул фильм с id {}.", userId, id);
-        film.getLikes().add(userId);
-    }
+
 
     @Override
     public void deleteLike(int id, int userId) {

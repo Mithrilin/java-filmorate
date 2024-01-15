@@ -94,4 +94,45 @@ public class FilmDbStorage implements FilmStorage {
     public Map<Integer, Film> getAllFilms() {
         return null;
     }
+
+    private RowMapper<Film> filmsListRowMapper(Map<Integer, Film> filmMap) {
+        return (rs, rowNum) -> {
+            int filmId = rs.getInt("id");
+            Film film = new Film(
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getDate("releasedate").toLocalDate(),
+                    rs.getInt("duration"),
+                    new Mpa(rs.getInt("mpa_id"),
+                            rs.getString("mpa_name"))
+            );
+            film.setId(filmId);
+            filmMap.put(filmId, film);
+            do {
+                if (filmId == rs.getInt("id")) {
+                    film.getGenres().add(new Genre(rs.getInt("genre_id"),
+                            rs.getString("genre_name")));
+                } else break;
+            } while (rs.next());
+            return film;
+        };
+    }
+    private RowMapper<Film> filmRowMapper() {
+        return (rs, rowNum) -> {
+            Film film = new Film(
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getDate("releasedate").toLocalDate(),
+                    rs.getInt("duration"),
+                    new Mpa(rs.getInt("mpa_id"),
+                            rs.getString("mpa_name"))
+            );
+            film.setId(rs.getInt("id"));
+            do {
+                film.getGenres().add(new Genre(rs.getInt("genre_id"),
+                        rs.getString("genre_name")));
+            } while (rs.next());
+            return film;
+        };
+    }
 }

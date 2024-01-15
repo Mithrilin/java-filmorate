@@ -75,12 +75,8 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public List<Film> getAllFilms() {
         Map<Integer, Film> filmMap = new HashMap<>();
-        String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
-                "m.name as mpa_name, g.id as genre_id, g.name as genre_name " +
-                "from films f " +
-                "left outer join mpa m on f.mpa_id = m.id " +
-                "left outer join film_genres fg on f.id = fg.film_id " +
-                "left outer join genres g on fg.genre_id = g.id order by f.id;";
+        String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, m.name as mpa_name " +
+                "from films f left outer join mpa m on f.mpa_id = m.id order by f.id;";
         List<Film> films = jdbcTemplate.query(sql, (rs, rowNum) -> {
             int filmId = rs.getInt("id");
             Film film = new Film(
@@ -93,21 +89,24 @@ public class FilmDbStorage implements FilmStorage {
             );
             film.setId(filmId);
             filmMap.put(filmId, film);
-            do {
-                if (filmId == rs.getInt("id")) {
-                    film.getGenres().add(new Genre(rs.getInt("genre_id"),
-                            rs.getString("genre_name")));
-                } else break;
-            } while (rs.next());
             return film;
         });
+        jdbcTemplate.query("select * from film_genres fg left join genres g on fg.genre_id = g.id;",
+                (RowMapper<Genre>) (rs, rowNum) -> {
+                    do {
+                        filmMap.get(rs.getInt("film_id")).getGenres().add(new Genre(
+                                rs.getInt("genre_id"),
+                                rs.getString("name")));
+                    } while (rs.next());
+                    return null;
+                });
         jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by film_id;",
                 (RowMapper<Film>) (rs, rowNum) -> {
-            do {
-                filmMap.get(rs.getInt("film_id")).setLike(rs.getInt("count"));
-            } while (rs.next());
-            return null;
-        });
+                    do {
+                        filmMap.get(rs.getInt("film_id")).setLike(rs.getInt("count"));
+                    } while (rs.next());
+                    return null;
+                });
         return films;
     }
 
@@ -137,6 +136,7 @@ public class FilmDbStorage implements FilmStorage {
             return film;
         };
     }
+
     private RowMapper<Film> filmRowMapper() {
         return (rs, rowNum) -> {
             Film film = new Film(

@@ -11,8 +11,8 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -64,25 +64,12 @@ public class FilmDbStorage implements FilmStorage {
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id where f.id = ?;";
-        return jdbcTemplate.queryForObject(sql, new RowMapper<Film>() {
-            @Override
-            public Film mapRow(ResultSet rs, int rowNum) throws SQLException {
-                Film film = new Film(
-                        rs.getString("name"),
-                        rs.getString("description"),
-                        rs.getDate("releasedate").toLocalDate(),
-                        rs.getInt("duration"),
-                        new Mpa(rs.getInt("mpa_id"),
-                                rs.getString("mpa_name"))
-                );
-                film.setId(rs.getInt("id"));
-                do {
-                    film.getGenres().add(new Genre(rs.getInt("genre_id"),
-                            rs.getString("genre_name")));
-                } while (rs.next());
-                return film;
-            }
-        }, id);
+        Film film = jdbcTemplate.queryForObject(sql, filmRowMapper(), id);
+        jdbcTemplate.query("select count(user_id) from likes where film_id = ?;", (RowMapper<Film>) (rs, rowNum) -> {
+            film.setLike(rs.getInt("count"));
+            return null;
+        }, film.getId());
+        return film;
     }
 
     @Override
@@ -106,8 +93,8 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public Map<Integer, Film> getAllFilms() {
-        return null;
+    public void deleteFilm(Film film) {
+
     }
 
     private RowMapper<Film> filmsListRowMapper(Map<Integer, Film> filmMap) {

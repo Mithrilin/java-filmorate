@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -65,30 +66,24 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public void deleteFilm(Film film) {
-        isIdValid(film.getId());
-        log.info("Фильм с ID {} удалён.", film.getId());
-        filmStorage.deleteFilm(film);
+    public List<Film> getPopularFilms(String count) {
+        List<Film> films = new ArrayList<>();
+        if (count != null) {
+            int length = Integer.parseInt(count);
+            films = filmStorage.getPopularFilms(length);
+            log.info("Список популярных фильмов размером {} возвращён.", length);
+        } else {
+//            films = filmStorage.getMostPopularFilm();
+            log.info("Самый популярный фильм с id {} возвращён.", films.get(0).getId());
+        }
+
+        return films;
     }
 
     @Override
-    public List<Film> getPopularFilms(String count) {
-        int length = 10;
-        if (count != null) {
-            length = Integer.parseInt(count);
-        }
-        List<Film> films = new ArrayList<>(filmStorage.getAllFilms().values());
-        log.info("Список популярных фильмов размером {} возвращён.", length);
-        return films.stream().sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
-                .limit(length).collect(Collectors.toList());
-    }
-
-    private Film isIdValid(int id) {
-        if (!filmStorage.getAllFilms().containsKey(id)) {
-            log.error("Фильм с id " + id + " не найден.");
-            throw new FilmNotFoundException("Фильм с id " + id + " не найден.");
-        }
-        return filmStorage.getAllFilms().get(id);
+    public void deleteFilm(Film film) {
+        log.info("Фильм с ID {} удалён.", film.getId());
+        filmStorage.deleteFilm(film);
     }
 
     private void isFilmValid(Film film) {

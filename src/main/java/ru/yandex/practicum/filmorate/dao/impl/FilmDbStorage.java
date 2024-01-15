@@ -133,6 +133,43 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
+    public List<Film> getPopularFilms(int length) {
+        Map<Integer, Film> filmMap = new HashMap<>();
+        String sql = "select film_id, count(user_id) from likes group by film_id order by count(user_id) desc limit ?;";
+        List<Film> films = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            int filmId = rs.getInt("id");
+            Film film = new Film(
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getDate("releasedate").toLocalDate(),
+                    rs.getInt("duration"),
+                    new Mpa(rs.getInt("mpa_id"),
+                            rs.getString("mpa_name"))
+            );
+            film.setId(filmId);
+            filmMap.put(filmId, film);
+            return film;
+        }, length);
+        jdbcTemplate.query("select * from film_genres fg left join genres g on fg.genre_id = g.id;",
+                (RowMapper<Genre>) (rs, rowNum) -> {
+                    do {
+                        filmMap.get(rs.getInt("film_id")).getGenres().add(new Genre(
+                                rs.getInt("genre_id"),
+                                rs.getString("name")));
+                    } while (rs.next());
+                    return null;
+                });
+        jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by film_id;",
+                (RowMapper<Film>) (rs, rowNum) -> {
+                    do {
+                        filmMap.get(rs.getInt("film_id")).setLike(rs.getInt("count"));
+                    } while (rs.next());
+                    return null;
+                });
+        return films;
+    }
+
+    @Override
     public void deleteFilm(Film film) {
 
     }

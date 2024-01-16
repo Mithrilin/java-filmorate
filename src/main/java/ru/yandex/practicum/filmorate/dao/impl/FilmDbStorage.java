@@ -72,7 +72,6 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public List<Film> getAllFilms() {
         Map<Integer, Film> filmMap = new HashMap<>();
-        Map<Integer, List<Genre>> genreMap = new HashMap<>();
         String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
                 "m.name as mpa_name, g.id as genre_id, g.name as genre_name " +
                 "from films f " +
@@ -81,7 +80,6 @@ public class FilmDbStorage implements FilmStorage {
                 "left outer join genres g on fg.genre_id = g.id order by f.id;";
         jdbcTemplate.query(sql, (rs, rowNum) -> {
             int filmId = rs.getInt("id");
-            Genre genre;
             if (!filmMap.containsKey(filmId)) {
                 Film film = new Film(
                         rs.getString("name"),
@@ -94,19 +92,9 @@ public class FilmDbStorage implements FilmStorage {
                 film.setId(filmId);
                 filmMap.put(filmId, film);
             }
-            if (!genreMap.containsKey(filmId)) {
-                List<Genre> genreList = new ArrayList<>();
-                genre = new Genre(
-                        rs.getInt("genre_id"),
-                        rs.getString("genre_name"));
-                genreList.add(genre);
-                genreMap.put(filmId, genreList);
-            } else {
-                genre = new Genre(
-                        rs.getInt("genre_id"),
-                        rs.getString("genre_name"));
-                genreMap.get(filmId).add(genre);
-            }
+            Genre genre = new Genre(
+                    rs.getInt("genre_id"),
+                    rs.getString("genre_name"));
             filmMap.get(filmId).getGenres().add(genre);
             return null;
         });
@@ -146,7 +134,6 @@ public class FilmDbStorage implements FilmStorage {
     public List<Film> getPopularFilms(String count) {
         Map<Integer, Integer> liksMap = new HashMap<>();
         Map<Integer, Film> filmMap = new HashMap<>();
-        Map<Integer, List<Genre>> genreMap = new HashMap<>();
         if (count != null) {
             int length = Integer.parseInt(count);
             jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id " +
@@ -168,7 +155,6 @@ public class FilmDbStorage implements FilmStorage {
             if (!liksMap.containsKey(filmId)) {
                 return null;
             }
-            Genre genre;
             if (!filmMap.containsKey(filmId)) {
                 Film film = new Film(
                         rs.getString("name"),
@@ -181,30 +167,16 @@ public class FilmDbStorage implements FilmStorage {
                 film.setId(filmId);
                 filmMap.put(filmId, film);
             }
-            if (!genreMap.containsKey(filmId)) {
-                List<Genre> genreList = new ArrayList<>();
-                genre = new Genre(
-                        rs.getInt("genre_id"),
-                        rs.getString("genre_name"));
-                genreList.add(genre);
-                genreMap.put(filmId, genreList);
-            } else {
-                genre = new Genre(
-                        rs.getInt("genre_id"),
-                        rs.getString("genre_name"));
-                genreMap.get(filmId).add(genre);
-            }
+            Genre genre = new Genre(
+                    rs.getInt("genre_id"),
+                    rs.getString("genre_name"));
             filmMap.get(filmId).getGenres().add(genre);
             return null;
         });
-        filmMap.values().stream().
-
+        for (Film film : filmMap.values()) {
+            film.setLike(liksMap.get(film.getId()));
+        }
         return new ArrayList<>(filmMap.values());
-    }
-
-    @Override
-    public void deleteFilm(Film film) {
-
     }
 
     private RowMapper<Film> filmRowMapper() {

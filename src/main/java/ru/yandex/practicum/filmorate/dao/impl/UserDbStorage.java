@@ -118,11 +118,7 @@ public class UserDbStorage implements UserStorage {
     private RowMapper<User> usersListRowMapper(Map<Integer, User> usersMap) {
         return (rs, rowNum) -> {
             int userId = rs.getInt("id");
-            User user = new User(
-                    rs.getString("email"),
-                    rs.getString("login"),
-                    rs.getString("name"),
-                    rs.getDate("birthday").toLocalDate());
+            User user = getNewUser(rs);
             user.setId(userId);
             usersMap.put(userId, user);
             return user;
@@ -131,16 +127,20 @@ public class UserDbStorage implements UserStorage {
 
     private RowMapper<User> userRowMapper() {
         return (rs, rowNum) -> {
-            User user = new User(
-                    rs.getString("email"),
-                    rs.getString("login"),
-                    rs.getString("name"),
-                    rs.getDate("birthday").toLocalDate());
+            User user = getNewUser(rs);
             user.setId(rs.getInt("id"));
             do {
                 user.getFriends().add(rs.getInt("friend_id"));
             } while (rs.next());
             return user;
         };
+    }
+
+    private User getNewUser(ResultSet rs) throws SQLException {
+        return new User(
+                rs.getString("email"),
+                rs.getString("login"),
+                rs.getString("name"),
+                rs.getDate("birthday").toLocalDate());
     }
 }

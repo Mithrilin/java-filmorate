@@ -11,6 +11,8 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 @Component("filmDbStorage")
@@ -81,14 +83,7 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.query(sql, (rs, rowNum) -> {
             int filmId = rs.getInt("id");
             if (!filmMap.containsKey(filmId)) {
-                Film film = new Film(
-                        rs.getString("name"),
-                        rs.getString("description"),
-                        rs.getDate("releasedate").toLocalDate(),
-                        rs.getInt("duration"),
-                        new Mpa(rs.getInt("mpa_id"),
-                                rs.getString("mpa_name"))
-                );
+                Film film = getNewFilm(rs);
                 film.setId(filmId);
                 filmMap.put(filmId, film);
             }
@@ -156,14 +151,7 @@ public class FilmDbStorage implements FilmStorage {
                 return null;
             }
             if (!filmMap.containsKey(filmId)) {
-                Film film = new Film(
-                        rs.getString("name"),
-                        rs.getString("description"),
-                        rs.getDate("releasedate").toLocalDate(),
-                        rs.getInt("duration"),
-                        new Mpa(rs.getInt("mpa_id"),
-                                rs.getString("mpa_name"))
-                );
+                Film film = getNewFilm(rs);
                 film.setId(filmId);
                 filmMap.put(filmId, film);
             }
@@ -181,14 +169,7 @@ public class FilmDbStorage implements FilmStorage {
 
     private RowMapper<Film> filmRowMapper() {
         return (rs, rowNum) -> {
-            Film film = new Film(
-                    rs.getString("name"),
-                    rs.getString("description"),
-                    rs.getDate("releasedate").toLocalDate(),
-                    rs.getInt("duration"),
-                    new Mpa(rs.getInt("mpa_id"),
-                            rs.getString("mpa_name"))
-            );
+            Film film = getNewFilm(rs);
             film.setId(rs.getInt("id"));
             do {
                 film.getGenres().add(new Genre(rs.getInt("genre_id"), rs.getString("genre_name")));
@@ -204,5 +185,15 @@ public class FilmDbStorage implements FilmStorage {
             } while (rs.next());
             return null;
         };
+    }
+
+    private Film getNewFilm(ResultSet rs) throws SQLException {
+        return new Film(
+                rs.getString("name"),
+                rs.getString("description"),
+                rs.getDate("releasedate").toLocalDate(),
+                rs.getInt("duration"),
+                new Mpa(rs.getInt("mpa_id"),
+                        rs.getString("mpa_name")));
     }
 }

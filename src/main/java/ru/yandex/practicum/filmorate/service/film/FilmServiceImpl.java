@@ -9,7 +9,6 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -70,12 +69,6 @@ public class FilmServiceImpl implements FilmService {
         List<Film> films = filmStorage.getPopularFilms(count);
         log.info("Список популярных фильмов возвращён.");
         return films;
-    }
-
-    @Override
-    public void deleteFilm(Film film) {
-        log.info("Фильм с ID {} удалён.", film.getId());
-        filmStorage.deleteFilm(film);
     }
 
     private void isFilmValid(Film film) {

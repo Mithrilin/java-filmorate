@@ -33,7 +33,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public User updateUser(User user) {
         isUserValid(user);
-        userStorage.updateUser(user);
+        int result = userStorage.updateUser(user);
+        if (result == 0) {
+            throw new UserNotFoundException("Пользователь с id " + user.getId() + " не найден.");
+        }
         log.info("Пользователь с ID {} обновлён.", user.getId());
         return user;
     }

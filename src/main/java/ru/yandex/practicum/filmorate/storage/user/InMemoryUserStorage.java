@@ -19,9 +19,9 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public User updateUser(User user) {
+    public Integer updateUser(User user) {
         users.put(user.getId(), user);
-        return user;
+        return user.getId();
     }
 
     @Override

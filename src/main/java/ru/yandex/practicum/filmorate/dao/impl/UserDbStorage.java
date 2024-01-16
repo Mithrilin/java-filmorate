@@ -70,7 +70,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void deleteUser(int id) {
-        jdbcTemplate.update("delete from users where id = ?", id);
+        jdbcTemplate.update("delete from users where id = ?;", id);
     }
 
     @Override
@@ -80,7 +80,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void deleteFriend(int id, int friendId) {
-        jdbcTemplate.update("delete from friends where user_id = ? and friend_id = ?", id, friendId);
+        jdbcTemplate.update("delete from friends where user_id = ? and friend_id = ?;", id, friendId);
     }
 
     @Override

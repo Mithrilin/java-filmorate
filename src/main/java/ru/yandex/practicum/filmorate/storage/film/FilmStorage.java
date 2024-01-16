@@ -17,7 +17,7 @@ public interface FilmStorage {
 
     void deleteLike(int id, int userId);
 
-    List<Film> getPopularFilms(int length);
+    List<Film> getPopularFilms(String count);
 
     void deleteFilm(Film film);
 

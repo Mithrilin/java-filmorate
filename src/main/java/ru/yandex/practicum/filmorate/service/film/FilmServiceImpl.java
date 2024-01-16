@@ -67,16 +67,8 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public List<Film> getPopularFilms(String count) {
-        List<Film> films = new ArrayList<>();
-        if (count != null) {
-            int length = Integer.parseInt(count);
-            films = filmStorage.getPopularFilms(length);
-            log.info("Список популярных фильмов размером {} возвращён.", length);
-        } else {
-//            films = filmStorage.getMostPopularFilm();
-            log.info("Самый популярный фильм с id {} возвращён.", films.get(0).getId());
-        }
-
+        List<Film> films = filmStorage.getPopularFilms(count);
+        log.info("Список популярных фильмов возвращён.");
         return films;
     }
 

@@ -46,7 +46,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> getPopularFilms(int length) {
+    public List<Film> getPopularFilms(String count) {
         return null;
     }
 

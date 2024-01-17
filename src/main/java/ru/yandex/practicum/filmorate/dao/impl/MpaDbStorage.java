@@ -23,7 +23,7 @@ public class MpaDbStorage implements MpaDao {
 
     @Override
     public List<Mpa> getAllMpa() {
-        return jdbcTemplate.query("select * from mpa;", mpaRowMapper());
+        return jdbcTemplate.query("select * from mpa order by id;", mpaRowMapper());
     }
 
     private RowMapper<Mpa> mpaRowMapper() {

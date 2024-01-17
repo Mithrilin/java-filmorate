@@ -23,7 +23,7 @@ public class GenreDbStorage implements GenreDao {
 
     @Override
     public List<Genre> getAllGenres() {
-        return jdbcTemplate.query("select * from genres;", genreRowMapper());
+        return jdbcTemplate.query("select * from genres order by id;", genreRowMapper());
     }
 
     private RowMapper<Genre> genreRowMapper() {

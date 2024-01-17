@@ -30,7 +30,8 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public void addFriend(int id, int friendId) {
+    public Integer addFriend(int id, int friendId) {
+        return null;
     }
 
     @Override

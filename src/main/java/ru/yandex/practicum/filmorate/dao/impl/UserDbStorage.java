@@ -57,7 +57,13 @@ public class UserDbStorage implements UserStorage {
     public List<User> getAllUsers() {
         Map<Integer, User> usersMap = new HashMap<>();
         String sql = "select * from users;";
-        List<User> users = jdbcTemplate.query(sql, usersListRowMapper(usersMap));
+        List<User> users = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            int userId = rs.getInt("id");
+            User user = getNewUser(rs);
+            user.setId(userId);
+            usersMap.put(userId, user);
+            return user;
+        });
         jdbcTemplate.query("select * from friends;", (RowMapper<Integer>) (rs, rowNum) -> {
             do {
                 usersMap.get(rs.getInt("user_id")).getFriends().add(rs.getInt("friend_id"));
@@ -73,8 +79,8 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public void addFriend(int id, int friendId) {
-        jdbcTemplate.update("insert into friends (user_id, friend_id) values (?, ?);", id, friendId);
+    public Integer addFriend(int id, int friendId) {
+        return jdbcTemplate.update("insert into friends (user_id, friend_id) values (?, ?);", id, friendId);
     }
 
     @Override
@@ -86,10 +92,17 @@ public class UserDbStorage implements UserStorage {
     public List<User> getAllFriends(int id) {
         Map<Integer, User> usersMap = new HashMap<>();
         String sql = "select * from friends f join users u on f.friend_id = u.id where f.user_id = ?;";
-        List<User> users = jdbcTemplate.query(sql, usersListRowMapper(usersMap), id);
+        List<User> users = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            User user = getNewUser(rs);
+            user.setId(rs.getInt("id"));
+            usersMap.put(rs.getInt("user_id"), user);
+            return user;
+        }, id);
         jdbcTemplate.query("select * from friends;", (RowMapper<Integer>) (rs, rowNum) -> {
             do {
-                usersMap.get(rs.getInt("user_id")).getFriends().add(rs.getInt("friend_id"));
+                if (usersMap.containsKey(rs.getInt("user_id"))) {
+                    usersMap.get(rs.getInt("user_id")).getFriends().add(rs.getInt("friend_id"));
+                }
             } while (rs.next());
             return null;
         });
@@ -99,18 +112,19 @@ public class UserDbStorage implements UserStorage {
     @Override
     public List<User> getAllCommonFriends(int id, int otherId) {
         Map<Integer, User> usersMap = new HashMap<>();
-        String sql = "select * from users where id in (?, ?);";
-        List<User> users = jdbcTemplate.query(sql, usersListRowMapper(usersMap), id, otherId);
-        jdbcTemplate.query("select * from friends;", (RowMapper<Integer>) (rs, rowNum) -> {
-            int userId;
-            do {
-                userId = rs.getInt("user_id");
-                if (usersMap.containsKey(userId)) {
-                    usersMap.get(userId).getFriends().add(rs.getInt("friend_id"));
-                }
-            } while (rs.next());
+        List<User> users = new ArrayList<>();
+        String sql = "select * from friends f join users u on f.friend_id = u.id where f.user_id in (?, ?);";
+        jdbcTemplate.query(sql, (rs, rowNum) -> {
+            int userId = rs.getInt("id");
+            if (usersMap.containsKey(userId)) {
+                users.add(usersMap.get(userId));
+            } else {
+                User user = getNewUser(rs);
+                user.setId(userId);
+                usersMap.put(userId, user);
+            }
             return null;
-        });
+        }, id, otherId);
         return users;
     }
 

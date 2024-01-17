@@ -67,14 +67,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void addFriend(int id, int friendId) {
-        userStorage.addFriend(id, friendId);
-        log.info("Пользователи с id {} и с id {} стали друзьями.", id, friendId);
+        int result = userStorage.addFriend(id, friendId);
+        if (result == 0) {
+            throw new UserNotFoundException("Пользователь не найден.");
+        }
+        log.info("Пользователи с id {} добавил в друзья пользователя с id {}.", id, friendId);
     }
 
     @Override
     public void deleteFriend(int id, int friendId) {
         userStorage.deleteFriend(id, friendId);
-        log.info("Пользователи с id {} и с id {} перестали быть друзьями.", id, friendId);
+        log.info("Пользователи с id {} удалил из друзей пользователя с id {}.", id, friendId);
     }
 
     @Override
@@ -86,16 +89,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllCommonFriends(int id, int otherId) {
-        List<User> users = userStorage.getAllCommonFriends(id, otherId);
-        User user = users.get(0);
-        User otherUser = users.get(1);
-        List<User> commonFriends = new ArrayList<>();
-        for (Integer friendId : user.getFriends()) {
-            if (otherUser.getFriends().contains(friendId)) {
-                User user1 = userStorage.getAllUsers().get(friendId);
-                commonFriends.add(user1);
-            }
-        }
+        List<User> commonFriends = userStorage.getAllCommonFriends(id, otherId);
         log.info("Список общих друзей пользователей с id {} и с id {} возвращён.", id, otherId);
         return commonFriends;
     }

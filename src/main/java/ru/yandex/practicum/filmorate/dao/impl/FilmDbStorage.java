@@ -35,6 +35,16 @@ public class FilmDbStorage implements FilmStorage {
                 "duration", film.getDuration().toString(),
                 "mpa_id", film.getMpa().getId().toString());
         film.setId(simpleJdbcInsert.executeAndReturnKey(params).intValue());
+        if (film.getGenres().isEmpty()) {
+            return film;
+        }
+        String sql = "update film_genres set film_id = ?, genre_id = ?;";
+        jdbcTemplate.update(con -> {
+            PreparedStatement statement = con.prepareStatement(sql);
+            statement.setString(1, film.getName());
+            statement.setDate(2, Date.valueOf(film.getReleaseDate()));
+            return statement;
+        });
         return film;
     }
 

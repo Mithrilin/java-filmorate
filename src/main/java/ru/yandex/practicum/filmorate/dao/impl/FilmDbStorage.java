@@ -4,6 +4,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -52,7 +53,7 @@ public class FilmDbStorage implements FilmStorage {
     public Film updateFilm(Film film) {
         String sql = "update films set name = ?, releaseDate = ?, description = ?, " +
                 "duration = ?, mpa_id = ? where id = ?;";
-        jdbcTemplate.update(con -> {
+        int result = jdbcTemplate.update(con -> {
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setString(1, film.getName());
             statement.setDate(2, Date.valueOf(film.getReleaseDate()));
@@ -62,11 +63,15 @@ public class FilmDbStorage implements FilmStorage {
             statement.setInt(6, film.getId());
             return statement;
         });
-        return film;
+        if (result == 0) {
+            throw new FilmNotFoundException("Фильм с id " + film.getId() + " не найден.");
+        }
+        jdbcTemplate.update("delete from film_genres where film_id = ?;", film.getId());
+        return addGenresFromFilm(film);
     }
 
     @Override
-    public Film getFilmById(int id) {
+    public List<Film> getFilmById(int id) {
         String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
                 "m.name as mpa_name, fg.genre_id, g.name as genre_name " +
                 "from films f " +
@@ -145,9 +150,9 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public void deleteLike(int id, int userId) {
+    public Integer deleteLike(int id, int userId) {
         String sql = "delete from likes where user_id = ? and film_id = ?;";
-        jdbcTemplate.update(con -> {
+        return jdbcTemplate.update(con -> {
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setInt(1, userId);
             statement.setInt(2, id);

@@ -17,8 +17,8 @@ public class GenreDbStorage implements GenreDao {
     }
 
     @Override
-    public Genre getGenreById(int id) {
-        return jdbcTemplate.queryForObject("select * from genres where id = ?;", genreRowMapper(), id);
+    public List<Genre> getGenreById(int id) {
+        return jdbcTemplate.query("select * from genres where id = ?;", genreRowMapper(), id);
     }
 
     @Override

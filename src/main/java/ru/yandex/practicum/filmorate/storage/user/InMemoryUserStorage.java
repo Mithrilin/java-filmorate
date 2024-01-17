@@ -25,8 +25,9 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public void deleteUser(int id) {
+    public Integer deleteUser(int id) {
         users.remove(id);
+        return null;
     }
 
     @Override
@@ -35,7 +36,8 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public void deleteFriend(int id, int friendId) {
+    public Integer deleteFriend(int id, int friendId) {
+        return null;
     }
 
     @Override

@@ -28,8 +28,8 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Film getFilmById(int id) {
-        return films.get(id);
+    public List<Film> getFilmById(int id) {
+        return new ArrayList<>(films.values());
     }
 
     @Override
@@ -42,7 +42,8 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public void deleteLike(int id, int userId) {
+    public Integer deleteLike(int id, int userId) {
+        return null;
     }
 
     @Override

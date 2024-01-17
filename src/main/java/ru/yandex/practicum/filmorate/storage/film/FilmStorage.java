@@ -9,13 +9,13 @@ public interface FilmStorage {
 
     Film updateFilm(Film film);
 
-    Film getFilmById(int id);
+    List<Film> getFilmById(int id);
 
     List<Film> getAllFilms();
 
     void addLike(int id, int userId);
 
-    void deleteLike(int id, int userId);
+    Integer deleteLike(int id, int userId);
 
     List<Film> getPopularFilms(String count);
 }

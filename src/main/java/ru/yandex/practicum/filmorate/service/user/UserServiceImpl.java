@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service.user;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
@@ -9,7 +10,6 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -61,22 +61,29 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(int id) {
-        userStorage.deleteUser(id);
+        int result = userStorage.deleteUser(id);
+        if (result == 0) {
+            throw new UserNotFoundException("Пользователь с id " + id + " не найден.");
+        }
         log.info("Пользователь с ID {} удалён.", id);
     }
 
     @Override
     public void addFriend(int id, int friendId) {
-        int result = userStorage.addFriend(id, friendId);
-        if (result == 0) {
+        try {
+            userStorage.addFriend(id, friendId);
+            log.info("Пользователи с id {} добавил в друзья пользователя с id {}.", id, friendId);
+        } catch (DataIntegrityViolationException e) {
             throw new UserNotFoundException("Пользователь не найден.");
         }
-        log.info("Пользователи с id {} добавил в друзья пользователя с id {}.", id, friendId);
     }
 
     @Override
     public void deleteFriend(int id, int friendId) {
-        userStorage.deleteFriend(id, friendId);
+        int result = userStorage.deleteFriend(id, friendId);
+        if (result == 0) {
+            throw new UserNotFoundException("Пользователь с id " + id + " или с id " + friendId + " не найден.");
+        }
         log.info("Пользователи с id {} удалил из друзей пользователя с id {}.", id, friendId);
     }
 

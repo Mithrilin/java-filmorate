@@ -17,8 +17,8 @@ public class MpaDbStorage implements MpaDao {
     }
 
     @Override
-    public Mpa getMpaById(int id) {
-        return jdbcTemplate.queryForObject("select * from mpa where id = ?;", mpaRowMapper(), id);
+    public List<Mpa> getMpaById(int id) {
+        return jdbcTemplate.query("select * from mpa where id = ?;", mpaRowMapper(), id);
     }
 
     @Override

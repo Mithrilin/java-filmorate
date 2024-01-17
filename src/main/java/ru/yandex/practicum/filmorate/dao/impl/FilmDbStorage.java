@@ -68,30 +68,33 @@ public class FilmDbStorage implements FilmStorage {
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id where f.id = ?;";
-        Film film = jdbcTemplate.queryForObject(sql, new RowMapper<Film>() {
-            @Override
-            public Film mapRow(ResultSet rs, int rowNum) throws SQLException {
-                Film film = new Film(
-                        rs.getString("name"),
-                        rs.getString("description"),
-                        rs.getDate("releasedate").toLocalDate(),
-                        rs.getInt("duration"),
-                        new Mpa(rs.getInt("mpa_id"),
-                                rs.getString("mpa_name")));
-                do {
-                    Genre genre = new Genre(rs.getInt("genre_id"), rs.getString("genre_name"));
-                    if (genre.getId() != 0) {
-                        film.getGenres().add(genre);
-                    }
-                } while (rs.next());
-                return film;
-            }
+        List<Film> films = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Film film1 = new Film(
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getDate("releasedate").toLocalDate(),
+                    rs.getInt("duration"),
+                    new Mpa(rs.getInt("mpa_id"),
+                            rs.getString("mpa_name")));
+            film1.setId(rs.getInt("id"));
+            do {
+                Genre genre = new Genre(
+                        rs.getInt("genre_id"),
+                        rs.getString("genre_name"));
+                if (genre.getId() != 0) {
+                    film1.getGenres().add(genre);
+                }
+            } while (rs.next());
+            return film1;
         }, id);
+        if (films.size() == 0) {
+            return films;
+        }
         jdbcTemplate.query("select count(user_id) from likes where film_id = ?;", (RowMapper<Film>) (rs, rowNum) -> {
-            film.setLike(rs.getInt("count(user_id)"));
+            films.get(0).setLike(rs.getInt("count(user_id)"));
             return null;
         }, id);
-        return film;
+        return films;
     }
 
     @Override
@@ -213,7 +216,7 @@ public class FilmDbStorage implements FilmStorage {
     private RowMapper<Film> likeRowMapper(Map<Integer, Integer> liksMap) {
         return (rs, rowNum) -> {
             do {
-                liksMap.put(rs.getInt("film_id"), rs.getInt("count"));
+                liksMap.put(rs.getInt("film_id"), rs.getInt("count(user_id)"));
             } while (rs.next());
             return null;
         };

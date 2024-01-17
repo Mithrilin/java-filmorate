@@ -36,17 +36,7 @@ public class FilmDbStorage implements FilmStorage {
                 "duration", film.getDuration().toString(),
                 "mpa_id", film.getMpa().getId().toString());
         film.setId(simpleJdbcInsert.executeAndReturnKey(params).intValue());
-        if (film.getGenres().isEmpty()) {
-            return film;
-        }
-        String sql = "update film_genres set film_id = ?, genre_id = ?;";
-        jdbcTemplate.update(con -> {
-            PreparedStatement statement = con.prepareStatement(sql);
-            statement.setString(1, film.getName());
-            statement.setDate(2, Date.valueOf(film.getReleaseDate()));
-            return statement;
-        });
-        return film;
+        return addGenresFromFilm(film);
     }
 
     @Override
@@ -237,5 +227,25 @@ public class FilmDbStorage implements FilmStorage {
                 rs.getInt("duration"),
                 new Mpa(rs.getInt("mpa_id"),
                         rs.getString("mpa_name")));
+    }
+
+    private Film addGenresFromFilm(Film film) {
+        if (film.getGenres().isEmpty()) {
+            return film;
+        }
+        StringBuilder sql = new StringBuilder("insert into film_genres values");
+        sql.append(" (?, ?),".repeat(film.getGenres().size()));
+        sql.deleteCharAt(sql.lastIndexOf(",")).append(";");
+        jdbcTemplate.update(con -> {
+            PreparedStatement statement = con.prepareStatement(sql.toString());
+            int l = 0;
+            for (int i = 0; i < film.getGenres().size(); i++) {
+                statement.setInt(l + 1, film.getId());
+                statement.setInt(l + 2, film.getGenres().get(i).getId());
+                l += 2;
+            }
+            return statement;
+        });
+        return film;
     }
 }

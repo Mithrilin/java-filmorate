@@ -124,7 +124,7 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by film_id;",
                 (RowMapper<Film>) (rs, rowNum) -> {
                     do {
-                        filmMap.get(rs.getInt("film_id")).setLike(rs.getInt("count"));
+                        filmMap.get(rs.getInt("film_id")).setLike(rs.getInt("count(user_id)"));
                     } while (rs.next());
                     return null;
                 });
@@ -157,16 +157,12 @@ public class FilmDbStorage implements FilmStorage {
     public List<Film> getPopularFilms(String count) {
         Map<Integer, Integer> liksMap = new HashMap<>();
         Map<Integer, Film> filmMap = new HashMap<>();
-        if (count != null) {
-            int length = Integer.parseInt(count);
-            jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id " +
-                            "order by count(user_id) desc limit ?;",
-                    likeRowMapper(liksMap), length);
-        } else {
-            jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id " +
-                            "order by count(user_id) desc;",
-                    likeRowMapper(liksMap));
-        }
+        List<Film> films = new ArrayList<>();
+        List<Integer> priority = new ArrayList<>();
+        int length = 0;
+
+
+
         String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
                 "m.name as mpa_name, g.id as genre_id, g.name as genre_name " +
                 "from films f " +
@@ -175,9 +171,6 @@ public class FilmDbStorage implements FilmStorage {
                 "left outer join genres g on fg.genre_id = g.id order by f.id;";
         jdbcTemplate.query(sql, (rs, rowNum) -> {
             int filmId = rs.getInt("id");
-            if (!liksMap.containsKey(filmId)) {
-                return null;
-            }
             if (!filmMap.containsKey(filmId)) {
                 Film film = getNewFilm(rs);
                 film.setId(filmId);
@@ -191,10 +184,45 @@ public class FilmDbStorage implements FilmStorage {
             }
             return null;
         });
-        for (Film film : filmMap.values()) {
-            film.setLike(liksMap.get(film.getId()));
+
+
+
+        if (count != null) {
+            length = Integer.parseInt(count);
+            jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id " +
+                            "order by count(user_id) desc limit ?;",
+                    likeRowMapper(liksMap, priority), length);
+        } else {
+            jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id " +
+                            "order by count(user_id) desc;",
+                    likeRowMapper(liksMap, priority));
         }
-        return new ArrayList<>(filmMap.values());
+        if (!priority.isEmpty()) {
+            for (Integer i : priority) {
+                Film film = filmMap.get(i);
+                film.setLike(liksMap.get(i));
+                films.add(film);
+            }
+        }
+        for (Film film : filmMap.values()) {
+            if (length != 0 && films.size() == length) {
+                break;
+            }
+            if (!liksMap.containsKey(film.getId())) {
+                films.add(film);
+            }
+        }
+
+
+
+//        for (Film film : filmMap.values()) {
+//            if (length != 0 && films.size() >= length) {
+//                break;
+//            }
+//            film.setLike(liksMap.get(film.getId()));
+//            films.add(film);
+//        }
+        return films;
     }
 
     private RowMapper<Film> filmRowMapper() {
@@ -213,11 +241,12 @@ public class FilmDbStorage implements FilmStorage {
         };
     }
 
-    private RowMapper<Film> likeRowMapper(Map<Integer, Integer> liksMap) {
+    private RowMapper<Integer> likeRowMapper(Map<Integer, Integer> liksMap, List<Integer> priority) {
         return (rs, rowNum) -> {
             do {
                 liksMap.put(rs.getInt("film_id"), rs.getInt("count(user_id)"));
             } while (rs.next());
+            priority.add(rs.getInt("film_id"));
             return null;
         };
     }

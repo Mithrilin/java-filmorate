@@ -108,6 +108,21 @@ class FilmDbStorageTest {
     }
 
     @Test
+    @DisplayName("Обновление фильма")
+    void testUpdateFilmShouldBe0WhenGenresIsEmpty() {
+        Film savedFilm = filmDbStorage.addFilm(filmOne);
+        filmTwo.setGenres(new ArrayList<>());
+        filmTwo.setId(savedFilm.getId());
+        filmTwo.setLike(INITIAL_LIKE);
+
+        filmDbStorage.updateFilm(filmTwo);
+        Film updatedFilm = filmDbStorage.getFilmById(savedFilm.getId()).get(0);
+
+        assertNotNull(updatedFilm);
+        assertEquals(0, updatedFilm.getGenres().size());
+    }
+
+    @Test
     @DisplayName("Ошибка обновление фильма, когда неправильный ид")
     void testUpdateFilmShouldThrowExceptionWhenWrongId() {
         int wrongId = 999;

@@ -83,10 +83,9 @@ class FilmDbStorageTest {
     @Test
     @DisplayName("Добавление фильма")
     void testAddFilmShouldBeEquals() {
-        int filmId = 1;
         filmOne.setLike(INITIAL_LIKE);
 
-        filmDbStorage.addFilm(filmOne);
+        int filmId = filmDbStorage.addFilm(filmOne).getId();
         Film savedFilm = filmDbStorage.getFilmById(filmId).get(0);
 
         assertNotNull(savedFilm);

@@ -107,7 +107,7 @@ class FilmDbStorageTest {
     }
 
     @Test
-    @DisplayName("Обновление фильма")
+    @DisplayName("Обновление фильма с пустым списком жанров")
     void testUpdateFilmShouldBe0WhenGenresIsEmpty() {
         Film savedFilm = filmDbStorage.addFilm(filmOne);
         filmTwo.setGenres(new ArrayList<>());

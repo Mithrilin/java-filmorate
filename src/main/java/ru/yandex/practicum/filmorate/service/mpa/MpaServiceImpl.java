@@ -12,7 +12,7 @@ import java.util.List;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class MpaServiceImpl implements MpaService{
+public class MpaServiceImpl implements MpaService {
     private final MpaDao mpaDao;
 
     @Override

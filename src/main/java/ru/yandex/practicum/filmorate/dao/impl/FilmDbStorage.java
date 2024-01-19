@@ -68,25 +68,7 @@ public class FilmDbStorage implements FilmStorage {
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id where f.id = ?;";
-        List<Film> films = jdbcTemplate.query(sql, (rs, rowNum) -> {
-            Film film1 = new Film(
-                    rs.getString("name"),
-                    rs.getString("description"),
-                    rs.getDate("releasedate").toLocalDate(),
-                    rs.getInt("duration"),
-                    new Mpa(rs.getInt("mpa_id"),
-                            rs.getString("mpa_name")));
-            film1.setId(rs.getInt("id"));
-            do {
-                Genre genre = new Genre(
-                        rs.getInt("genre_id"),
-                        rs.getString("genre_name"));
-                if (genre.getId() != 0) {
-                    film1.getGenres().add(genre);
-                }
-            } while (rs.next());
-            return film1;
-        }, id);
+        List<Film> films = jdbcTemplate.query(sql, filmRowMapper(), id);
         if (films.size() == 0) {
             return films;
         }
@@ -99,7 +81,6 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getAllFilms() {
-        Map<Integer, Film> filmMap = new HashMap<>();
         String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
                 "m.name as mpa_name, g.id as genre_id, g.name as genre_name " +
                 "from films f " +
@@ -142,13 +123,9 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public List<Film> getPopularFilms(String count) {
         Map<Integer, Integer> liksMap = new HashMap<>();
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        List<Integer> priority = new ArrayList<>();
+        List<Integer> priority;
         int length = 0;
-
-
-
         String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
                 "m.name as mpa_name, g.id as genre_id, g.name as genre_name " +
                 "from films f " +
@@ -160,9 +137,9 @@ public class FilmDbStorage implements FilmStorage {
             priority = jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by count(user_id) desc;",
                     likeRowMapper(liksMap));
         } else {
-            jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id " +
-                            "order by count(user_id) desc;",
-                    likeRowMapper(liksMap, priority));
+            length = Integer.parseInt(count);
+            priority = jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by count(user_id) desc limit ?;",
+                    likeRowMapper(liksMap), length);
         }
         if (!priority.isEmpty()) {
             for (Integer i : priority) {
@@ -172,23 +149,11 @@ public class FilmDbStorage implements FilmStorage {
             }
         }
         for (Film film : filmMap.values()) {
-            if (length != 0 && films.size() == length) {
-                break;
-            }
+            if (count != null && films.size() >= length) break;
             if (!liksMap.containsKey(film.getId())) {
                 films.add(film);
             }
         }
-
-
-
-//        for (Film film : filmMap.values()) {
-//            if (length != 0 && films.size() >= length) {
-//                break;
-//            }
-//            film.setLike(liksMap.get(film.getId()));
-//            films.add(film);
-//        }
         return films;
     }
 
@@ -208,13 +173,10 @@ public class FilmDbStorage implements FilmStorage {
         };
     }
 
-    private RowMapper<Integer> likeRowMapper(Map<Integer, Integer> liksMap, List<Integer> priority) {
+    private RowMapper<Integer> likeRowMapper(Map<Integer, Integer> liksMap) {
         return (rs, rowNum) -> {
-            do {
-                liksMap.put(rs.getInt("film_id"), rs.getInt("count(user_id)"));
-            } while (rs.next());
-            priority.add(rs.getInt("film_id"));
-            return null;
+            liksMap.put(rs.getInt("film_id"), rs.getInt("count(user_id)"));
+            return rs.getInt("film_id");
         };
     }
 
@@ -252,16 +214,23 @@ public class FilmDbStorage implements FilmStorage {
         if (film.getGenres().isEmpty()) {
             return film;
         }
+        Map<Integer, Genre> genresMap = new HashMap<>();
+        for (Genre genre : film.getGenres()) {
+            if (!genresMap.containsKey(genre.getId())) {
+                genresMap.put(genre.getId(), genre);
+            }
+        }
+        film.setGenres(new ArrayList<>(genresMap.values()));
         StringBuilder sql = new StringBuilder("insert into film_genres values");
         sql.append(" (?, ?),".repeat(film.getGenres().size()));
         sql.deleteCharAt(sql.lastIndexOf(",")).append(";");
         jdbcTemplate.update(con -> {
             PreparedStatement statement = con.prepareStatement(sql.toString());
-            int l = 0;
+            int questionMarkNumber = 0;
             for (int i = 0; i < film.getGenres().size(); i++) {
-                statement.setInt(l + 1, film.getId());
-                statement.setInt(l + 2, film.getGenres().get(i).getId());
-                l += 2;
+                statement.setInt(questionMarkNumber + 1, film.getId());
+                statement.setInt(questionMarkNumber + 2, film.getGenres().get(i).getId());
+                questionMarkNumber += 2;
             }
             return statement;
         });

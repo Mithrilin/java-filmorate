@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
+import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -113,6 +115,21 @@ class FilmDbStorageTest {
         assertNotNull(updatedFilm);
         assertEquals(filmTwo, updatedFilm);
     }
+
+    @Test
+    @DisplayName("Ошибка обновление фильма, когда неправильный ид")
+    void testUpdateFilmShouldThrowExceptionWhenWrongId() {
+        int wrongId = 999;
+        filmDbStorage.addFilm(filmOne);
+        filmTwo.setId(wrongId);
+
+        FilmNotFoundException exception = assertThrows(
+                FilmNotFoundException.class,
+                () -> filmDbStorage.updateFilm(filmTwo));
+
+        assertEquals("Фильм с id " + wrongId + " не найден.", exception.getMessage());
+    }
+
 
     @Test
     @DisplayName("Получение всех фильмов")

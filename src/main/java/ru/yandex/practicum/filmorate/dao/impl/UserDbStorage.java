@@ -143,7 +143,9 @@ public class UserDbStorage implements UserStorage {
             User user = getNewUser(rs);
             user.setId(rs.getInt("id"));
             do {
-                user.getFriends().add(rs.getInt("friend_id"));
+                if (rs.getInt("friend_id") != 0) {
+                    user.getFriends().add(rs.getInt("friend_id"));
+                }
             } while (rs.next());
             return user;
         };

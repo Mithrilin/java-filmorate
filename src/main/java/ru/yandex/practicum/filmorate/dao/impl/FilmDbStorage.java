@@ -106,21 +106,7 @@ public class FilmDbStorage implements FilmStorage {
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id order by f.id;";
-        jdbcTemplate.query(sql, (rs, rowNum) -> {
-            int filmId = rs.getInt("id");
-            if (!filmMap.containsKey(filmId)) {
-                Film film = getNewFilm(rs);
-                film.setId(filmId);
-                filmMap.put(filmId, film);
-            }
-            Genre genre = new Genre(
-                    rs.getInt("genre_id"),
-                    rs.getString("genre_name"));
-            if (genre.getId() != 0) {
-                filmMap.get(filmId).getGenres().add(genre);
-            }
-            return null;
-        });
+        Map<Integer, Film> filmMap = getFilmMap(sql);
         jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by film_id;",
                 (RowMapper<Film>) (rs, rowNum) -> {
                     do {
@@ -169,29 +155,10 @@ public class FilmDbStorage implements FilmStorage {
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id order by f.id;";
-        jdbcTemplate.query(sql, (rs, rowNum) -> {
-            int filmId = rs.getInt("id");
-            if (!filmMap.containsKey(filmId)) {
-                Film film = getNewFilm(rs);
-                film.setId(filmId);
-                filmMap.put(filmId, film);
-            }
-            Genre genre = new Genre(
-                    rs.getInt("genre_id"),
-                    rs.getString("genre_name"));
-            if (genre.getId() != 0) {
-                filmMap.get(filmId).getGenres().add(genre);
-            }
-            return null;
-        });
-
-
-
-        if (count != null) {
-            length = Integer.parseInt(count);
-            jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id " +
-                            "order by count(user_id) desc limit ?;",
-                    likeRowMapper(liksMap, priority), length);
+        Map<Integer, Film> filmMap = getFilmMap(sql);
+        if (count == null) {
+            priority = jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by count(user_id) desc;",
+                    likeRowMapper(liksMap));
         } else {
             jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id " +
                             "order by count(user_id) desc;",
@@ -259,6 +226,26 @@ public class FilmDbStorage implements FilmStorage {
                 rs.getInt("duration"),
                 new Mpa(rs.getInt("mpa_id"),
                         rs.getString("mpa_name")));
+    }
+
+    private Map<Integer, Film> getFilmMap(String sql) {
+        Map<Integer, Film> filmMap = new HashMap<>();
+        jdbcTemplate.query(sql, (rs, rowNum) -> {
+            int filmId = rs.getInt("id");
+            if (!filmMap.containsKey(filmId)) {
+                Film film = getNewFilm(rs);
+                film.setId(filmId);
+                filmMap.put(filmId, film);
+            }
+            Genre genre = new Genre(
+                    rs.getInt("genre_id"),
+                    rs.getString("genre_name"));
+            if (genre.getId() != 0) {
+                filmMap.get(filmId).getGenres().add(genre);
+            }
+            return null;
+        });
+        return filmMap;
     }
 
     private Film addGenresFromFilm(Film film) {

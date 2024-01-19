@@ -10,6 +10,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.filmorate.model.Genre;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @JdbcTest
@@ -37,6 +39,11 @@ class GenreDbStorageTest {
     }
 
     @Test
-    void getAllGenres() {
+    @DisplayName("Получение списка всех жанров")
+    void testGetAllGenresShouldBe6() {
+        List<Genre> genres = genreDbStorage.getAllGenres();
+
+        assertNotNull(genres);
+        assertEquals(6, genres.size());
     }
 }

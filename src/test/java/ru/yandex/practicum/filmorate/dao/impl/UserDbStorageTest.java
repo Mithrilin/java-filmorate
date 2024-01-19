@@ -43,9 +43,6 @@ class UserDbStorageTest {
 
 
 
-    @Test
-    void deleteFriend() {
-    }
 
     @Test
     void getAllFriends() {
@@ -118,5 +115,18 @@ class UserDbStorageTest {
 
         User returnedUser = userDbStorage.getUserById(userOneId).get(0);
         assertEquals(1, returnedUser.getFriends().size());
+    }
+
+    @Test
+    @DisplayName("Удаление друга")
+    void testDeleteFriendShouldBe0() {
+        int userOneId = userDbStorage.addUser(userOne).getId();
+        int userTwoId = userDbStorage.addUser(userTwo).getId();
+        userDbStorage.addFriend(userOneId, userTwoId);
+
+        userDbStorage.deleteFriend(userOneId, userTwoId);
+
+        User returnedUser = userDbStorage.getUserById(userOneId).get(0);
+        assertEquals(0, returnedUser.getFriends().size());
     }
 }

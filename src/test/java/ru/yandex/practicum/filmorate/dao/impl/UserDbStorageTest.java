@@ -154,7 +154,7 @@ class UserDbStorageTest {
         List<User> friends = userDbStorage.getAllFriends(userOneId);
 
         assertNotNull(friends);
-        assertEquals(1, friends.get(0).getFriends().size());
+        assertEquals(1, friends.size());
     }
 
     @Test

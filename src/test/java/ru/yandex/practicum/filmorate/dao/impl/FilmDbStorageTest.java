@@ -9,6 +9,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -43,7 +44,13 @@ class FilmDbStorageTest {
     private static final Integer INITIAL_LIKE = 0;
     private static Film filmOne = null;
     private static Film filmTwo = null;
+    private static final LocalDate BIRTHDAY_USER_ONE = LocalDate.of(1986, 10, 25);
+    private static final String NAME_USER_ONE = "Nick Name";
+    private static final String LOGIN_USER_ONE = "dolore";
+    private static final String EMAIL_USER_ONE = "dolore@mail.ru";
+    private static User userOne = null;
     private FilmDbStorage filmDbStorage;
+    private UserDbStorage userDbStorage;
     private final JdbcTemplate jdbcTemplate;
 
 
@@ -55,6 +62,7 @@ class FilmDbStorageTest {
     @BeforeEach
     void setUp() {
         filmDbStorage = new FilmDbStorage(jdbcTemplate);
+        userDbStorage = new UserDbStorage(jdbcTemplate);
 
         mpaOne.setId(MPA_ID_ONE);
         mpaOne.setName(MPA_NAME_ONE);
@@ -73,15 +81,11 @@ class FilmDbStorageTest {
         genresFilmTwo.add(genreTwo);
         filmTwo = new Film(NAME_FILM_TWO, DESCRIPTION_FILM_TWO, RELEASE_DATE_FILM_TWO, DURATION_FILM_TWO, mpaOne);
         filmTwo.setGenres(genresFilmTwo);
+
+        userOne = new User(EMAIL_USER_ONE, LOGIN_USER_ONE, NAME_USER_ONE, BIRTHDAY_USER_ONE);
     }
 
 
-
-
-
-    @Test
-    void addLike() {
-    }
 
     @Test
     void deleteLike() {
@@ -133,5 +137,17 @@ class FilmDbStorageTest {
 
         assertNotNull(returnedFilms);
         assertEquals(films, returnedFilms);
+    }
+
+    @Test
+    @DisplayName("Добавление лайка к фильму")
+    void testAddLikeShouldBeEquals() {
+        int filmId = filmDbStorage.addFilm(filmOne).getId();
+        int userId = userDbStorage.addUser(userOne).getId();
+
+        filmDbStorage.addLike(filmId, userId);
+
+        Film film = filmDbStorage.getFilmById(filmId).get(0);
+        assertEquals(1, film.getLike());
     }
 }

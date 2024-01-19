@@ -92,6 +92,19 @@ class UserDbStorageTest {
     }
 
     @Test
+    @DisplayName("Получение всех пользователей при наличии друзей")
+    void testGetAllUsersShouldBeEqualsWhenFriendsNotEmpty() {
+        int userOneId = userDbStorage.addUser(userOne).getId();
+        int userTwoId = userDbStorage.addUser(userTwo).getId();
+        userDbStorage.addFriend(userOneId, userTwoId);
+
+        List<User> returnedUsers = userDbStorage.getAllUsers();
+
+        assertNotNull(returnedUsers);
+        assertEquals(2, returnedUsers.size());
+    }
+
+    @Test
     @DisplayName("Удаление пользователя")
     void testDeleteUserShouldBeEquals() {
         int userOneId = userDbStorage.addUser(userOne).getId();

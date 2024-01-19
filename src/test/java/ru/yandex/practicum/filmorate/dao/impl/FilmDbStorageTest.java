@@ -5,6 +5,7 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -16,6 +17,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @JdbcTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 class FilmDbStorageTest {
     private static final Integer MPA_ID_ONE = 1;
@@ -47,6 +49,13 @@ class FilmDbStorageTest {
 
     @BeforeAll
     static void beforeAll() {
+
+    }
+
+    @BeforeEach
+    void setUp() {
+        filmDbStorage = new FilmDbStorage(jdbcTemplate);
+
         mpaOne.setId(MPA_ID_ONE);
         mpaOne.setName(MPA_NAME_ONE);
         genreOne.setId(GENRE_ID_ONE);
@@ -54,7 +63,6 @@ class FilmDbStorageTest {
         List<Genre> genresFilmOne = new ArrayList<>();
         genresFilmOne.add(genreOne);
         filmOne = new Film(NAME_FILM_ONE, DESCRIPTION_FILM_ONE, RELEASE_DATE_FILM_ONE, DURATION_FILM_ONE, mpaOne);
-        filmOne.setLike(INITIAL_LIKE);
         filmOne.setGenres(genresFilmOne);
 
         mpaTwo.setId(MPA_ID_TWO);
@@ -64,26 +72,12 @@ class FilmDbStorageTest {
         List<Genre> genresFilmTwo = new ArrayList<>();
         genresFilmTwo.add(genreTwo);
         filmTwo = new Film(NAME_FILM_TWO, DESCRIPTION_FILM_TWO, RELEASE_DATE_FILM_TWO, DURATION_FILM_TWO, mpaOne);
-        filmTwo.setLike(INITIAL_LIKE);
         filmTwo.setGenres(genresFilmTwo);
     }
 
-    @BeforeEach
-    void setUp() {
-        filmDbStorage = new FilmDbStorage(jdbcTemplate);
-    }
 
 
 
-
-
-    @Test
-    void getFilmById() {
-    }
-
-    @Test
-    void getAllFilms() {
-    }
 
     @Test
     void addLike() {
@@ -101,6 +95,7 @@ class FilmDbStorageTest {
     @DisplayName("Добавление фильма")
     void testAddFilmShouldBeEquals() {
         int filmId = 1;
+        filmOne.setLike(INITIAL_LIKE);
 
         filmDbStorage.addFilm(filmOne);
         Film savedFilm = filmDbStorage.getFilmById(filmId).get(0);
@@ -114,11 +109,29 @@ class FilmDbStorageTest {
     void testUpdateFilmShouldBeEquals() {
         Film savedFilm = filmDbStorage.addFilm(filmOne);
         filmTwo.setId(savedFilm.getId());
+        filmTwo.setLike(INITIAL_LIKE);
 
         filmDbStorage.updateFilm(filmTwo);
         Film updatedFilm = filmDbStorage.getFilmById(savedFilm.getId()).get(0);
 
         assertNotNull(updatedFilm);
         assertEquals(filmTwo, updatedFilm);
+    }
+
+    @Test
+    @DisplayName("Получение всех фильмов")
+    void TestGetAllFilmsShouldBeEquals() {
+        List<Film> films = new ArrayList<>();
+        films.add(filmOne);
+        films.add(filmTwo);
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        filmOne.setId(1);
+        filmTwo.setId(2);
+
+        List<Film> returnedFilms = filmDbStorage.getAllFilms();
+
+        assertNotNull(returnedFilms);
+        assertEquals(films, returnedFilms);
     }
 }

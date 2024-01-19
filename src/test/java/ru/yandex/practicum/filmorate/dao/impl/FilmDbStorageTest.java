@@ -87,9 +87,7 @@ class FilmDbStorageTest {
 
 
 
-    @Test
-    void deleteLike() {
-    }
+
 
     @Test
     void getPopularFilms() {
@@ -149,5 +147,18 @@ class FilmDbStorageTest {
 
         Film film = filmDbStorage.getFilmById(filmId).get(0);
         assertEquals(1, film.getLike());
+    }
+
+    @Test
+    @DisplayName("Удаление лайка")
+    void testDeleteLikeShouldBeEquals() {
+        int filmId = filmDbStorage.addFilm(filmOne).getId();
+        int userId = userDbStorage.addUser(userOne).getId();
+
+        filmDbStorage.addLike(filmId, userId);
+        filmDbStorage.deleteLike(filmId, userId);
+
+        Film film = filmDbStorage.getFilmById(filmId).get(0);
+        assertEquals(0, film.getLike());
     }
 }

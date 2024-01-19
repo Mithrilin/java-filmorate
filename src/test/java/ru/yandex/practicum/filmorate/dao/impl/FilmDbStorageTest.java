@@ -152,10 +152,10 @@ class FilmDbStorageTest {
         List<Film> films = new ArrayList<>();
         films.add(filmOne);
         films.add(filmTwo);
-        filmDbStorage.addFilm(filmOne);
-        filmDbStorage.addFilm(filmTwo);
-        filmOne.setId(1);
-        filmTwo.setId(2);
+        int filmOneId = filmDbStorage.addFilm(filmOne).getId();
+        filmOne.setId(filmOneId);
+        int filmTwoId = filmDbStorage.addFilm(filmTwo).getId();
+        filmTwo.setId(filmTwoId);
 
         List<Film> returnedFilms = filmDbStorage.getAllFilms();
 

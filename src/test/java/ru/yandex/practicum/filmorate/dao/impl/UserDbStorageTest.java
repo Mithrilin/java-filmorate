@@ -41,9 +41,7 @@ class UserDbStorageTest {
         userTwo = new User(EMAIL_USER_TWO, LOGIN_USER_TWO, NAME_USER_TWO, BIRTHDAY_USER_TWO);
     }
 
-    @Test
-    void addFriend() {
-    }
+
 
     @Test
     void deleteFriend() {
@@ -108,5 +106,17 @@ class UserDbStorageTest {
         List<User> returnedUsers = userDbStorage.getAllUsers();
         assertEquals(1, returnedUsers.size());
         assertEquals(userTwoId, returnedUsers.get(0).getId());
+    }
+
+    @Test
+    @DisplayName("Добавление друга")
+    void testAddFriendShouldBe1() {
+        int userOneId = userDbStorage.addUser(userOne).getId();
+        int userTwoId = userDbStorage.addUser(userTwo).getId();
+
+        userDbStorage.addFriend(userOneId, userTwoId);
+
+        User returnedUser = userDbStorage.getUserById(userOneId).get(0);
+        assertEquals(1, returnedUser.getFriends().size());
     }
 }

@@ -41,13 +41,6 @@ class UserDbStorageTest {
         userTwo = new User(EMAIL_USER_TWO, LOGIN_USER_TWO, NAME_USER_TWO, BIRTHDAY_USER_TWO);
     }
 
-
-
-
-    @Test
-    void deleteUser() {
-    }
-
     @Test
     void addFriend() {
     }
@@ -102,5 +95,18 @@ class UserDbStorageTest {
 
         assertNotNull(returnedUsers);
         assertEquals(users, returnedUsers);
+    }
+
+    @Test
+    @DisplayName("Удаление пользователя")
+    void testDeleteUserShouldBeEquals() {
+        int userOneId = userDbStorage.addUser(userOne).getId();
+        int userTwoId = userDbStorage.addUser(userTwo).getId();
+
+        userDbStorage.deleteUser(userOneId);
+
+        List<User> returnedUsers = userDbStorage.getAllUsers();
+        assertEquals(1, returnedUsers.size());
+        assertEquals(userTwoId, returnedUsers.get(0).getId());
     }
 }

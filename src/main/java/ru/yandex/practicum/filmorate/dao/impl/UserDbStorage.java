@@ -57,13 +57,7 @@ public class UserDbStorage implements UserStorage {
     public List<User> getAllUsers() {
         Map<Integer, User> usersMap = new HashMap<>();
         String sql = "select * from users;";
-        List<User> users = jdbcTemplate.query(sql, (rs, rowNum) -> {
-            int userId = rs.getInt("id");
-            User user = getNewUser(rs);
-            user.setId(userId);
-            usersMap.put(userId, user);
-            return user;
-        });
+        List<User> users = jdbcTemplate.query(sql, usersListRowMapper(usersMap));
         jdbcTemplate.query("select * from friends;", (RowMapper<Integer>) (rs, rowNum) -> {
             do {
                 usersMap.get(rs.getInt("user_id")).getFriends().add(rs.getInt("friend_id"));

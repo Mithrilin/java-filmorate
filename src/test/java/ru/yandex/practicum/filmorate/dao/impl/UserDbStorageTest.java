@@ -18,10 +18,15 @@ import static org.junit.jupiter.api.Assertions.*;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 class UserDbStorageTest {
     private static final LocalDate BIRTHDAY_USER_ONE = LocalDate.of(1986, 10, 25);
+    private static final LocalDate BIRTHDAY_USER_TWO = LocalDate.of(1993, 11, 14);
     private static final String NAME_USER_ONE = "Nick Name";
+    private static final String NAME_USER_TWO = "Tom Soer";
     private static final String LOGIN_USER_ONE = "dolore";
+    private static final String LOGIN_USER_TWO = "soer";
     private static final String EMAIL_USER_ONE = "dolore@mail.ru";
+    private static final String EMAIL_USER_TWO = "soer@mail.ru";
     private static User userOne = null;
+    private static User userTwo = null;
     private UserDbStorage userDbStorage;
     private final JdbcTemplate jdbcTemplate;
 
@@ -31,12 +36,11 @@ class UserDbStorageTest {
         userDbStorage = new UserDbStorage(jdbcTemplate);
 
         userOne = new User(EMAIL_USER_ONE, LOGIN_USER_ONE, NAME_USER_ONE, BIRTHDAY_USER_ONE);
+        userTwo = new User(EMAIL_USER_TWO, LOGIN_USER_TWO, NAME_USER_TWO, BIRTHDAY_USER_TWO);
     }
 
 
-    @Test
-    void updateUser() {
-    }
+
 
     @Test
     void getUserById() {
@@ -74,5 +78,18 @@ class UserDbStorageTest {
 
         assertNotNull(savedUser);
         assertEquals(userOne, savedUser);
+    }
+
+    @Test
+    @DisplayName("Обновление пользователя")
+    void testUpdateUserShouldBeEquals() {
+        User savedUser = userDbStorage.addUser(userOne);
+        userTwo.setId(savedUser.getId());
+
+        userDbStorage.updateUser(userTwo);
+        User updatedUser = userDbStorage.getUserById(savedUser.getId()).get(0);
+
+        assertNotNull(updatedUser);
+        assertEquals(userTwo, updatedUser);
     }
 }

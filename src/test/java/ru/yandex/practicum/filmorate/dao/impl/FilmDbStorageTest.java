@@ -52,16 +52,7 @@ class FilmDbStorageTest {
         filmDbStorage = new FilmDbStorage(jdbcTemplate);
     }
 
-    @Test
-    @DisplayName("Добавление фильма")
-    void testAddFilmShouldBeEquals() {
-        int expectedId = 1;
 
-        filmDbStorage.addFilm(filmOne);
-        Film savedFilm = filmDbStorage.getFilmById(expectedId).get(0);
-
-        assertEquals(filmOne, savedFilm);
-    }
 
     @Test
     void updateFilm() {
@@ -85,5 +76,16 @@ class FilmDbStorageTest {
 
     @Test
     void getPopularFilms() {
+    }
+
+    @Test
+    @DisplayName("Добавление фильма")
+    void testAddFilmShouldBeEquals() {
+        int expectedId = 1;
+
+        filmDbStorage.addFilm(filmOne);
+        Film savedFilm = filmDbStorage.getFilmById(expectedId).get(0);
+
+        assertEquals(filmOne, savedFilm);
     }
 }

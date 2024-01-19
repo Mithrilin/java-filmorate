@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 @JdbcTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
@@ -41,12 +43,6 @@ class UserDbStorageTest {
         userTwo = new User(EMAIL_USER_TWO, LOGIN_USER_TWO, NAME_USER_TWO, BIRTHDAY_USER_TWO);
     }
 
-
-
-
-    @Test
-    void getAllFriends() {
-    }
 
     @Test
     void getAllCommonFriends() {
@@ -128,5 +124,20 @@ class UserDbStorageTest {
 
         User returnedUser = userDbStorage.getUserById(userOneId).get(0);
         assertEquals(0, returnedUser.getFriends().size());
+    }
+
+    @Test
+    @DisplayName("Получение списка друзей")
+    void testGetAllFriendsShouldBe1() {
+        int userOneId = userDbStorage.addUser(userOne).getId();
+        userOne.setId(userOneId);
+        int userTwoId = userDbStorage.addUser(userTwo).getId();
+        userTwo.setId(userTwoId);
+        userDbStorage.addFriend(userOneId, userTwoId);
+
+        List<User> friends = userDbStorage.getAllFriends(userOneId);
+
+        assertNotNull(friends);
+        assertEquals(1, friends.get(0).getFriends().size());
     }
 }

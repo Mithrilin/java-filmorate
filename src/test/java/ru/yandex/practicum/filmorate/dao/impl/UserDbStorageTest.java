@@ -23,14 +23,19 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class UserDbStorageTest {
     private static final LocalDate BIRTHDAY_USER_ONE = LocalDate.of(1986, 10, 25);
     private static final LocalDate BIRTHDAY_USER_TWO = LocalDate.of(1993, 11, 14);
+    private static final LocalDate BIRTHDAY_USER_THREE = LocalDate.of(1973, 6, 3);
     private static final String NAME_USER_ONE = "Nick Name";
     private static final String NAME_USER_TWO = "Tom Soer";
+    private static final String NAME_USER_THREE = "Kris Bem";
     private static final String LOGIN_USER_ONE = "dolore";
     private static final String LOGIN_USER_TWO = "soer";
+    private static final String LOGIN_USER_THREE = "bem";
     private static final String EMAIL_USER_ONE = "dolore@mail.ru";
     private static final String EMAIL_USER_TWO = "soer@mail.ru";
+    private static final String EMAIL_USER_THREE = "bem@mail.ru";
     private static User userOne = null;
     private static User userTwo = null;
+    private static User userThree = null;
     private UserDbStorage userDbStorage;
     private final JdbcTemplate jdbcTemplate;
 
@@ -41,12 +46,10 @@ class UserDbStorageTest {
 
         userOne = new User(EMAIL_USER_ONE, LOGIN_USER_ONE, NAME_USER_ONE, BIRTHDAY_USER_ONE);
         userTwo = new User(EMAIL_USER_TWO, LOGIN_USER_TWO, NAME_USER_TWO, BIRTHDAY_USER_TWO);
+        userThree = new User(EMAIL_USER_THREE, LOGIN_USER_THREE, NAME_USER_THREE, BIRTHDAY_USER_THREE);
     }
 
 
-    @Test
-    void getAllCommonFriends() {
-    }
 
     @Test
     @DisplayName("Добавление пользователя")
@@ -139,5 +142,21 @@ class UserDbStorageTest {
 
         assertNotNull(friends);
         assertEquals(1, friends.get(0).getFriends().size());
+    }
+
+    @Test
+    @DisplayName("Получение списка общих друзей")
+    void testGetAllCommonFriendsShouldBeEquals() {
+        int userOneId = userDbStorage.addUser(userOne).getId();
+        int userTwoId = userDbStorage.addUser(userTwo).getId();
+        int userThreeId = userDbStorage.addUser(userThree).getId();
+        userDbStorage.addFriend(userOneId, userThreeId);
+        userDbStorage.addFriend(userTwoId, userThreeId);
+
+        List<User> commonFriends = userDbStorage.getAllCommonFriends(userOneId, userTwoId);
+
+        assertNotNull(commonFriends);
+        assertEquals(1, commonFriends.size());
+        assertEquals(userThreeId, commonFriends.get(0).getId());
     }
 }

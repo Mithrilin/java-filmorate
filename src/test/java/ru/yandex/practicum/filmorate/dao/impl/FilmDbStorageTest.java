@@ -87,12 +87,6 @@ class FilmDbStorageTest {
 
 
 
-
-
-    @Test
-    void getPopularFilms() {
-    }
-
     @Test
     @DisplayName("Добавление фильма")
     void testAddFilmShouldBeEquals() {
@@ -160,5 +154,20 @@ class FilmDbStorageTest {
 
         Film film = filmDbStorage.getFilmById(filmId).get(0);
         assertEquals(0, film.getLike());
+    }
+
+    @Test
+    @DisplayName("Получение всех популярных фильмов")
+    void testGetAllPopularFilmsShouldBe2WhenCountIsNull() {
+        int userId = userDbStorage.addUser(userOne).getId();
+        int filmId = filmDbStorage.addFilm(filmOne).getId();
+        filmDbStorage.addFilm(filmTwo);
+        filmOne.setId(filmId);
+        filmDbStorage.addLike(filmId, userId);
+
+        List<Film> films = filmDbStorage.getPopularFilms(null);
+
+        assertEquals(2, films.size());
+        assertEquals(filmId, films.get(0).getId());
     }
 }

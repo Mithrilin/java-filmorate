@@ -89,7 +89,7 @@ public class UserDbStorage implements UserStorage {
         List<User> users = jdbcTemplate.query(sql, (rs, rowNum) -> {
             User user = getNewUser(rs);
             user.setId(rs.getInt("id"));
-            usersMap.put(rs.getInt("user_id"), user);
+            usersMap.put(rs.getInt("id"), user);
             return user;
         }, id);
         jdbcTemplate.query("select * from friends;", (RowMapper<Integer>) (rs, rowNum) -> {

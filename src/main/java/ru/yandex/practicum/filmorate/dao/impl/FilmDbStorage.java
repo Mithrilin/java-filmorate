@@ -134,11 +134,13 @@ public class FilmDbStorage implements FilmStorage {
                 "left outer join genres g on fg.genre_id = g.id order by f.id;";
         Map<Integer, Film> filmMap = getFilmMap(sql);
         if (count == null) {
-            priority = jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by count(user_id) desc;",
+            priority = jdbcTemplate.query("select film_id, count(user_id) from likes " +
+                            "group by film_id order by count(user_id) desc;",
                     likeRowMapper(liksMap));
         } else {
             length = Integer.parseInt(count);
-            priority = jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by count(user_id) desc limit ?;",
+            priority = jdbcTemplate.query("select film_id, count(user_id) from likes " +
+                            "group by film_id order by count(user_id) desc limit ?;",
                     likeRowMapper(liksMap), length);
         }
         if (!priority.isEmpty()) {

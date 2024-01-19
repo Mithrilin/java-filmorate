@@ -11,6 +11,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 @JdbcTest
@@ -41,14 +43,6 @@ class UserDbStorageTest {
 
 
 
-
-    @Test
-    void getUserById() {
-    }
-
-    @Test
-    void getAllUsers() {
-    }
 
     @Test
     void deleteUser() {
@@ -91,5 +85,22 @@ class UserDbStorageTest {
 
         assertNotNull(updatedUser);
         assertEquals(userTwo, updatedUser);
+    }
+
+    @Test
+    @DisplayName("Получение всех пользователей")
+    void testGetAllUsersShouldBeEquals() {
+        List<User> users = new ArrayList<>();
+        users.add(userOne);
+        users.add(userTwo);
+        int userOneId = userDbStorage.addUser(userOne).getId();
+        userOne.setId(userOneId);
+        int userTwoId = userDbStorage.addUser(userTwo).getId();
+        userTwo.setId(userTwoId);
+
+        List<User> returnedUsers = userDbStorage.getAllUsers();
+
+        assertNotNull(returnedUsers);
+        assertEquals(users, returnedUsers);
     }
 }

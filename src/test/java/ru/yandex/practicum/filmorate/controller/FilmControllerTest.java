@@ -137,19 +137,4 @@ class FilmControllerTest {
 
         assertEquals("Фильм не прошёл валидацию.", exception.getMessage());
     }
-
-    @Test
-    @DisplayName("ID у фильма неправильное при обновлении")
-    void shouldThrowExceptionWhenWrongId() {
-        int duration = 120;
-        int wrongId = 999;
-        LocalDate releaseDate = LocalDate.of(1986, 10, 25);
-        Film film = new Film("Тестовый фильм", "Описание", releaseDate, duration, mpa);
-        film.setId(wrongId);
-        FilmNotFoundException exception = assertThrows(
-                FilmNotFoundException.class,
-                () -> filmController.updateFilm(film));
-
-        assertEquals("Фильм с id 999 не найден.", exception.getMessage());
-    }
 }

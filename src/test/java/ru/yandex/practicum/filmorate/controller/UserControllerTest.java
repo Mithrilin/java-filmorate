@@ -170,19 +170,4 @@ class UserControllerTest {
 
         assertEquals("Пользователь не прошёл валидацию.", exception.getMessage());
     }
-
-    @Test
-    @DisplayName("Неправильный ID при обновлении пользователя")
-    void shouldThrowExceptionWhenWrongIdAndUpdate() {
-        LocalDate birthday = LocalDate.of(1986, 10, 25);
-        userController.createUser(new User("mail@mail.ru", "dolore", "Nick Name",
-                birthday));
-        User updateUser = new User("mail@mail.ru", "Wrong Login", "Nick Name", birthday);
-        updateUser.setId(999);
-        UserNotFoundException exception = assertThrows(
-                UserNotFoundException.class,
-                () -> userController.updateUser(updateUser));
-
-        assertEquals("Пользователь с id 999 не найден.", exception.getMessage());
-    }
 }

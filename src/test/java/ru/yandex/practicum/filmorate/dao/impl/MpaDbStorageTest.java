@@ -39,6 +39,11 @@ class MpaDbStorageTest {
     }
 
     @Test
-    void getAllMpa() {
+    @DisplayName("Получение списка с рейтингами")
+    void testGetAllMpaShouldBe5() {
+        List<Mpa> mpas = mpaDbStorage.getAllMpa();
+
+        assertNotNull(mpas);
+        assertEquals(5, mpas.size());
     }
 }

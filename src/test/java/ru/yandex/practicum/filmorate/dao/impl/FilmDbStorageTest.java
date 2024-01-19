@@ -54,12 +54,6 @@ class FilmDbStorageTest {
     private UserDbStorage userDbStorage;
     private final JdbcTemplate jdbcTemplate;
 
-
-    @BeforeAll
-    static void beforeAll() {
-
-    }
-
     @BeforeEach
     void setUp() {
         filmDbStorage = new FilmDbStorage(jdbcTemplate);
@@ -85,8 +79,6 @@ class FilmDbStorageTest {
 
         userOne = new User(EMAIL_USER_ONE, LOGIN_USER_ONE, NAME_USER_ONE, BIRTHDAY_USER_ONE);
     }
-
-
 
     @Test
     @DisplayName("Добавление фильма")
@@ -209,5 +201,21 @@ class FilmDbStorageTest {
 
         assertEquals(2, films.size());
         assertEquals(filmId, films.get(0).getId());
+    }
+
+    @Test
+    @DisplayName("Получение самого популярного фильма")
+    void testGetMostPopularFilmShouldBe1WhenCountIs1() {
+        int userId = userDbStorage.addUser(userOne).getId();
+        int filmId = filmDbStorage.addFilm(filmOne).getId();
+        filmDbStorage.addFilm(filmTwo);
+        filmOne.setId(filmId);
+        filmDbStorage.addLike(filmId, userId);
+
+        List<Film> films = filmDbStorage.getPopularFilms("1");
+
+        assertEquals(1, films.size());
+        assertEquals(filmId, films.get(0).getId());
+        assertEquals(1, films.get(0).getLike());
     }
 }

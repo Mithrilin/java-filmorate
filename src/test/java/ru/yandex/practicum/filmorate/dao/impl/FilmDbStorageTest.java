@@ -142,7 +142,7 @@ class FilmDbStorageTest {
 
     @Test
     @DisplayName("Получение всех фильмов")
-    void TestGetAllFilmsShouldBeEquals() {
+    void testGetAllFilmsShouldBeEquals() {
         List<Film> films = new ArrayList<>();
         films.add(filmOne);
         films.add(filmTwo);
@@ -155,6 +155,20 @@ class FilmDbStorageTest {
 
         assertNotNull(returnedFilms);
         assertEquals(films, returnedFilms);
+    }
+
+    @Test
+    @DisplayName("Получение всех фильмов с 1 лайком в фильме 1")
+    void testGetAllFilmsShouldBe1() {
+        int filmId = filmDbStorage.addFilm(filmOne).getId();
+        filmDbStorage.addFilm(filmTwo);
+        int userId = userDbStorage.addUser(userOne).getId();
+        filmDbStorage.addLike(filmId, userId);
+
+        List<Film> returnedFilms = filmDbStorage.getAllFilms();
+
+        assertEquals(2, returnedFilms.size());
+        assertEquals(1, returnedFilms.get(0).getLike());
     }
 
     @Test

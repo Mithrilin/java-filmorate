@@ -7,7 +7,6 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -130,6 +129,16 @@ class FilmDbStorageTest {
         assertEquals("Фильм с id " + wrongId + " не найден.", exception.getMessage());
     }
 
+    @Test
+    @DisplayName("Пустой список с пользователями, когда неправильный ид")
+    void testGetFilmByIdShouldBe0WhenWrongId() {
+        int wrongId = 999;
+        filmDbStorage.addFilm(filmOne);
+
+        List<Film> films = filmDbStorage.getFilmById(wrongId);
+
+        assertEquals(0, films.size());
+    }
 
     @Test
     @DisplayName("Получение всех фильмов")

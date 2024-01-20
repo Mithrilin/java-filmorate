@@ -5,14 +5,14 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.dao.UserStorage;
+import ru.yandex.practicum.filmorate.dao.UserDao;
 
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
 
 @Component("userDbStorage")
-public class UserDbStorage implements UserStorage {
+public class UserDbStorage implements UserDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserDbStorage(JdbcTemplate jdbcTemplate) {

@@ -8,7 +8,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.dao.FilmStorage;
+import ru.yandex.practicum.filmorate.dao.FilmDao;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -17,7 +17,7 @@ import java.sql.SQLException;
 import java.util.*;
 
 @Component("filmDbStorage")
-public class FilmDbStorage implements FilmStorage {
+public class FilmDbStorage implements FilmDao {
     private final JdbcTemplate jdbcTemplate;
 
     public FilmDbStorage(JdbcTemplate jdbcTemplate) {

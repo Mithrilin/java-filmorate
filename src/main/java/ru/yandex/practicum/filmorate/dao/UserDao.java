@@ -4,7 +4,7 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
 
-public interface UserStorage {
+public interface UserDao {
     User addUser(User user);
 
     Integer updateUser(User user);

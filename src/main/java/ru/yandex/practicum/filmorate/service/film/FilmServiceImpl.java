@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.dao.FilmStorage;
+import ru.yandex.practicum.filmorate.dao.FilmDao;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,16 +17,16 @@ import java.util.List;
 @Component
 public class FilmServiceImpl implements FilmService {
     private static final LocalDate INITIAL_RELEASE_DATE = LocalDate.of(1895, 12, 28);
-    private final FilmStorage filmStorage;
+    private final FilmDao filmDao;
 
-    public FilmServiceImpl(@Qualifier("filmDbStorage") FilmStorage filmStorage) {
-        this.filmStorage = filmStorage;
+    public FilmServiceImpl(@Qualifier("filmDbStorage") FilmDao filmStorage) {
+        this.filmDao = filmStorage;
     }
 
     @Override
     public Film addFilm(Film film) {
         isFilmValid(film);
-        film = filmStorage.addFilm(film);
+        film = filmDao.addFilm(film);
         log.info("Добавлен новый фильм с ID = {}", film.getId());
         return film;
     }
@@ -34,14 +34,14 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public Film updateFilm(Film film) {
         isFilmValid(film);
-        filmStorage.updateFilm(film);
+        filmDao.updateFilm(film);
         log.info("Фильм с ID {} обновлён.", film.getId());
         return film;
     }
 
     @Override
     public Film getFilmById(int id) {
-        List<Film> films = filmStorage.getFilmById(id);
+        List<Film> films = filmDao.getFilmById(id);
         if (films.size() == 0) {
             throw new NotFoundException("Фильм с id " + id + " не найден.");
         }
@@ -51,20 +51,20 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public List<Film> getAllFilms() {
-        List<Film> films = filmStorage.getAllFilms();
+        List<Film> films = filmDao.getAllFilms();
         log.info("Текущее количество фильмов: {}. Список возвращён.", films.size());
         return films;
     }
 
     @Override
     public void addLike(int id, int userId) {
-        filmStorage.addLike(id, userId);
+        filmDao.addLike(id, userId);
         log.info("Пользователь с id {} лайкнул фильм с id {}.", userId, id);
     }
 
     @Override
     public void deleteLike(int id, int userId) {
-        Integer result = filmStorage.deleteLike(id, userId);
+        Integer result = filmDao.deleteLike(id, userId);
         if (result == 0) {
             throw new NotFoundException("Фильм с id " + id + "или пользователь с id " + userId + " не найдены.");
         }
@@ -73,7 +73,7 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public List<Film> getPopularFilms(String count) {
-        List<Film> films = filmStorage.getPopularFilms(count);
+        List<Film> films = filmDao.getPopularFilms(count);
         log.info("Список популярных фильмов возвращён.");
         return films;
     }

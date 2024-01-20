@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.dao.UserStorage;
+import ru.yandex.practicum.filmorate.dao.UserDao;
 
 import java.util.List;
 
@@ -16,16 +16,16 @@ import java.util.List;
 @Service
 @Component
 public class UserServiceImpl implements UserService {
-    private final UserStorage userStorage;
+    private final UserDao userDao;
 
-    public UserServiceImpl(@Qualifier("userDbStorage") UserStorage userStorage) {
-        this.userStorage = userStorage;
+    public UserServiceImpl(@Qualifier("userDbStorage") UserDao userStorage) {
+        this.userDao = userStorage;
     }
 
     @Override
     public User addUser(User user) {
         isUserValid(user);
-        user = userStorage.addUser(user);
+        user = userDao.addUser(user);
         log.info("Добавлен новый пользователь с ID = {}", user.getId());
         return user;
     }
@@ -33,7 +33,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User updateUser(User user) {
         isUserValid(user);
-        int result = userStorage.updateUser(user);
+        int result = userDao.updateUser(user);
         if (result == 0) {
             throw new NotFoundException("Пользователь с id " + user.getId() + " не найден.");
         }
@@ -43,7 +43,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserById(int id) {
-        List<User> users = userStorage.getUserById(id);
+        List<User> users = userDao.getUserById(id);
         if (users.isEmpty()) {
             throw new NotFoundException("Пользователь с id " + id + " не найден.");
         }
@@ -54,14 +54,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllUsers() {
-        List<User> users = userStorage.getAllUsers();
+        List<User> users = userDao.getAllUsers();
         log.info("Текущее количество пользователей: {}. Список возвращён.", users.size());
         return users;
     }
 
     @Override
     public void deleteUser(int id) {
-        int result = userStorage.deleteUser(id);
+        int result = userDao.deleteUser(id);
         if (result == 0) {
             throw new NotFoundException("Пользователь с id " + id + " не найден.");
         }
@@ -71,7 +71,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void addFriend(int id, int friendId) {
         try {
-            userStorage.addFriend(id, friendId);
+            userDao.addFriend(id, friendId);
             log.info("Пользователи с id {} добавил в друзья пользователя с id {}.", id, friendId);
         } catch (DataIntegrityViolationException e) {
             throw new NotFoundException("Пользователь не найден.");
@@ -80,7 +80,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteFriend(int id, int friendId) {
-        int result = userStorage.deleteFriend(id, friendId);
+        int result = userDao.deleteFriend(id, friendId);
         if (result == 0) {
             throw new NotFoundException("Пользователь с id " + id + " или с id " + friendId + " не найден.");
         }
@@ -89,14 +89,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllFriends(int id) {
-        List<User> users = userStorage.getAllFriends(id);
+        List<User> users = userDao.getAllFriends(id);
         log.info("Список друзей пользователя с id {} возвращён.", id);
         return users;
     }
 
     @Override
     public List<User> getAllCommonFriends(int id, int otherId) {
-        List<User> commonFriends = userStorage.getAllCommonFriends(id, otherId);
+        List<User> commonFriends = userDao.getAllCommonFriends(id, otherId);
         log.info("Список общих друзей пользователей с id {} и с id {} возвращён.", id, otherId);
         return commonFriends;
     }

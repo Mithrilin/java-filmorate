@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.dao.UserStorage;
@@ -35,7 +35,7 @@ public class UserServiceImpl implements UserService {
         isUserValid(user);
         int result = userStorage.updateUser(user);
         if (result == 0) {
-            throw new UserNotFoundException("Пользователь с id " + user.getId() + " не найден.");
+            throw new NotFoundException("Пользователь с id " + user.getId() + " не найден.");
         }
         log.info("Пользователь с ID {} обновлён.", user.getId());
         return user;
@@ -45,7 +45,7 @@ public class UserServiceImpl implements UserService {
     public User getUserById(int id) {
         List<User> users = userStorage.getUserById(id);
         if (users.isEmpty()) {
-            throw new UserNotFoundException("Пользователь с id " + id + " не найден.");
+            throw new NotFoundException("Пользователь с id " + id + " не найден.");
         }
         User user = users.get(0);
         log.info("Пользователь с id {} возвращён.", user.getId());
@@ -63,7 +63,7 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(int id) {
         int result = userStorage.deleteUser(id);
         if (result == 0) {
-            throw new UserNotFoundException("Пользователь с id " + id + " не найден.");
+            throw new NotFoundException("Пользователь с id " + id + " не найден.");
         }
         log.info("Пользователь с ID {} удалён.", id);
     }
@@ -74,7 +74,7 @@ public class UserServiceImpl implements UserService {
             userStorage.addFriend(id, friendId);
             log.info("Пользователи с id {} добавил в друзья пользователя с id {}.", id, friendId);
         } catch (DataIntegrityViolationException e) {
-            throw new UserNotFoundException("Пользователь не найден.");
+            throw new NotFoundException("Пользователь не найден.");
         }
     }
 
@@ -82,7 +82,7 @@ public class UserServiceImpl implements UserService {
     public void deleteFriend(int id, int friendId) {
         int result = userStorage.deleteFriend(id, friendId);
         if (result == 0) {
-            throw new UserNotFoundException("Пользователь с id " + id + " или с id " + friendId + " не найден.");
+            throw new NotFoundException("Пользователь с id " + id + " или с id " + friendId + " не найден.");
         }
         log.info("Пользователи с id {} удалил из друзей пользователя с id {}.", id, friendId);
     }

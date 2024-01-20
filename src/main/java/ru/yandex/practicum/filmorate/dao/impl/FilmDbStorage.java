@@ -4,7 +4,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -54,7 +54,7 @@ public class FilmDbStorage implements FilmStorage {
             return statement;
         });
         if (result == 0) {
-            throw new FilmNotFoundException("Фильм с id " + film.getId() + " не найден.");
+            throw new NotFoundException("Фильм с id " + film.getId() + " не найден.");
         }
         jdbcTemplate.update("delete from film_genres where film_id = ?;", film.getId());
         return addGenresFromFilm(film);

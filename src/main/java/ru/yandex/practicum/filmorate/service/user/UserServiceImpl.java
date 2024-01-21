@@ -103,7 +103,6 @@ public class UserServiceImpl implements UserService {
 
     private void isUserValid(User user) {
         if (user.getLogin().contains(" ")) {
-            log.error("Пользователь не прошёл валидацию.");
             throw new ValidationException("Пользователь не прошёл валидацию.");
         }
         if (user.getName() == null || user.getName().isBlank()) {

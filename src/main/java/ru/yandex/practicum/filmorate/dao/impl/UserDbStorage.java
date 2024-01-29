@@ -58,6 +58,7 @@ public class UserDbStorage implements UserDao {
         Map<Integer, User> usersMap = new HashMap<>();
         String sql = "select * from users;";
         List<User> users = jdbcTemplate.query(sql, usersListRowMapper(usersMap));
+        // Добавление ид друзей в список пользователю
         jdbcTemplate.query("select * from friends;", (RowMapper<Integer>) (rs, rowNum) -> {
             do {
                 usersMap.get(rs.getInt("user_id")).getFriends().add(rs.getInt("friend_id"));
@@ -92,6 +93,7 @@ public class UserDbStorage implements UserDao {
             usersMap.put(rs.getInt("id"), user);
             return user;
         }, id);
+        // Добавление ид друзей в список пользователю
         jdbcTemplate.query("select * from friends;", (RowMapper<Integer>) (rs, rowNum) -> {
             do {
                 if (usersMap.containsKey(rs.getInt("user_id"))) {

@@ -53,6 +53,7 @@ public class FilmDbStorage implements FilmDao {
             statement.setInt(6, film.getId());
             return statement;
         });
+        // Проверка на наличие фильма в БД
         if (result == 0) {
             throw new NotFoundException("Фильм с id " + film.getId() + " не найден.");
         }
@@ -69,9 +70,11 @@ public class FilmDbStorage implements FilmDao {
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id where f.id = ?;";
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper(), id);
+        // Проверка на наличие фильма в БД
         if (films.size() == 0) {
             return films;
         }
+        // Добавление в фильм количество лайков
         jdbcTemplate.query("select count(user_id) from likes where film_id = ?;", (RowMapper<Film>) (rs, rowNum) -> {
             films.get(0).setLike(rs.getInt("count(user_id)"));
             return null;
@@ -87,7 +90,9 @@ public class FilmDbStorage implements FilmDao {
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id order by f.id;";
+        // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = getFilmMap(sql);
+        // Добавление в фильм количество лайков
         jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by film_id;",
                 (RowMapper<Film>) (rs, rowNum) -> {
                     do {
@@ -120,6 +125,11 @@ public class FilmDbStorage implements FilmDao {
         });
     }
 
+    /** Метод получения популярных фильмов.
+     * Если значение count задано, то такое количество фильмов и попадёт в список.
+     * Если фильмов с лайками меньше чем значение count, то остаток заполнится фильмами без лайков.
+     * Если значение count не задано, то в список попадут все фильмы.
+     **/
     @Override
     public List<Film> getPopularFilms(String count) {
         Map<Integer, Integer> liksMap = new HashMap<>();
@@ -132,7 +142,9 @@ public class FilmDbStorage implements FilmDao {
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id order by f.id;";
+        // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = getFilmMap(sql);
+        // Проверка наличия значения count (размера списка)
         if (count == null) {
             priority = jdbcTemplate.query("select film_id, count(user_id) from likes " +
                             "group by film_id order by count(user_id) desc;",
@@ -143,6 +155,7 @@ public class FilmDbStorage implements FilmDao {
                             "group by film_id order by count(user_id) desc limit ?;",
                     likeRowMapper(liksMap), length);
         }
+        // Проверка наличия лайков
         if (!priority.isEmpty()) {
             for (Integer i : priority) {
                 Film film = filmMap.get(i);
@@ -150,6 +163,7 @@ public class FilmDbStorage implements FilmDao {
                 films.add(film);
             }
         }
+        // Формирование итогового списка с учётом заданного размера
         for (Film film : filmMap.values()) {
             if (count != null && films.size() >= length) break;
             if (!liksMap.containsKey(film.getId())) {
@@ -192,6 +206,7 @@ public class FilmDbStorage implements FilmDao {
                         rs.getString("mpa_name")));
     }
 
+    // Метод сборки всех фильмов в мапу с записью жанров
     private Map<Integer, Film> getFilmMap(String sql) {
         Map<Integer, Film> filmMap = new HashMap<>();
         jdbcTemplate.query(sql, (rs, rowNum) -> {
@@ -212,10 +227,13 @@ public class FilmDbStorage implements FilmDao {
         return filmMap;
     }
 
+    // Метод добавления жанров в фильмы
     private Film addGenresFromFilm(Film film) {
+        // Проверка, что у фильма есть жанры
         if (film.getGenres().isEmpty()) {
             return film;
         }
+        // Проверка на дубликаты жанров
         Map<Integer, Genre> genresMap = new HashMap<>();
         for (Genre genre : film.getGenres()) {
             if (!genresMap.containsKey(genre.getId())) {

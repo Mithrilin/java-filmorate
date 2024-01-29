@@ -101,6 +101,7 @@ public class UserServiceImpl implements UserService {
         return commonFriends;
     }
 
+    // Метод проверки наличия пробела в логине и замены пустого имени на логин
     private void isUserValid(User user) {
         if (user.getLogin().contains(" ")) {
             throw new ValidationException("Пользователь не прошёл валидацию.");

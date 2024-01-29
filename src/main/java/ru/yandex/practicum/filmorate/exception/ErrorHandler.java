@@ -13,6 +13,7 @@ import java.util.Map;
 @ControllerAdvice("ru.yandex.practicum.filmorate")
 @RestControllerAdvice
 public class ErrorHandler {
+    // Отлавливаем все ValidationException
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleNotValid(final ValidationException e) {
@@ -20,6 +21,7 @@ public class ErrorHandler {
         return Map.of("errorMessage", e.getMessage());
     }
 
+    // Отлавливаем все NotFoundException
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> handleNotFound(final NotFoundException e) {
@@ -27,6 +29,7 @@ public class ErrorHandler {
         return Map.of("errorMessage", e.getMessage());
     }
 
+    // Отлавливаем все остальные возможные ошибки.
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Map<String, String> handleAllException(final Exception e) {

@@ -78,6 +78,7 @@ public class FilmServiceImpl implements FilmService {
         return films;
     }
 
+    // Метод проверки минимальной даты
     private void isFilmValid(Film film) {
         if (film.getReleaseDate().isBefore(INITIAL_RELEASE_DATE)) {
             throw new ValidationException("Фильм не прошёл валидацию. Дата релиза меньше минимального значения.");

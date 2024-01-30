@@ -4,6 +4,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.dao.UserDao;
 
@@ -122,6 +125,113 @@ public class UserDbStorage implements UserDao {
             return null;
         }, id, otherId);
         return users;
+    }
+
+    @Override
+    public List<Film> getRecommendations(int id) {
+        // Пользователи, которые вообще лайкали фильмы
+        List<Integer> usersId = new ArrayList<>();
+        // Список фильмов, которые лайкнул целевой пользователь
+        Map<Integer, Film> usersFavoriteFilms = new HashMap<>();
+        // Список всех фильмов, у которых есть лайки
+        Map<Integer, Film> filmMap = new HashMap<>();
+        // Общий список всех фильмов с лайками по пользователям
+        Map<Integer, HashMap<Integer, Film>> allLikes = new HashMap<>();
+        String sql = "select l.user_id, l.film_id, " +
+                "f.name as film_name, f.releasedate, f.description, f.duration, f.mpa_id, " +
+                "m.name as mpa_name, fg.genre_id, g.name as genre_name " +
+                "from likes l " +
+                "join films f on f.id = l.film_id " +
+                "join mpa m on f.mpa_id = m.id " +
+                "left outer join film_genres fg on f.id = fg.film_id " +
+                "left outer join genres g on fg.genre_id = g.id " +
+                "order by l.user_id, l.film_id;";
+        // Собираем все списки
+        jdbcTemplate.query(sql, likedFilmsRowMapper(allLikes, usersId, filmMap, usersFavoriteFilms, id));
+        // Проставляем количество лайков к каждому фильму
+        jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by film_id;",
+                (RowMapper<Film>) (rs, rowNum) -> {
+                    do {
+                        filmMap.get(rs.getInt("film_id")).setLike(rs.getInt("count(user_id)"));
+                    } while (rs.next());
+                    return null;
+                });
+        // Максимальное количество совпадений
+        int matchesMax = 0;
+        // Список рекомендаций
+        List<Film> recommendations = new ArrayList<>();
+        // Проходим по списку пользователей
+        for (Integer userId : usersId) {
+            // Проверяем, что пользователь не целевой
+            if (userId != id) {
+                HashMap<Integer, Film> likedFilms = allLikes.get(userId);
+                // Количество совпадений лайков с конкретным пользователем
+                int matches = 0;
+                List<Film> recommendationsTemp = new ArrayList<>();
+                // Проходим по списку фильмов пользователя
+                for (Integer filmId : likedFilms.keySet()) {
+                    // Проверяем совпадает ли лайк с целевым пользователем
+                    if (usersFavoriteFilms.containsKey(filmId)) {
+                        // Если совпадает, то увеличиваем счётчик
+                        matches++;
+                    } else {
+                        // Если не совпадает, добавляем во временные рекомендации
+                        recommendationsTemp.add(filmMap.get(filmId));
+                    }
+                }
+                // Проверяем, что у пользователя помимо совпавших фильмов есть и фильмы для рекомендации
+                // И что у этого пользователя наибольшее количество совпадений
+                if (matches < likedFilms.size() && matches > matchesMax) {
+                    matchesMax = matches;
+                    recommendations = recommendationsTemp;
+                }
+            }
+        }
+        return recommendations;
+    }
+
+    private RowMapper<Object> likedFilmsRowMapper(Map<Integer, HashMap<Integer, Film>> allLikes,
+                                                  List<Integer> usersId,
+                                                  Map<Integer, Film> filmMap,
+                                                  Map<Integer, Film> usersFavoriteFilms,
+                                                  int id) {
+        return (rs, rowNum) -> {
+            int userId = rs.getInt("user_id");
+            // Проверяем есть ли такой пользователь в списке
+            if (!allLikes.containsKey(userId)) {
+                allLikes.put(userId, new HashMap<>());
+                usersId.add(userId);
+            }
+            int filmId = rs.getInt("film_id");
+            // Проверяем есть ли этот фильм в списке лайков пользователя
+            if (!allLikes.get(userId).containsKey(filmId)) {
+                // Проверяем есть ли этот фильм в списке фильмов
+                if (!filmMap.containsKey(filmId)) {
+                    Film film = new Film(
+                            rs.getString("film_name"),
+                            rs.getString("description"),
+                            rs.getDate("releasedate").toLocalDate(),
+                            rs.getInt("duration"),
+                            new Mpa(rs.getInt("mpa_id"),
+                                    rs.getString("mpa_name")));
+                    film.setId(filmId);
+                    filmMap.put(filmId, film);
+                }
+                allLikes.get(userId).put(filmId, filmMap.get(filmId));
+                // Проверяем является ли данный пользователь целевым
+                if (userId == id) {
+                    usersFavoriteFilms.put(filmId, filmMap.get(filmId));
+                }
+            }
+            Genre genre = new Genre(
+                    rs.getInt("genre_id"),
+                    rs.getString("genre_name"));
+            // Проверяем есть ли у фильма жанры
+            if (genre.getId() != 0) {
+                allLikes.get(userId).get(filmId).getGenres().add(genre);
+            }
+            return null;
+        };
     }
 
     private RowMapper<User> usersListRowMapper(Map<Integer, User> usersMap) {

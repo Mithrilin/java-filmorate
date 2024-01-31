@@ -13,6 +13,7 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 @Component
 public class DirectorDbStorage implements DirectorDao {
@@ -21,26 +22,6 @@ public class DirectorDbStorage implements DirectorDao {
     public DirectorDbStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
-
-  /*  @Override
-    public List<Mpa> getMpaById(int id) {
-        return jdbcTemplate.query("select * from mpa where id = ?;", mpaRowMapper(), id);
-    }
-
-    @Override
-    public List<Mpa> getAllMpa() {
-        return jdbcTemplate.query("select * from mpa order by id;", mpaRowMapper());
-    }*/
-
-    /*private RowMapper<Mpa> mpaRowMapper() {
-        return (rs, rowNum) -> {
-            Mpa mpa = new Mpa();
-            mpa.setId(rs.getInt("id"));
-            mpa.setName(rs.getString("name"));
-            return mpa;
-        };
-    }*/
-
 
     @Override
     public List<Director> getDirectors() {
@@ -90,7 +71,6 @@ public class DirectorDbStorage implements DirectorDao {
                 rs.getString("director_name"));
 
     }
-
 
 }
 

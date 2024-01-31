@@ -21,5 +21,7 @@ public interface FilmDao {
 
     List<Film> getPopularFilms(String count);
 
+    List<Film> getFilmsSortByDirectorId(int directorId, String sortBy);//GET /films/director/{directorId}?sortBy=[year,likes]
+
     List<Film> getCommonFilms(int userId, int friendId);
 }

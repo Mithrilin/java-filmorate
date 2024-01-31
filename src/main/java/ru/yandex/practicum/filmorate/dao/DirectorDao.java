@@ -14,4 +14,6 @@ public interface DirectorDao {
     Director updateDirector(Director director); //PUT /directors - Изменение режиссёра
 
     void deleteDirector(int id); //DELETE /directors/{id} - Удаление режиссёра
+
+
 }

@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class Director {
-    private int id;
+    private Integer id;
     private String name;
 
     public Director(int id, String name) {

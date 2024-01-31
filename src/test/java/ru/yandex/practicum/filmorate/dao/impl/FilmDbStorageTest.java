@@ -40,8 +40,8 @@ class FilmDbStorageTest {
     private static final Mpa mpaOne = new Mpa();
     private static final Mpa mpaTwo = new Mpa();
 
-    private static final Director directorOne = new Director();
-    private static final Director directorTwo = new Director();
+    private static final Director directorOne = new Director(1, "Director one");
+    private static final Director directorTwo = new Director(2, "Director two");
     private static final Integer INITIAL_LIKE = 0;
     private static Film filmOne = null;
     private static Film filmTwo = null;

@@ -3,11 +3,14 @@ package ru.yandex.practicum.filmorate.dao;
 import ru.yandex.practicum.filmorate.model.Review;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ReviewDao {
-    Review getReviewById(int id);
+    Optional<Review> getReviewById(int id);
 
-    List<Review> getAllReviewsByFilmId(int filmId);
+    List<Review> getAllReviewsByFilmId(int filmId, int count);
+
+    List<Review> getAllReviews(int count);
 
     Review createReview(Review review);
 

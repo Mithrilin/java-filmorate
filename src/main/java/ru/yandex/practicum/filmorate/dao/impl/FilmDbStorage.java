@@ -125,7 +125,13 @@ public class FilmDbStorage implements FilmDao {
         });
     }
 
-    /** Метод получения популярных фильмов.
+    @Override
+    public Integer deleteFilm(int id) {
+        return jdbcTemplate.update("delete from films where id = ?;", id);
+    }
+
+    /**
+     * Метод получения популярных фильмов.
      * Если значение count задано, то такое количество фильмов и попадёт в список.
      * Если фильмов с лайками меньше чем значение count, то остаток заполнится фильмами без лайков.
      * Если значение count не задано, то в список попадут все фильмы.

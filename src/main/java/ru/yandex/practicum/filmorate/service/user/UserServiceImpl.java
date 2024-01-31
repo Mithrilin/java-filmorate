@@ -89,6 +89,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllFriends(int id) {
+        userDao.getUserById(id).stream().findAny().orElseThrow(() ->
+                new NotFoundException(String.format("Пользователь с id %d не найден", id)));
         List<User> users = userDao.getAllFriends(id);
         log.info("Список друзей пользователя с id {} возвращён.", id);
         return users;

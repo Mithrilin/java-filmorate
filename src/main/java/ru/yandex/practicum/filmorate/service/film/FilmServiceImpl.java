@@ -72,6 +72,13 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
+    public void deleteFilm(int id) {
+        Integer result = filmDao.deleteFilm(id);
+        if (result == 0) throw new NotFoundException("Фильм с id " + id + " не найден.");
+        log.info("Фильм с id {} удален", id);
+    }
+
+    @Override
     public List<Film> getPopularFilms(String count) {
         List<Film> films = filmDao.getPopularFilms(count);
         log.info("Список популярных фильмов возвращён.");

@@ -7,10 +7,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -42,6 +39,9 @@ class FilmDbStorageTest {
     private static final Integer DURATION_FILM_TWO = 100;
     private static final Mpa mpaOne = new Mpa();
     private static final Mpa mpaTwo = new Mpa();
+
+    private static final Director directorOne = new Director();
+    private static final Director directorTwo = new Director();
     private static final Integer INITIAL_LIKE = 0;
     private static Film filmOne = null;
     private static Film filmTwo = null;
@@ -65,7 +65,12 @@ class FilmDbStorageTest {
         genreOne.setName(GENRE_NAME_ONE);
         List<Genre> genresFilmOne = new ArrayList<>();
         genresFilmOne.add(genreOne);
-        filmOne = new Film(NAME_FILM_ONE, DESCRIPTION_FILM_ONE, RELEASE_DATE_FILM_ONE, DURATION_FILM_ONE, mpaOne);
+        filmOne = new Film(NAME_FILM_ONE,
+                DESCRIPTION_FILM_ONE,
+                RELEASE_DATE_FILM_ONE,
+                DURATION_FILM_ONE,
+                mpaOne,
+                directorOne);
         filmOne.setGenres(genresFilmOne);
 
         mpaTwo.setId(MPA_ID_TWO);
@@ -74,7 +79,12 @@ class FilmDbStorageTest {
         genreTwo.setName(GENRE_NAME_TWO);
         List<Genre> genresFilmTwo = new ArrayList<>();
         genresFilmTwo.add(genreTwo);
-        filmTwo = new Film(NAME_FILM_TWO, DESCRIPTION_FILM_TWO, RELEASE_DATE_FILM_TWO, DURATION_FILM_TWO, mpaOne);
+        filmTwo = new Film(NAME_FILM_TWO,
+                DESCRIPTION_FILM_TWO,
+                RELEASE_DATE_FILM_TWO,
+                DURATION_FILM_TWO,
+                mpaOne,
+                directorTwo);
         filmTwo.setGenres(genresFilmTwo);
 
         userOne = new User(EMAIL_USER_ONE, LOGIN_USER_ONE, NAME_USER_ONE, BIRTHDAY_USER_ONE);

@@ -7,6 +7,7 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -251,7 +252,8 @@ public class FilmDbStorage implements FilmDao {
                 rs.getDate("releasedate").toLocalDate(),
                 rs.getInt("duration"),
                 new Mpa(rs.getInt("mpa_id"),
-                        rs.getString("mpa_name")));
+                        rs.getString("mpa_name")),
+                new Director(rs.getInt("director_id"),rs.getString("director_name")));
     }
 
     // Метод сборки всех фильмов в мапу с записью жанров

@@ -17,6 +17,8 @@ public interface FilmService {
 
     void deleteLike(int id, int userId);
 
+    void deleteFilm(int id);
+
     List<Film> getPopularFilms(String count);
 
     List<Film> getCommonFilms(int userId, int friendId);

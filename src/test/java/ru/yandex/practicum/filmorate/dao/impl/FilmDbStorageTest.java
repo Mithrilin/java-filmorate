@@ -248,10 +248,11 @@ class FilmDbStorageTest {
         assertEquals(1, films.size());
         assertEquals(filmTwo, films.get(0));
     }
+
     @Test
     @DisplayName("Получение пустого списка общих фильмов")
     void testGetCommonFilmsEmpty() {
-        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm( filmOne);
         filmDbStorage.addFilm(filmTwo);
         userDbStorage.addUser(userOne);
         userDbStorage.addUser(new User("ford@ya.ru", "ford", "Ford", BIRTHDAY_USER_ONE));

@@ -176,7 +176,7 @@ class ReviewDbStorageTest {
 
         reviewDbStorage.createReview(review1);
         reviewDbStorage.createReview(review2);
-        List<Review> savedReviews = reviewDbStorage.getAllReviews( 1);
+        List<Review> savedReviews = reviewDbStorage.getAllReviews(1);
 
         assertThat(savedReviews)
                 .isNotNull()

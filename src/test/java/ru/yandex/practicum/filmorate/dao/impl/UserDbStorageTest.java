@@ -54,7 +54,6 @@ class UserDbStorageTest {
     }
 
 
-
     @Test
     @DisplayName("Добавление пользователя")
     void testAddUserShouldBeEquals() {
@@ -184,15 +183,15 @@ class UserDbStorageTest {
         int userTwoId = userDbStorage.addUser(userTwo).getId();
         int userThreeId = userDbStorage.addUser(userThree).getId();
         int film1Id = filmDbStorage.addFilm(new Film("filmName 1", "description 1",
-                LocalDate.of(1986, 10, 25),100, new Mpa(1, "G"))).getId();
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
         int film2Id = filmDbStorage.addFilm(new Film("filmName 2", "description 2",
-                LocalDate.of(1986, 10, 25),100, new Mpa(1, "G"))).getId();
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
         int film3Id = filmDbStorage.addFilm(new Film("filmName 3", "description 3",
-                LocalDate.of(1986, 10, 25),100, new Mpa(1, "G"))).getId();
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
         int film4Id = filmDbStorage.addFilm(new Film("filmName 4", "description 4",
-                LocalDate.of(1986, 10, 25),100, new Mpa(1, "G"))).getId();
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
         int film5Id = filmDbStorage.addFilm(new Film("filmName 5", "description 5",
-                LocalDate.of(1986, 10, 25),100, new Mpa(1, "G"))).getId();
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
         filmDbStorage.addLike(film1Id, userOneId);
         filmDbStorage.addLike(film1Id, userTwoId);
         filmDbStorage.addLike(film2Id, userOneId);
@@ -215,13 +214,13 @@ class UserDbStorageTest {
         int userTwoId = userDbStorage.addUser(userTwo).getId();
         int userThreeId = userDbStorage.addUser(userThree).getId();
         int film1Id = filmDbStorage.addFilm(new Film("filmName 1", "description 1",
-                LocalDate.of(1986, 10, 25),100, new Mpa(1, "G"))).getId();
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
         int film2Id = filmDbStorage.addFilm(new Film("filmName 2", "description 2",
-                LocalDate.of(1986, 10, 25),100, new Mpa(1, "G"))).getId();
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
         int film3Id = filmDbStorage.addFilm(new Film("filmName 3", "description 3",
-                LocalDate.of(1986, 10, 25),100, new Mpa(1, "G"))).getId();
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
         int film4Id = filmDbStorage.addFilm(new Film("filmName 4", "description 4",
-                LocalDate.of(1986, 10, 25),100, new Mpa(1, "G"))).getId();
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
         filmDbStorage.addLike(film1Id, userOneId);
         filmDbStorage.addLike(film1Id, userTwoId);
         filmDbStorage.addLike(film2Id, userOneId);
@@ -245,15 +244,23 @@ class UserDbStorageTest {
         int userOneId = userDbStorage.addUser(userOne).getId();
         userDbStorage.addUser(userTwo);
         filmDbStorage.addFilm(new Film("filmName 1", "description 1",
-                LocalDate.of(1986, 10, 25),100, new Mpa(1, "G")));
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G")));
         filmDbStorage.addFilm(new Film("filmName 2", "description 2",
-                LocalDate.of(1986, 10, 25),100, new Mpa(1, "G")));
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G")));
         filmDbStorage.addFilm(new Film("filmName 3", "description 3",
-                LocalDate.of(1986, 10, 25),100, new Mpa(1, "G")));
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G")));
 
         List<Film> recommendations = userDbStorage.getRecommendations(userOneId);
 
         assertNotNull(recommendations);
         assertEquals(0, recommendations.size());
+    }
+
+    @Test
+    @DisplayName("Удаление пользователя")
+    void testDeleteUser() {
+        userDbStorage.addUser(userOne);
+        userDbStorage.deleteUser(1);
+        assertEquals(0, userDbStorage.getAllUsers().size());
     }
 }

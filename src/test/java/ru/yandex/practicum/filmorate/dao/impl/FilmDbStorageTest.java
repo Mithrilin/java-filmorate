@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.model.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -75,8 +76,7 @@ class FilmDbStorageTest {
                 DESCRIPTION_FILM_ONE,
                 RELEASE_DATE_FILM_ONE,
                 DURATION_FILM_ONE,
-                mpaOne,
-                directorOne);
+                mpaOne);
         filmOne.setGenres(genresFilmOne);
 
         mpaTwo.setId(MPA_ID_TWO);
@@ -89,8 +89,7 @@ class FilmDbStorageTest {
                 DESCRIPTION_FILM_TWO,
                 RELEASE_DATE_FILM_TWO,
                 DURATION_FILM_TWO,
-                mpaOne,
-                directorTwo);
+                mpaOne);
         filmTwo.setGenres(genresFilmTwo);
 
         userOne = new User(EMAIL_USER_ONE, LOGIN_USER_ONE, NAME_USER_ONE, BIRTHDAY_USER_ONE);

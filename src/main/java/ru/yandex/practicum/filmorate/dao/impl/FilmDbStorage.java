@@ -32,26 +32,12 @@ public class FilmDbStorage implements FilmDao {
         SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(Objects.requireNonNull(jdbcTemplate.getDataSource()))
                 .withTableName("films")
                 .usingGeneratedKeyColumns("id");
-
-        Map<String, String> params;
-
-        if(film.getDirector() != null) {
-            params = Map.of(
-                    "name", film.getName(),
-                    "releaseDate", film.getReleaseDate().toString(),
-                    "description", film.getDescription(),
-                    "duration", film.getDuration().toString(),
-                    "mpa_id", film.getMpa().getId().toString(),
-                    "director_id", film.getDirector().getId().toString());
-        } else {
-            params = Map.of(
+        Map<String, String> params = Map.of(
                     "name", film.getName(),
                     "releaseDate", film.getReleaseDate().toString(),
                     "description", film.getDescription(),
                     "duration", film.getDuration().toString(),
                     "mpa_id", film.getMpa().getId().toString());
-        }
-
         film.setId(simpleJdbcInsert.executeAndReturnKey(params).intValue());
         return addGenresFromFilm(film);
     }
@@ -59,7 +45,7 @@ public class FilmDbStorage implements FilmDao {
     @Override
     public Film updateFilm(Film film) {
         String sql = "update films set name = ?, releaseDate = ?, description = ?, " +
-                "duration = ?, mpa_id = ? , director_id = ? where id = ?;";
+                "duration = ?, mpa_id = ?  where id = ?;";
         int result = jdbcTemplate.update(con -> {
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setString(1, film.getName());
@@ -67,8 +53,7 @@ public class FilmDbStorage implements FilmDao {
             statement.setString(3, film.getDescription());
             statement.setInt(4, film.getDuration());
             statement.setInt(5, film.getMpa().getId());
-            statement.setInt(6, film.getDirector().getId());
-            statement.setInt(7, film.getId());
+            statement.setInt(6, film.getId());
             return statement;
         });
         // Проверка на наличие фильма в БД
@@ -275,10 +260,8 @@ public class FilmDbStorage implements FilmDao {
                 rs.getDate("releasedate").toLocalDate(),
                 rs.getInt("duration"),
                 new Mpa(rs.getInt("mpa_id"),
-                        rs.getString("mpa_name")),
-                new Director(rs.getInt("director_id"),
-                        rs.getString("director_name"))
-        );
+                        rs.getString("mpa_name"))
+                );
     }
 
     // Метод сборки всех фильмов в мапу с записью жанров
@@ -302,6 +285,8 @@ public class FilmDbStorage implements FilmDao {
         });
         return filmMap;
     }
+
+
 
     // Метод добавления жанров в фильмы
     private Film addGenresFromFilm(Film film) {
@@ -333,6 +318,45 @@ public class FilmDbStorage implements FilmDao {
         return film;
     }
 
+    private void addDirectorsFromFilm(Film film) {
+        // Проверка, что у фильма есть режиссеры
+        if (film.getDirectors().isEmpty()) {
+            return;
+        }
+
+        //получить идентификаторы режиссеров из фильма
+        Set<Integer> setDirectorsId = film.getDirectors().stream()
+                .map(director -> director.getId())
+                .collect(Collectors.toSet());
+
+        //проверить что режиссер такой есть в базе
+        isDirector(setDirectorsId);
+
+        //добавить связь межу режиссерами и фильмом
+
+
+        String sql = "insert into directors_film (film_id, director_id) values(?, ?);";
+
+       setDirectorsId.stream().peek(dId->
+           jdbcTemplate.update(con -> {
+               PreparedStatement statement = con.prepareStatement(sql);
+               statement.setInt(1, film.getId());
+               statement.setInt(2, dId);
+               return statement;
+           })
+       );
+
+    }
+
+    //проверка есть ли режиссеры в базе
+    private void isDirector(Set<Integer> setDirectorsId) {
+        List<Integer> directorsId = jdbcTemplate.queryForList("select director_id from directors",Integer.class);
+        setDirectorsId.stream().peek(dId-> {
+            if(!directorsId.contains(dId)) {
+                throw new NotFoundException("Не найден режиссер под id = " + dId);
+            }
+        });
+    }
 
     @Override
     public List<Film> getFilmsSortYearByDirectorId(int directorId) {

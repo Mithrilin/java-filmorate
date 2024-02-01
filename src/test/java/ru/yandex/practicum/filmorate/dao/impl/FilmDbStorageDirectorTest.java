@@ -13,6 +13,7 @@ import ru.yandex.practicum.filmorate.model.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,14 +56,13 @@ class FilmDbStorageDirectorTest {
                     "Описание" + i,
                     LocalDate.of(2000 - i,1 + i,10 + i),
                     100 + i,
-                    new Mpa(1,"G"),
-                    directorThree);
+                    new Mpa(1,"G"));
             film[filmNam].setGenres(new ArrayList<>());
             film[filmNam].setId(i);
             if (filmNam < 3) {
-                film[filmNam].setDirector(directorOne);
+                film[filmNam].setDirectors(new HashSet<>());
             } else if (filmNam > 2  && filmNam < 5) {
-                film[filmNam].setDirector(directorTwo);
+                film[filmNam].setDirectors(new HashSet<>());
             }
 
             System.out.println(film[filmNam]);

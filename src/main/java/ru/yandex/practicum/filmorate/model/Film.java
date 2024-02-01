@@ -8,7 +8,9 @@ import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Data
 public class Film {
@@ -26,14 +28,13 @@ public class Film {
     private List<Genre> genres = new ArrayList<>();
     private Integer like;
 
-    private final Director director;
+    private Set<Director> directors = new HashSet<>();
 
-    public Film(String name, String description, LocalDate releaseDate, Integer duration, Mpa mpa, Director director) {
+    public Film(String name, String description, LocalDate releaseDate, Integer duration, Mpa mpa) {
         this.name = name;
         this.description = description;
         this.releaseDate = releaseDate;
         this.duration = duration;
         this.mpa = mpa;
-        this.director = director;
     }
 }

@@ -78,6 +78,13 @@ public class FilmServiceImpl implements FilmService {
         return films;
     }
 
+    @Override
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        List<Film> commonFilms = filmDao.getCommonFilms(userId, friendId);
+        log.info("Список общих фильмов пользователей с id{} и id{}.", userId, friendId);
+        return commonFilms;
+    }
+
     // Метод проверки минимальной даты
     private void isFilmValid(Film film) {
         if (film.getReleaseDate().isBefore(INITIAL_RELEASE_DATE)) {

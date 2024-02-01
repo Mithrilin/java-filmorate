@@ -232,4 +232,32 @@ class FilmDbStorageTest {
         assertEquals(filmId, films.get(0).getId());
         assertEquals(1, films.get(0).getLike());
     }
+
+    @Test
+    @DisplayName("Получение списка общих фильмов")
+    void testGetCommonFilms() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        userDbStorage.addUser(new User("ford@ya.ru", "ford", "Ford", BIRTHDAY_USER_ONE));
+        filmDbStorage.addLike(1, 1);
+        filmDbStorage.addLike(2, 1);
+        filmDbStorage.addLike(2, 2);
+        filmTwo.setLike(2);
+        List<Film> films = filmDbStorage.getCommonFilms(1, 2);
+        assertEquals(1, films.size());
+        assertEquals(filmTwo, films.get(0));
+    }
+    @Test
+    @DisplayName("Получение пустого списка общих фильмов")
+    void testGetCommonFilmsEmpty() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        userDbStorage.addUser(new User("ford@ya.ru", "ford", "Ford", BIRTHDAY_USER_ONE));
+        filmDbStorage.addLike(1, 1);
+        filmDbStorage.addLike(2, 2);
+        List<Film> films = filmDbStorage.getCommonFilms(1, 2);
+        assertEquals(0, films.size());
+    }
 }

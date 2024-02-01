@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.service.review.ReviewService;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RequestMapping("/reviews")
@@ -34,13 +35,13 @@ public class ReviewController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public Review createReview(Review review) {
+    public Review createReview(@Valid @RequestBody Review review) {
         return reviewService.createReview(review);
     }
 
     @ResponseStatus(HttpStatus.OK)
     @PutMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public Review updateReview(Review review) {
+    public Review updateReview(@Valid @RequestBody Review review) {
         return reviewService.updateReview(review);
     }
 

@@ -57,6 +57,6 @@ create table if not exists reviews (
 create table if not exists users_reviews_rates (
     user_id integer not null references users(id) on delete cascade,
     review_id integer not null references reviews(id) on delete cascade,
-    isPositive boolean not null
+    isPositive boolean not null,
     primary key (user_id, review_id)
 );

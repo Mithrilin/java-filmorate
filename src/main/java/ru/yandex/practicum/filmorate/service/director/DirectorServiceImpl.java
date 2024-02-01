@@ -28,10 +28,10 @@ public class DirectorServiceImpl implements DirectorService {
     }
 
     @Override
-    public List<Director> getDirectorById(Integer id) {
+    public Director getDirectorById(Integer id) {
         Director director = directorDao.getDirectorById(id).get(0);
         log.info("Получен режиссер = {}", director);
-        return null;
+        return director;
     }
 
     @Override
@@ -43,9 +43,9 @@ public class DirectorServiceImpl implements DirectorService {
 
     @Override
     public Director updateDirector(Director director) {
-        Director updateDirector = directorDao.updateDirector(director);
-        log.info("Обновлен режиссер = {}", updateDirector);
-        return updateDirector;
+        Director upDirector = directorDao.updateDirector(director);
+        log.info("Обновлен режиссер = {}", upDirector);
+        return upDirector;
     }
 
     @Override

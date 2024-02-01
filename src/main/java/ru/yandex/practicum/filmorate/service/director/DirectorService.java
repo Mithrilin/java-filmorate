@@ -11,7 +11,7 @@ import java.util.List;
 public interface DirectorService {
     List<Director> getDirectors (); //GET /directors - Список всех режиссёров
 
-    List<Director> getDirectorById(Integer id); //GET /directors/{id}- Получение режиссёра по id
+    Director getDirectorById(Integer id); //GET /directors/{id}- Получение режиссёра по id
 
     Director addDirector(Director director); //POST /directors - Создание режиссёра
 

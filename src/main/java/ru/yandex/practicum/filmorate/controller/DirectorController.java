@@ -1,36 +1,40 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import lombok.AllArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Director;
+import ru.yandex.practicum.filmorate.service.director.DirectorService;
 
 import java.util.List;
-
+@RestController
+@AllArgsConstructor
+@RequestMapping("/directors")
 public class DirectorController {
 
-    public List<Director> getDirectors() {
-        log.info("Получены все режиссеры");
-        return directorDao.getDirectors();
+    private final DirectorService directorService;
+
+    @GetMapping
+    public List<Director> getDirectors() {  //GET /directors - Список всех режиссёров
+       return directorService.getDirectors();
     }
 
-    public List<Director> getDirectorById(Integer id) {
-        Director director = directorDao.getDirectorById(id).get(0);
-        log.info("Получен режиссер = {}", director);
-        return null;
+    @GetMapping("/{id}")
+    public Director getDirectorById(@PathVariable Integer id) { //GET /directors/{id}- Получение режиссёра по id
+        return directorService.getDirectorById(id);
     }
 
-    public Director addDirector(Director director) {
-        Director addDirector = directorDao.addDirector(director);
-        log.info("Добавлен новый режиссер = {}", addDirector);
-        return addDirector;
+    @PostMapping
+    public Director addDirector(@RequestBody Director director) { //POST /directors - Создание режиссёра
+        return directorService.addDirector(director);
     }
 
-    public Director updateDirector(Director director) {
-        Director updateDirector = directorDao.updateDirector(director);
-        log.info("Обновлен режиссер = {}", updateDirector);
-        return updateDirector;
+    @PutMapping
+    public Director updateDirector(@RequestBody Director director) { //PUT /directors - Изменение режиссёра
+        return directorService.updateDirector(director);
     }
 
-    public void deleteDirector(Integer id) {
-        directorDao.deleteDirector(id);
-        log.info("Удален режиссер под id = {}", id);
+    @DeleteMapping("/{id}")
+    public void deleteDirector(@PathVariable Integer id) {  //DELETE /directors/{id} - Удаление режиссёра
+        directorService.deleteDirector(id);
     }
 }

@@ -3,18 +3,20 @@ package ru.yandex.practicum.filmorate.dao.impl;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.dao.FilmDao;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component("filmDbStorage")
 public class FilmDbStorage implements FilmDao {
@@ -179,6 +181,46 @@ public class FilmDbStorage implements FilmDao {
         return films;
     }
 
+    @Override
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+                "FROM films AS f " +
+                "JOIN mpa AS m ON f.mpa_id = m.id " +
+                "JOIN likes AS l ON l.film_id = f.id " +
+                "WHERE f.id IN (" +
+                "SELECT l.film_id FROM likes AS l " +
+                "WHERE l.user_id = ? AND l.film_id IN (" +
+                "SELECT l.film_id FROM likes AS l " +
+                "WHERE l.user_id = ?)) " +
+                "GROUP BY f.id " +
+                "ORDER BY film_likes DESC";
+        List<Film> commonFilms = jdbcTemplate.query(sql, this::filmRowWithLikes, userId, friendId);
+        if (commonFilms.isEmpty()) return new ArrayList<>();
+        List<Integer> filmsId = commonFilms.stream().map(Film::getId).collect(Collectors.toList());
+        String inSql = String.join(",", Collections.nCopies(filmsId.size(), "?"));
+        String sqlGenres = String.format("SELECT fg.film_id AS filmId, g.id AS genreId, g.name AS genreName " +
+                "FROM film_genres AS fg " +
+                "JOIN genres AS g ON fg.genre_id = g.id " +
+                "WHERE fg.film_id IN (%s)", inSql);
+        SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sqlGenres, filmsId.toArray());
+        Map<Integer, List<Genre>> genresMap = new HashMap<>();
+        while (sqlRowSet.next()) {
+            int filmId = sqlRowSet.getInt("FILMID");
+            int genreId = sqlRowSet.getInt("GENREID");
+            String genreName = sqlRowSet.getString("GENRENAME");
+            Genre genre = new Genre(genreId, genreName);
+            if (!genresMap.containsKey(filmId)) {
+                genresMap.put(filmId, new ArrayList<>());
+            }
+            genresMap.get(filmId).add(genre);
+        }
+        for (Film film : commonFilms) {
+            if (genresMap.containsKey(film.getId()))
+                film.setGenres(genresMap.get(film.getId()));
+        }
+        return commonFilms;
+    }
+
     private RowMapper<Film> filmRowMapper() {
         return (rs, rowNum) -> {
             Film film = getNewFilm(rs);
@@ -260,6 +302,15 @@ public class FilmDbStorage implements FilmDao {
             }
             return statement;
         });
+        return film;
+    }
+
+    private Film filmRowWithLikes(ResultSet rs, int rowNum) throws SQLException {
+        Film film = new Film(rs.getString("name"), rs.getString("description"),
+                rs.getDate("releaseDate").toLocalDate(), rs.getInt("duration"),
+                new Mpa(rs.getInt("mpaId"), rs.getString("mpaName")));
+        film.setId((rs.getInt("id")));
+        film.setLike(rs.getInt(("film_likes")));
         return film;
     }
 }

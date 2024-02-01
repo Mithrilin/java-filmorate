@@ -4,10 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.dao.FilmDao;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -83,6 +83,13 @@ public class FilmServiceImpl implements FilmService {
         List<Film> films = filmDao.getPopularFilms(count);
         log.info("Список популярных фильмов возвращён.");
         return films;
+    }
+
+    @Override
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        List<Film> commonFilms = filmDao.getCommonFilms(userId, friendId);
+        log.info("Список общих фильмов пользователей с id{} и id{}.", userId, friendId);
+        return commonFilms;
     }
 
     // Метод проверки минимальной даты

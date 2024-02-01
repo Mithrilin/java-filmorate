@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.service.director.DirectorService;
 
+import javax.validation.Valid;
 import java.util.List;
 @RestController
 @AllArgsConstructor
@@ -26,13 +27,13 @@ public class DirectorController {
     }
 
     @PostMapping
-    public Director addDirector(@RequestBody Director director) { //POST /directors - Создание режиссёра
+    public Director addDirector(@RequestBody @Valid Director director) { //POST /directors - Создание режиссёра
 
         return directorService.addDirector(director);
     }
 
     @PutMapping
-    public Director updateDirector(@RequestBody Director director) { //PUT /directors - Изменение режиссёра
+    public Director updateDirector(@RequestBody @Valid Director director) { //PUT /directors - Изменение режиссёра
 
         return directorService.updateDirector(director);
     }

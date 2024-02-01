@@ -88,15 +88,15 @@ class FilmDbStorageDirectorTest {
     @DisplayName("Получение фильмов определенного режиссера и отсортированные по году или количеству оценок")
     void testGetFilmsSortByDirectorId() {
         //сортировка по году
-        assertIterableEquals(List.of(3, 2, 1),filmDbStorage.getFilmsSortByDirectorId(directorOne.getId(),YEAR)
+        assertIterableEquals(List.of(3, 2, 1),filmDbStorage.getFilmsSortYearByDirectorId(directorOne.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает фильмы в последовательности 3, 2, 1");
 
-        assertIterableEquals(List.of(5, 4),filmDbStorage.getFilmsSortByDirectorId(directorTwo.getId(),YEAR)
+        assertIterableEquals(List.of(5, 4),filmDbStorage.getFilmsSortYearByDirectorId(directorTwo.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает фильмы в последовательности 5, 4");
 
-        assertIterableEquals(List.of(6),filmDbStorage.getFilmsSortByDirectorId(directorThree.getId(),YEAR)
+        assertIterableEquals(List.of(6),filmDbStorage.getFilmsSortYearByDirectorId(directorThree.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает фильм 6");
 
@@ -115,17 +115,17 @@ class FilmDbStorageDirectorTest {
         //  System.out.println(directorDbStorage.getDirectors());
 
 
-        assertIterableEquals(List.of(2, 1),filmDbStorage.getFilmsSortByDirectorId(directorOne.getId(),LIKES)
+        assertIterableEquals(List.of(2, 1),filmDbStorage.getFilmsSortLikesByDirectorId(directorOne.getId())
                 .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает два фильма в последовательности 2, 1");
 
-        assertIterableEquals(List.of(4),filmDbStorage.getFilmsSortByDirectorId(directorTwo.getId(),LIKES)
+        assertIterableEquals(List.of(4),filmDbStorage.getFilmsSortLikesByDirectorId(directorTwo.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает оди фильм 4");
 
         //filmDbStorage.getFilmsSortByDirectorId(directorThree.getId(),LIKES).stream().forEach(System.out::println);
 
-        assertIterableEquals(List.of(),filmDbStorage.getFilmsSortByDirectorId(directorThree.getId(),LIKES)
+        assertIterableEquals(List.of(),filmDbStorage.getFilmsSortLikesByDirectorId(directorThree.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает ни одного фильма");
 
@@ -138,7 +138,7 @@ class FilmDbStorageDirectorTest {
         filmDbStorage.addLike(3,user[2].getId());
         filmDbStorage.addLike(3,user[3].getId());
 
-        assertIterableEquals(List.of(1, 2, 3),filmDbStorage.getFilmsSortByDirectorId(directorOne.getId(),LIKES)
+        assertIterableEquals(List.of(1, 2, 3),filmDbStorage.getFilmsSortLikesByDirectorId(directorOne.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает два фильма в последовательности 1, 2, 3");
 
@@ -147,7 +147,7 @@ class FilmDbStorageDirectorTest {
 
         // filmDbStorage.getFilmsSortByDirectorId(directorOne.getId(),LIKES).stream().forEach(System.out::println);
 
-        assertIterableEquals(List.of(2, 1, 3),filmDbStorage.getFilmsSortByDirectorId(directorOne.getId(),LIKES)
+        assertIterableEquals(List.of(2, 1, 3),filmDbStorage.getFilmsSortLikesByDirectorId(directorOne.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает три фильма в последовательности 2, 1, 3");
     }

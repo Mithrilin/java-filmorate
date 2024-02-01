@@ -98,4 +98,8 @@ public class FilmServiceImpl implements FilmService {
             throw new ValidationException("Фильм не прошёл валидацию. Дата релиза меньше минимального значения.");
         }
     }
+
+    public List<Film> getFilmsSortByDirectorId(int directorId, String sortBy) {
+        return null;
+    }
 }

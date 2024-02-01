@@ -317,40 +317,32 @@ public class FilmDbStorage implements FilmDao {
         return film;
     }
 
-    public List<Film> getFilmsSortByDirectorId(int directorId, String sortBy) {
-        List<Integer> filmsId;
 
-        switch (sortBy){
-            case "year":
-                String sqlSortYear = String.format("select id, " +
-                         "from public.films " +
-                         "where director_id = ? " +
-                         "order by extract(year from cast(releasedate as date));"
-                );
+    @Override
+    public List<Film> getFilmsSortYearByDirectorId(int directorId) {
+        String sqlSortYear = String.format("select id, " +
+                "from public.films " +
+                "where director_id = ? " +
+                "order by extract(year from cast(releasedate as date));"
+        );
+        List<Integer> filmsId = jdbcTemplate.queryForList(sqlSortYear,Integer.class,directorId);
 
-                filmsId = jdbcTemplate.queryForList(sqlSortYear,Integer.class,directorId);
+        return filmsId.stream().map(fId -> getFilmById(fId).get(0)).collect(Collectors.toList());
+    }
 
-                return filmsId.stream().map(fId -> getFilmById(fId).get(0)).collect(Collectors.toList());
+    @Override
+    public List<Film> getFilmsSortLikesByDirectorId(int directorId) {
+        String sqlSortLikes = String.format("select f.id " +
+                "from likes as l " +
+                "inner join films as f on l.film_id = f.id " +
+                "group by f.id " +
+                "having f.director_id = ? " +
+                "order  by count(l.user_id);", directorId
+        );
 
-            case "likes":
-                String sqlSortLikes = String.format("select f.id " +
-                                "from likes as l " +
-                                "inner join films as f on l.film_id = f.id " +
-                                "group by f.id " +
-                                "having f.director_id = ? " +
-                                "order  by count(l.user_id);", directorId
-                );
+        List<Integer>  filmsId = jdbcTemplate.queryForList(sqlSortLikes,Integer.class,directorId);
 
-                filmsId = jdbcTemplate.queryForList(sqlSortLikes,Integer.class,directorId);
-
-            return filmsId.stream().map(fId -> getFilmById(fId).get(0)).collect(Collectors.toList());
-
-            default:
-                throw new NotFoundException(
-                        "Не найден необходимый параметр сортировки year или likes ! Параметр = " + sortBy
-                );
-        }
-
+        return filmsId.stream().map(fId -> getFilmById(fId).get(0)).collect(Collectors.toList());
     }
 
     private Film filmRowWithLikes(ResultSet rs, int rowNum) throws SQLException {

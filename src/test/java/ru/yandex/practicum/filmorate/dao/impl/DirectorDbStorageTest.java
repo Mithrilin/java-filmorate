@@ -41,7 +41,7 @@ class DirectorDbStorageTest {
     @Test
     @DisplayName("постман тесты")
     void getDirectorOneBeforeCreate() {
-        directorDbStorage.getDirectorById(1);
+        assertIterableEquals(List.of(),directorDbStorage.getDirectorById(1));
     }
 
     @Test

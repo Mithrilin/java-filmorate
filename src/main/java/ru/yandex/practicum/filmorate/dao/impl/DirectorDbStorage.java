@@ -15,7 +15,7 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
-@Component
+@Component("directorDbStorage")
 public class DirectorDbStorage implements DirectorDao {
     private final JdbcTemplate jdbcTemplate;
 

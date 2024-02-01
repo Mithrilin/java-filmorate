@@ -15,5 +15,4 @@ public interface DirectorDao {
 
     void deleteDirector(int id); //DELETE /directors/{id} - Удаление режиссёра
 
-
 }

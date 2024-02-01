@@ -26,7 +26,7 @@ public class Film {
     private List<Genre> genres = new ArrayList<>();
     private Integer like;
 
-    private Director director;
+    private final Director director;
 
     public Film(String name, String description, LocalDate releaseDate, Integer duration, Mpa mpa, Director director) {
         this.name = name;

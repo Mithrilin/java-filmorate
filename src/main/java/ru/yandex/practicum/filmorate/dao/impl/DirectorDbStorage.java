@@ -77,7 +77,7 @@ public class DirectorDbStorage implements DirectorDao {
 
     private RowMapper<Director> directorRowMapper() {
         return (rs, rowNum) -> new Director(rs.getInt("director_id"),
-                rs.getString("director_name"));
+                    rs.getString("director_name"));
 
     }
 

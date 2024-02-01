@@ -99,7 +99,16 @@ public class FilmServiceImpl implements FilmService {
         }
     }
 
+    @Override
     public List<Film> getFilmsSortByDirectorId(int directorId, String sortBy) {
-        return null;
+        switch (sortBy) {
+            case "year":
+                return filmDao.getFilmsSortYearByDirectorId(directorId);
+            case "likes":
+                return filmDao.getFilmsSortLikesByDirectorId(directorId);
+            default:
+                throw new NotFoundException("Параметр сортировки не определен! Параметр сортировки = "+sortBy);
+        }
+
     }
 }

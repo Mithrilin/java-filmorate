@@ -52,12 +52,18 @@ class FilmDbStorageTest {
     private static User userOne = null;
     private FilmDbStorage filmDbStorage;
     private UserDbStorage userDbStorage;
+
+    private DirectorDbStorage directorDbStorage;
     private final JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() {
         filmDbStorage = new FilmDbStorage(jdbcTemplate);
         userDbStorage = new UserDbStorage(jdbcTemplate);
+        directorDbStorage = new DirectorDbStorage(jdbcTemplate);
+
+        directorDbStorage.addDirector(directorOne);
+        directorDbStorage.addDirector(directorTwo);
 
         mpaOne.setId(MPA_ID_ONE);
         mpaOne.setName(MPA_NAME_ONE);
@@ -88,6 +94,7 @@ class FilmDbStorageTest {
         filmTwo.setGenres(genresFilmTwo);
 
         userOne = new User(EMAIL_USER_ONE, LOGIN_USER_ONE, NAME_USER_ONE, BIRTHDAY_USER_ONE);
+
     }
 
     @Test

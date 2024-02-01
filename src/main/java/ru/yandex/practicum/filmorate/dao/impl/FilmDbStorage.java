@@ -46,7 +46,7 @@ public class FilmDbStorage implements FilmDao {
     @Override
     public Film updateFilm(Film film) {
         String sql = "update films set name = ?, releaseDate = ?, description = ?, " +
-                "duration = ?, mpa_id = ? where id = ?;";
+                "duration = ?, mpa_id = ? , director_id = ? where id = ?;";
         int result = jdbcTemplate.update(con -> {
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setString(1, film.getName());
@@ -54,7 +54,8 @@ public class FilmDbStorage implements FilmDao {
             statement.setString(3, film.getDescription());
             statement.setInt(4, film.getDuration());
             statement.setInt(5, film.getMpa().getId());
-            statement.setInt(6, film.getId());
+            statement.setInt(6, film.getDirector().getId());
+            statement.setInt(7, film.getId());
             return statement;
         });
         // Проверка на наличие фильма в БД
@@ -153,8 +154,10 @@ public class FilmDbStorage implements FilmDao {
         List<Integer> priority;
         int length = 0;
         String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
-                "m.name as mpa_name, g.id as genre_id, g.name as genre_name " +
+                "m.name as mpa_name, g.id as genre_id, g.name as genre_name, " +
+                "d.director_id, d.director_name " +
                 "from films f " +
+                "left outer join directors d on f.director_id = d.director_id " +
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id order by f.id;";

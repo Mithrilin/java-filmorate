@@ -28,7 +28,7 @@ public class DirectorServiceImpl implements DirectorService {
     }
 
     @Override
-    public Director getDirectorById(Integer id) {
+    public Director getDirectorById(int id) {
         Director director = directorDao.getDirectorById(id).get(0);
         log.info("Получен режиссер = {}", director);
         return director;
@@ -49,7 +49,7 @@ public class DirectorServiceImpl implements DirectorService {
     }
 
     @Override
-    public void deleteDirector(Integer id) {
+    public void deleteDirector(int id) {
         directorDao.deleteDirector(id);
         log.info("Удален режиссер под id = {}", id);
     }

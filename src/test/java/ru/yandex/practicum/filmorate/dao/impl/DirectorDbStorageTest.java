@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.dao.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
@@ -17,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 class DirectorDbStorageTest {
-
 
     private DirectorDbStorage directorDbStorage;
     private final JdbcTemplate jdbcTemplate;
@@ -38,18 +38,14 @@ class DirectorDbStorageTest {
         directorTwo = new Director(2,"Director two");
 
     }
-
     @Test
-    void getDirectors() {
-        directorDbStorage.getDirectors();
+    @DisplayName("постман тесты")
+    void getDirectorOneBeforeCreate() {
+        directorDbStorage.getDirectorById(1);
     }
 
     @Test
-    void getDirectorById() {
-        System.out.println(directorDbStorage.getDirectorById(1));
-    }
-
-    @Test
+    @DisplayName("Добавление, получение, обновление, удаление режиссера")
     void createAndGetAndUpdateAndDeleteDirectors() {
         assertEquals(directorOne, directorDbStorage.addDirector(directorOne),"добавить режиссера Director");
         assertEquals(directorTwo, directorDbStorage.addDirector(directorTwo),"добавить режиссера Director two");
@@ -72,11 +68,6 @@ class DirectorDbStorageTest {
 
     }
 
-    @Test
-    void upDirector() {
-    }
 
-    @Test
-    void deleteDirector() {
-    }
+
 }

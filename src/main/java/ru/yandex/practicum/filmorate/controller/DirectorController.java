@@ -15,26 +15,31 @@ public class DirectorController {
 
     @GetMapping
     public List<Director> getDirectors() {  //GET /directors - Список всех режиссёров
-       return directorService.getDirectors();
+
+        return directorService.getDirectors();
     }
 
     @GetMapping("/{id}")
-    public Director getDirectorById(@PathVariable Integer id) { //GET /directors/{id}- Получение режиссёра по id
+    public Director getDirectorById(@PathVariable int id) { //GET /directors/{id}- Получение режиссёра по id
+
         return directorService.getDirectorById(id);
     }
 
     @PostMapping
     public Director addDirector(@RequestBody Director director) { //POST /directors - Создание режиссёра
+
         return directorService.addDirector(director);
     }
 
     @PutMapping
     public Director updateDirector(@RequestBody Director director) { //PUT /directors - Изменение режиссёра
+
         return directorService.updateDirector(director);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteDirector(@PathVariable Integer id) {  //DELETE /directors/{id} - Удаление режиссёра
+    public void deleteDirector(@PathVariable int id) { //DELETE /directors/{id} - Удаление режиссёра
+
         directorService.deleteDirector(id);
     }
 }

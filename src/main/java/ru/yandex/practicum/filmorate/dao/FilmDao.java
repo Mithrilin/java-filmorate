@@ -17,6 +17,8 @@ public interface FilmDao {
 
     Integer deleteLike(int id, int userId);
 
+    Integer deleteFilm(int id);
+
     List<Film> getPopularFilms(String count);
 
     List<Film> getCommonFilms(int userId, int friendId);

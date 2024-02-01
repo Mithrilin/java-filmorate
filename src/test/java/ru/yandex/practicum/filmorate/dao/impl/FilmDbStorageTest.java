@@ -261,4 +261,12 @@ class FilmDbStorageTest {
         List<Film> films = filmDbStorage.getCommonFilms(1, 2);
         assertEquals(0, films.size());
     }
+
+    @Test
+    @DisplayName(("Удаление фильма"))
+    void testDeleteFilm() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.deleteFilm(1);
+        assertEquals(0, filmDbStorage.getAllFilms().size());
+    }
 }

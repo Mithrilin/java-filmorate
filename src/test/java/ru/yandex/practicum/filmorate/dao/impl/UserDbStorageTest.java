@@ -46,7 +46,7 @@ class UserDbStorageTest {
     @BeforeEach
     void setUp() {
         userDbStorage = new UserDbStorage(jdbcTemplate);
-        filmDbStorage = new FilmDbStorage(jdbcTemplate);
+        filmDbStorage = new FilmDbStorage(jdbcTemplate, eventDbStorage);
 
         userOne = new User(EMAIL_USER_ONE, LOGIN_USER_ONE, NAME_USER_ONE, BIRTHDAY_USER_ONE);
         userTwo = new User(EMAIL_USER_TWO, LOGIN_USER_TWO, NAME_USER_TWO, BIRTHDAY_USER_TWO);

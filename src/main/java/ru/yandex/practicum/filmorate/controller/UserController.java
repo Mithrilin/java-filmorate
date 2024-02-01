@@ -64,4 +64,9 @@ public class UserController {
     public List<Film> findRecommendations(@PathVariable int id) {
         return userService.getRecommendations(id);
     }
+
+    @GetMapping("/{id}/feed")
+    public List<Film> getUsersFeed(@PathVariable int id) {
+        return null;
+    }
 }

@@ -29,8 +29,17 @@ public class DirectorDbStorage implements DirectorDao {
     }
 
     @Override
-    public List<Director> getDirectorById(int id) {
-        return jdbcTemplate.query("select * from directors where director_id = ?;", directorRowMapper(), id);
+    public Director getDirectorById(int id) {
+
+        List<Director> listDirector = jdbcTemplate.query(
+                "select * from directors where director_id = ?;", directorRowMapper(), id
+        );
+
+        if(listDirector.isEmpty()) {
+            throw new NotFoundException("Не найден режиссер под id = "+id);
+        }
+
+        return listDirector.get(0);
     }
 
 
@@ -47,7 +56,7 @@ public class DirectorDbStorage implements DirectorDao {
             },keyHolder);
 
 
-        return getDirectorById((int) keyHolder.getKey()).get(0);
+        return getDirectorById((int) keyHolder.getKey());
     }
 
     @Override
@@ -57,7 +66,7 @@ public class DirectorDbStorage implements DirectorDao {
         jdbcTemplate.update("update directors set director_name = ? where director_id = ?;",
                 director.getName(), directorId);
 
-        return getDirectorById(directorId).get(0);
+        return getDirectorById(directorId);
     }
 
     @Override

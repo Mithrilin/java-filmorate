@@ -31,13 +31,7 @@ public class DirectorServiceImpl implements DirectorService {
     @Override
     public Director getDirectorById(int id) {
 
-        List<Director> listDirector = directorDao.getDirectorById(id);
-
-        if(listDirector.isEmpty()) {
-            throw new NotFoundException("Не найден режиссер под id = "+id);
-        }
-
-        Director director = directorDao.getDirectorById(id).get(0);
+        Director director = directorDao.getDirectorById(id);
 
         log.info("Получен режиссер = {}", director);
         return director;

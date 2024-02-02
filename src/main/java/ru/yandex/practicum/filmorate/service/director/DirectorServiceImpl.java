@@ -55,7 +55,7 @@ public class DirectorServiceImpl implements DirectorService {
     public void deleteDirector(int id) {
       int check = directorDao.deleteDirector(id);
       if (check == 0) {
-          throw new NotFoundException("Директор не найден под id = " + id);
+          throw new NotFoundException("Режиссер не найден под id = " + id);
       }
         log.info("Удален режиссер под id = {}", id);
     }

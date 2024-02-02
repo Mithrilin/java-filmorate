@@ -400,6 +400,13 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getFilmsSortLikesByDirectorId(int directorId) {
+        //проверка на наличие режиссера
+        if (jdbcTemplate.queryForList(
+                "select director_id from directors where director_id = ?;", Integer.class, directorId).isEmpty()
+        ) {
+            throw new NotFoundException(String.format("Режиссер под id = %s не найден", directorId));
+        }
+
         String sqlSortLikes = "select df.film_id " +
                 "from directors_film df " +
                 "left join likes l on df.film_id = l.film_id " +

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.*;
 
 import java.time.LocalDate;
@@ -88,15 +89,15 @@ class FilmDbStorageDirectorTest {
     void testGetFilmsSortYearByDirectorId() {
         //сортировка по году
         assertIterableEquals(List.of(3, 2, 1),filmDbStorage.getFilmsSortYearByDirectorId(directorOne.getId())
-                        .stream().map(f->f.getId()).collect(Collectors.toList()),
+                        .stream().map(f -> f.getId()).collect(Collectors.toList()),
                 "возвращает фильмы в последовательности 3, 2, 1");
 
         assertIterableEquals(List.of(5, 4),filmDbStorage.getFilmsSortYearByDirectorId(directorTwo.getId())
-                        .stream().map(f->f.getId()).collect(Collectors.toList()),
+                        .stream().map(f -> f.getId()).collect(Collectors.toList()),
                 "возвращает фильмы в последовательности 5, 4");
 
         assertIterableEquals(List.of(6,3,2,1),filmDbStorage.getFilmsSortYearByDirectorId(directorThree.getId())
-                        .stream().map(f->f.getId()).collect(Collectors.toList()),
+                        .stream().map(f -> f.getId()).collect(Collectors.toList()),
                 "возвращает фильмы в последовательности 6, 3, 2, 1");
 
 
@@ -119,18 +120,18 @@ class FilmDbStorageDirectorTest {
 
 
         assertIterableEquals(List.of(3, 2, 1),filmDbStorage.getFilmsSortLikesByDirectorId(directorOne.getId())
-                        .stream().map(f->f.getId()).collect(Collectors.toList()),
+                        .stream().map(f -> f.getId()).collect(Collectors.toList()),
                 "возвращает два фильма в последовательности 2, 1");
 
         assertIterableEquals(List.of(5, 4),filmDbStorage.getFilmsSortLikesByDirectorId(directorTwo.getId())
-                        .stream().map(f->f.getId()).collect(Collectors.toList()),
+                        .stream().map(f -> f.getId()).collect(Collectors.toList()),
                 "возвращает оди фильм 5, 4");
 
 
         filmDbStorage.getFilmsSortLikesByDirectorId(directorThree.getId()).stream().forEach(System.out::println);
 
         assertIterableEquals(List.of(3, 6, 2, 1),filmDbStorage.getFilmsSortLikesByDirectorId(directorThree.getId())
-                        .stream().map(f->f.getId()).collect(Collectors.toList()),
+                        .stream().map(f -> f.getId()).collect(Collectors.toList()),
                 "возвращает два фильма в последовательности 3, 6, 2, 1");
 
         // Удалить оценки у первого фильма
@@ -143,14 +144,14 @@ class FilmDbStorageDirectorTest {
         filmDbStorage.addLike(3,user[3].getId());
 
         assertIterableEquals(List.of(1, 2, 3),filmDbStorage.getFilmsSortLikesByDirectorId(directorOne.getId())
-                        .stream().map(f->f.getId()).collect(Collectors.toList()),
+                        .stream().map(f -> f.getId()).collect(Collectors.toList()),
                 "возвращает два фильма в последовательности 1, 2, 3");
 
         // Удалить оценки у второго фильма
         filmDbStorage.deleteLike(2,user[0].getId());
 
         assertIterableEquals(List.of(2, 1, 3),filmDbStorage.getFilmsSortLikesByDirectorId(directorOne.getId())
-                        .stream().map(f->f.getId()).collect(Collectors.toList()),
+                        .stream().map(f -> f.getId()).collect(Collectors.toList()),
                 "возвращает три фильма в последовательности 2, 1, 3");
 
         // Удалить оценки у четвертого фильма
@@ -158,8 +159,16 @@ class FilmDbStorageDirectorTest {
         filmDbStorage.deleteLike(4,user[4].getId());
 
         assertIterableEquals(List.of(4, 5),filmDbStorage.getFilmsSortLikesByDirectorId(directorTwo.getId())
-                        .stream().map(f->f.getId()).collect(Collectors.toList()),
+                        .stream().map(f -> f.getId()).collect(Collectors.toList()),
                 "возвращает пустой список");
+
+        assertEquals("Режиссер под id = 9999 не найден",
+                assertThrows(
+                        NotFoundException.class,
+                        () -> filmDbStorage.getFilmsSortLikesByDirectorId(9999)).getMessage(),
+                "Нет такого режиссера"
+        );
+
     }
 
 }

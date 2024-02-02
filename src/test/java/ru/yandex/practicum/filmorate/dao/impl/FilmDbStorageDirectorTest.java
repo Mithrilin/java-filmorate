@@ -118,20 +118,20 @@ class FilmDbStorageDirectorTest {
         filmDbStorage.addLike(4,user[4].getId());
 
 
-        assertIterableEquals(List.of(2, 1),filmDbStorage.getFilmsSortLikesByDirectorId(directorOne.getId())
+        assertIterableEquals(List.of(3, 2, 1),filmDbStorage.getFilmsSortLikesByDirectorId(directorOne.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает два фильма в последовательности 2, 1");
 
-        assertIterableEquals(List.of(4),filmDbStorage.getFilmsSortLikesByDirectorId(directorTwo.getId())
+        assertIterableEquals(List.of(5, 4),filmDbStorage.getFilmsSortLikesByDirectorId(directorTwo.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
-                "возвращает оди фильм 4");
+                "возвращает оди фильм 5, 4");
 
 
         filmDbStorage.getFilmsSortLikesByDirectorId(directorThree.getId()).stream().forEach(System.out::println);
 
-        assertIterableEquals(List.of(2,1),filmDbStorage.getFilmsSortLikesByDirectorId(directorThree.getId())
+        assertIterableEquals(List.of(3, 6, 2, 1),filmDbStorage.getFilmsSortLikesByDirectorId(directorThree.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
-                "возвращает два фильма в последовательности 2, 1");
+                "возвращает два фильма в последовательности 3, 6, 2, 1");
 
         // Удалить оценки у первого фильма
         filmDbStorage.deleteLike(1,user[0].getId());
@@ -157,7 +157,7 @@ class FilmDbStorageDirectorTest {
         filmDbStorage.deleteLike(4,user[3].getId());
         filmDbStorage.deleteLike(4,user[4].getId());
 
-        assertIterableEquals(List.of(),filmDbStorage.getFilmsSortLikesByDirectorId(directorTwo.getId())
+        assertIterableEquals(List.of(4, 5),filmDbStorage.getFilmsSortLikesByDirectorId(directorTwo.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает пустой список");
     }

@@ -400,12 +400,11 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getFilmsSortLikesByDirectorId(int directorId) {
-        String sqlSortLikes = "select l.film_id " +
-                "from (select * " +
+        String sqlSortLikes = "select df.film_id " +
                 "from directors_film df " +
-                "where df.director_id = ?) d " +
-                "join likes l on d.film_id = l.film_id " +
-                "group by d.film_id " +
+                "left join likes l on df.film_id = l.film_id " +
+                "where df.director_id = ? " +
+                "group by df.film_id " +
                 "order by count(l.user_id);";
 
         List<Integer>  filmsId = jdbcTemplate.queryForList(sqlSortLikes,Integer.class,directorId);

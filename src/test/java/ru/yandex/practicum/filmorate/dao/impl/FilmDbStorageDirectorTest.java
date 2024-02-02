@@ -11,10 +11,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.filmorate.model.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -60,9 +57,11 @@ class FilmDbStorageDirectorTest {
             film[filmNam].setGenres(new ArrayList<>());
             film[filmNam].setId(i);
             if (filmNam < 3) {
-                film[filmNam].setDirectors(new HashSet<>());
+                film[filmNam].setDirectors(Set.of(directorOne, directorThree));
             } else if (filmNam > 2  && filmNam < 5) {
-                film[filmNam].setDirectors(new HashSet<>());
+                film[filmNam].setDirectors(Set.of(directorTwo));
+            } else {
+                film[filmNam].setDirectors(Set.of(directorThree));
             }
 
             System.out.println(film[filmNam]);
@@ -85,8 +84,8 @@ class FilmDbStorageDirectorTest {
     }
 
     @Test
-    @DisplayName("Получение фильмов определенного режиссера и отсортированные по году или количеству оценок")
-    void testGetFilmsSortByDirectorId() {
+    @DisplayName("Получение фильмов определенного режиссера и отсортированные по году")
+    void testGetFilmsSortYearByDirectorId() {
         //сортировка по году
         assertIterableEquals(List.of(3, 2, 1),filmDbStorage.getFilmsSortYearByDirectorId(directorOne.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
@@ -96,38 +95,43 @@ class FilmDbStorageDirectorTest {
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает фильмы в последовательности 5, 4");
 
-        assertIterableEquals(List.of(6),filmDbStorage.getFilmsSortYearByDirectorId(directorThree.getId())
+        assertIterableEquals(List.of(6,3,2,1),filmDbStorage.getFilmsSortYearByDirectorId(directorThree.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
-                "возвращает фильм 6");
+                "возвращает фильмы в последовательности 6, 3, 2, 1");
 
-    // Оценки первому фильму
-    filmDbStorage.addLike(1,user[0].getId());
-    filmDbStorage.addLike(1,user[1].getId());
-    filmDbStorage.addLike(1,user[2].getId());
-    filmDbStorage.addLike(1,user[3].getId());
-    // Оценки второму фильму
-    filmDbStorage.addLike(2,user[0].getId());
-    filmDbStorage.addLike(2,user[1].getId());
-    // Оценки четвертому фильму
-    filmDbStorage.addLike(4,user[3].getId());
-    filmDbStorage.addLike(4,user[4].getId());
 
-        //  System.out.println(directorDbStorage.getDirectors());
+    }
+
+    @Test
+    @DisplayName("Получение фильмов определенного режиссера и отсортированные по количеству оценок")
+    void testGetFilmsSortLikesByDirectorId() {
+        // Оценки первому фильму
+        filmDbStorage.addLike(1,user[0].getId());
+        filmDbStorage.addLike(1,user[1].getId());
+        filmDbStorage.addLike(1,user[2].getId());
+        filmDbStorage.addLike(1,user[3].getId());
+        // Оценки второму фильму
+        filmDbStorage.addLike(2,user[0].getId());
+        filmDbStorage.addLike(2,user[1].getId());
+        // Оценки четвертому фильму
+        filmDbStorage.addLike(4,user[3].getId());
+        filmDbStorage.addLike(4,user[4].getId());
 
 
         assertIterableEquals(List.of(2, 1),filmDbStorage.getFilmsSortLikesByDirectorId(directorOne.getId())
-                .stream().map(f->f.getId()).collect(Collectors.toList()),
+                        .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает два фильма в последовательности 2, 1");
 
         assertIterableEquals(List.of(4),filmDbStorage.getFilmsSortLikesByDirectorId(directorTwo.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает оди фильм 4");
 
-        //filmDbStorage.getFilmsSortByDirectorId(directorThree.getId(),LIKES).stream().forEach(System.out::println);
 
-        assertIterableEquals(List.of(),filmDbStorage.getFilmsSortLikesByDirectorId(directorThree.getId())
+        filmDbStorage.getFilmsSortLikesByDirectorId(directorThree.getId()).stream().forEach(System.out::println);
+
+        assertIterableEquals(List.of(2,1),filmDbStorage.getFilmsSortLikesByDirectorId(directorThree.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
-                "возвращает ни одного фильма");
+                "возвращает два фильма в последовательности 2, 1");
 
         // Удалить оценки у первого фильма
         filmDbStorage.deleteLike(1,user[0].getId());
@@ -145,11 +149,17 @@ class FilmDbStorageDirectorTest {
         // Удалить оценки у второго фильма
         filmDbStorage.deleteLike(2,user[0].getId());
 
-        // filmDbStorage.getFilmsSortByDirectorId(directorOne.getId(),LIKES).stream().forEach(System.out::println);
-
         assertIterableEquals(List.of(2, 1, 3),filmDbStorage.getFilmsSortLikesByDirectorId(directorOne.getId())
                         .stream().map(f->f.getId()).collect(Collectors.toList()),
                 "возвращает три фильма в последовательности 2, 1, 3");
+
+        // Удалить оценки у четвертого фильма
+        filmDbStorage.deleteLike(4,user[3].getId());
+        filmDbStorage.deleteLike(4,user[4].getId());
+
+        assertIterableEquals(List.of(),filmDbStorage.getFilmsSortLikesByDirectorId(directorTwo.getId())
+                        .stream().map(f->f.getId()).collect(Collectors.toList()),
+                "возвращает пустой список");
     }
 
 }

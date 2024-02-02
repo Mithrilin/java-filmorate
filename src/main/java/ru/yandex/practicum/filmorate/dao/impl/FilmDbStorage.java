@@ -39,6 +39,7 @@ public class FilmDbStorage implements FilmDao {
                     "duration", film.getDuration().toString(),
                     "mpa_id", film.getMpa().getId().toString());
         film.setId(simpleJdbcInsert.executeAndReturnKey(params).intValue());
+
         //добавить связи фильм - директор
         addDirectorsFromFilm(film);
 
@@ -64,6 +65,10 @@ public class FilmDbStorage implements FilmDao {
             throw new NotFoundException("Фильм с id " + film.getId() + " не найден.");
         }
         jdbcTemplate.update("delete from film_genres where film_id = ?;", film.getId());
+
+        //добавить связи фильм - директор
+        addDirectorsFromFilm(film);
+
         return addGenresFromFilm(film);
     }
 
@@ -153,9 +158,7 @@ public class FilmDbStorage implements FilmDao {
         int length = 0;
         String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
                 "m.name as mpa_name, g.id as genre_id, g.name as genre_name, " +
-                "d.director_id, d.director_name " +
                 "from films f " +
-                "left outer join directors d on f.director_id = d.director_id " +
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id order by f.id;";
@@ -250,6 +253,13 @@ public class FilmDbStorage implements FilmDao {
         };
     }
 
+    private RowMapper<Integer> likeRowMapper(Map<Integer, Integer> liksMap) {
+        return (rs, rowNum) -> {
+            liksMap.put(rs.getInt("film_id"), rs.getInt("count(user_id)"));
+            return rs.getInt("film_id");
+        };
+    }
+
     private Set<Director> getDirectorsFilm(int filmId) {
 
         Set<Director> setDirectors = new HashSet<>(1);
@@ -299,7 +309,8 @@ public class FilmDbStorage implements FilmDao {
             if (genre.getId() != 0) {
                 filmMap.get(filmId).getGenres().add(genre);
             }
-
+                //добавить режиссеров в фильм
+                filmMap.get(filmId).setDirectors(getDirectorsFilm(filmId));
             return null;
         });
         return filmMap;
@@ -350,6 +361,9 @@ public class FilmDbStorage implements FilmDao {
                 .map(dId-> String.format("(%s, %s)",filmId,dId))
                 .collect(Collectors.joining(","));
 
+        //удалить все связи фильм - режиссер
+        jdbcTemplate.update("delete from directors_film where film_id = " + filmId + ";");
+
         //добавить связь межу режиссерами и фильмом
         jdbcTemplate.update("insert into directors_film (film_id, director_id) values " + values + ";");
 
@@ -371,11 +385,12 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getFilmsSortYearByDirectorId(int directorId) {
-        String sqlSortYear = String.format("select id, " +
-                "from public.films " +
-                "where director_id = ? " +
-                "order by extract(year from cast(releasedate as date));"
-        );
+        String sqlSortYear = "select df.film_id " +
+                "from directors_film df " +
+                "join films f on df.film_id = f.id " +
+                "where df.director_id = ? " +
+                "order by extract(year from cast(f.releasedate as date));";
+
         List<Integer> filmsId = jdbcTemplate.queryForList(sqlSortYear,Integer.class,directorId);
 
         return filmsId.stream().map(fId -> getFilmById(fId).get(0)).collect(Collectors.toList());
@@ -383,13 +398,13 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getFilmsSortLikesByDirectorId(int directorId) {
-        String sqlSortLikes = String.format("select f.id " +
-                "from likes as l " +
-                "inner join films as f on l.film_id = f.id " +
-                "group by f.id " +
-                "having f.director_id = ? " +
-                "order  by count(l.user_id);", directorId
-        );
+        String sqlSortLikes = "select l.film_id " +
+                "from (select * " +
+                "from directors_film df " +
+                "where df.director_id = ?) d " +
+                "join likes l on d.film_id = l.film_id " +
+                "group by d.film_id " +
+                "order by count(l.user_id);";
 
         List<Integer>  filmsId = jdbcTemplate.queryForList(sqlSortLikes,Integer.class,directorId);
 

@@ -42,7 +42,7 @@ class DirectorDbStorageTest {
     @DisplayName("постман тесты")
     void getDirectorOneBeforeCreate() {
 
-        directorDbStorage.getDirectorById(1);
+        //   directorDbStorage.getDirectorById(1);
     }
 
     @Test

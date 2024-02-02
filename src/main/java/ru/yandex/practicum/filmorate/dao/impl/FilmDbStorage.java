@@ -228,8 +228,10 @@ public class FilmDbStorage implements FilmDao {
             genresMap.get(filmId).add(genre);
         }
         for (Film film : commonFilms) {
-            if (genresMap.containsKey(film.getId()))
+            if (genresMap.containsKey(film.getId())) {
                 film.setGenres(genresMap.get(film.getId()));
+                film.setDirectors(getDirectorsFilm(film.getId()));
+            }
         }
         return commonFilms;
     }
@@ -261,7 +263,7 @@ public class FilmDbStorage implements FilmDao {
         };
     }
 
-    private Set<Director> getDirectorsFilm(int filmId) {
+    private Set<Director> getDirectorsFilm(int filmId) { //для добавления режиссеров к объекту фильма
 
         Set<Director> setDirectors = new HashSet<>(1);
 

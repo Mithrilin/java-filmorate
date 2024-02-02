@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.DirectorDao;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 
 import java.util.List;
@@ -52,7 +53,10 @@ public class DirectorServiceImpl implements DirectorService {
 
     @Override
     public void deleteDirector(int id) {
-        directorDao.deleteDirector(id);
+      int check = directorDao.deleteDirector(id);
+      if (check == 0) {
+          throw new NotFoundException("Директор не найден под id = " + id);
+      }
         log.info("Удален режиссер под id = {}", id);
     }
 

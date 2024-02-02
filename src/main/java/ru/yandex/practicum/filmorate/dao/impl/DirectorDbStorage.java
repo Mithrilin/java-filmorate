@@ -68,8 +68,8 @@ public class DirectorDbStorage implements DirectorDao {
     }
 
     @Override
-    public void deleteDirector(int id) {
-        System.out.println("elfkty__----- " + jdbcTemplate.update("delete from public.directors where director_id = " + id));
+    public int deleteDirector(int id) {
+        return jdbcTemplate.update("delete from public.directors where director_id = " + id);
     }
 
 

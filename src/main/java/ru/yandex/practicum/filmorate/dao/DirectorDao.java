@@ -5,7 +5,7 @@ import ru.yandex.practicum.filmorate.model.Director;
 import java.util.List;
 
 public interface DirectorDao {
-    List<Director> getDirectors (); //GET /directors - Список всех режиссёров
+    List<Director> getDirectors(); //GET /directors - Список всех режиссёров
 
     Director getDirectorById(int id); //GET /directors/{id}- Получение режиссёра по id
 
@@ -13,6 +13,6 @@ public interface DirectorDao {
 
     Director updateDirector(Director director); //PUT /directors - Изменение режиссёра
 
-    void deleteDirector(int id); //DELETE /directors/{id} - Удаление режиссёра
+    int deleteDirector(int id); //DELETE /directors/{id} - Удаление режиссёра
 
 }

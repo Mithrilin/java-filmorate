@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 
 import java.util.List;
@@ -38,12 +39,6 @@ class DirectorDbStorageTest {
         directorTwo = new Director(2,"Director two");
 
     }
-    @Test
-    @DisplayName("постман тесты")
-    void getDirectorOneBeforeCreate() {
-
-        //   directorDbStorage.getDirectorById(1);
-    }
 
     @Test
     @DisplayName("Добавление, получение, обновление, удаление режиссера")
@@ -61,14 +56,14 @@ class DirectorDbStorageTest {
                 List.of(directorOneUp,directorTwo),directorDbStorage.getDirectors(), "вернуть всех режиссеров"
         );
 
-        directorDbStorage.deleteDirector(1);
+        assertEquals(1,directorDbStorage.deleteDirector(1));
         assertIterableEquals(
                 List.of(directorTwo),directorDbStorage.getDirectors(),
                 "вернуть всех режиссеров после удаления режиссера Director one up"
         );
 
+        assertEquals(0, directorDbStorage.deleteDirector(9999),"нет такого режиссера");
+
     }
-
-
 
 }

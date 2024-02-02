@@ -162,6 +162,7 @@ public class FilmDbStorage implements FilmDao {
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id order by f.id;";
+
         // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = getFilmMap(sql);
         // Проверка наличия значения count (размера списка)
@@ -317,7 +318,6 @@ public class FilmDbStorage implements FilmDao {
     }
 
 
-
     // Метод добавления жанров в фильмы
     private Film addGenresFromFilm(Film film) {
         // Проверка, что у фильма есть жанры
@@ -349,16 +349,18 @@ public class FilmDbStorage implements FilmDao {
     }
 
     private void addDirectorsFromFilm(Film film) {
+        int filmId = film.getId();
+
         // Проверка, что у фильма есть режиссеры
         if (film.getDirectors().isEmpty()) {
+            //удалить все связи фильм - режиссер если они были
+            jdbcTemplate.update("delete from directors_film where film_id = " + filmId + ";");
             return;
         }
 
-        int filmId = film.getId();
-
         //проверить что режиссер такой есть в базе возвращает сет из id режиссеров
         String values = isDirector(film).stream()
-                .map(dId-> String.format("(%s, %s)",filmId,dId))
+                .map(dId -> String.format("(%s, %s)",filmId,dId))
                 .collect(Collectors.joining(","));
 
         //удалить все связи фильм - режиссер
@@ -375,8 +377,8 @@ public class FilmDbStorage implements FilmDao {
         List<Integer> directorsId = jdbcTemplate.queryForList("select director_id from directors",Integer.class);
         return film.getDirectors().stream()
                 .map(Director::getId)
-                .map(dId-> {
-                    if(!directorsId.contains(dId)) {
+                .map(dId -> {
+                    if (!directorsId.contains(dId)) {
                     throw new NotFoundException("Не найден режиссер под id = " + dId);
                     }
                     return dId;

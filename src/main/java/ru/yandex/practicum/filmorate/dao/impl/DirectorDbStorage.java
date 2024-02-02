@@ -1,7 +1,5 @@
 package ru.yandex.practicum.filmorate.dao.impl;
 
-import jdk.jshell.spi.ExecutionControl;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -10,11 +8,11 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.dao.DirectorDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
-import ru.yandex.practicum.filmorate.model.Mpa;
+
 
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
+
 @Component("directorDbStorage")
 public class DirectorDbStorage implements DirectorDao {
     private final JdbcTemplate jdbcTemplate;
@@ -35,8 +33,8 @@ public class DirectorDbStorage implements DirectorDao {
                 "select * from directors where director_id = ?;", directorRowMapper(), id
         );
 
-        if(listDirector.isEmpty()) {
-            throw new NotFoundException("Не найден режиссер под id = "+id);
+        if (listDirector.isEmpty()) {
+            throw new NotFoundException("Не найден режиссер под id = " + id);
         }
 
         return listDirector.get(0);

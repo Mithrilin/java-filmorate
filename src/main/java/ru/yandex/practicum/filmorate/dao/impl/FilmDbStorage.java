@@ -70,12 +70,11 @@ public class FilmDbStorage implements FilmDao {
     @Override
     public List<Film> getFilmById(int id) {
         String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
-                "m.name as mpa_name, fg.genre_id, g.name as genre_name, d.director_id, d.director_name " +
+                "m.name as mpa_name, fg.genre_id, g.name as genre_name " +
                 "from films f " +
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id " +
-                "left outer join directors d on f.director_id = d.director_id " +
                 "where f.id = ?;";
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper(), id);
         // Проверка на наличие фильма в БД
@@ -94,13 +93,11 @@ public class FilmDbStorage implements FilmDao {
     public List<Film> getAllFilms() {
         String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
                 "m.name as mpa_name, " +
-                "g.id as genre_id, g.name as genre_name, " +
-                "d.director_id, d.director_name " +
+                "g.id as genre_id, g.name as genre_name " +
                 "from films f " +
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id " +
-                "left outer join directors d on f.director_id = d.director_id " +
                 "order by f.id;";
         // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = getFilmMap(sql);
@@ -245,15 +242,34 @@ public class FilmDbStorage implements FilmDao {
                     film.getGenres().add(genre);
                 }
             } while (rs.next());
+
+            //добавить режиссеров в фильм
+            film.setDirectors(getDirectorsFilm(film.getId()));
+
             return film;
         };
     }
 
-    private RowMapper<Integer> likeRowMapper(Map<Integer, Integer> liksMap) {
-        return (rs, rowNum) -> {
-            liksMap.put(rs.getInt("film_id"), rs.getInt("count(user_id)"));
-            return rs.getInt("film_id");
-        };
+    private Set<Director> getDirectorsFilm(int filmId) {
+
+        Set<Director> setDirectors = new HashSet<>(1);
+
+        SqlRowSet directors = jdbcTemplate.queryForRowSet(
+                "select d.director_id, d.director_name " +
+                "from public.directors_film df " +
+                "join directors d on df.director_id = d.director_id " +
+                "where df.film_id = " + filmId + ";"
+        );
+
+        while (directors.next()) {
+            Director director = new Director(
+                    directors.getInt("director_id"),
+                    directors.getString("director_name")
+            );
+             setDirectors.add(director);
+        }
+
+        return  setDirectors;
     }
 
     private Film getNewFilm(ResultSet rs) throws SQLException {

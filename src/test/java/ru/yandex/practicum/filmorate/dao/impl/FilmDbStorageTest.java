@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -53,7 +54,6 @@ class FilmDbStorageTest {
     private static User userOne = null;
     private FilmDbStorage filmDbStorage;
     private UserDbStorage userDbStorage;
-
     private DirectorDbStorage directorDbStorage;
     private final JdbcTemplate jdbcTemplate;
 
@@ -78,6 +78,7 @@ class FilmDbStorageTest {
                 DURATION_FILM_ONE,
                 mpaOne);
         filmOne.setGenres(genresFilmOne);
+        filmOne.setDirectors(Set.of(directorOne, directorTwo));
 
         mpaTwo.setId(MPA_ID_TWO);
         mpaTwo.setName(MPA_NAME_TWO);
@@ -91,7 +92,7 @@ class FilmDbStorageTest {
                 DURATION_FILM_TWO,
                 mpaOne);
         filmTwo.setGenres(genresFilmTwo);
-
+        filmTwo.setDirectors(Set.of(directorTwo));
         userOne = new User(EMAIL_USER_ONE, LOGIN_USER_ONE, NAME_USER_ONE, BIRTHDAY_USER_ONE);
 
     }
@@ -100,7 +101,6 @@ class FilmDbStorageTest {
     @DisplayName("Добавление фильма")
     void testAddFilmShouldBeEquals() {
         filmOne.setLike(INITIAL_LIKE);
-
         int filmId = filmDbStorage.addFilm(filmOne).getId();
         Film savedFilm = filmDbStorage.getFilmById(filmId).get(0);
 

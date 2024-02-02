@@ -39,6 +39,9 @@ public class FilmDbStorage implements FilmDao {
                     "duration", film.getDuration().toString(),
                     "mpa_id", film.getMpa().getId().toString());
         film.setId(simpleJdbcInsert.executeAndReturnKey(params).intValue());
+        //добавить связи фильм - директор
+        addDirectorsFromFilm(film);
+
         return addGenresFromFilm(film);
     }
 
@@ -324,38 +327,30 @@ public class FilmDbStorage implements FilmDao {
             return;
         }
 
-        //получить идентификаторы режиссеров из фильма
-        Set<Integer> setDirectorsId = film.getDirectors().stream()
-                .map(director -> director.getId())
-                .collect(Collectors.toSet());
+        int filmId = film.getId();
 
-        //проверить что режиссер такой есть в базе
-        isDirector(setDirectorsId);
+        //проверить что режиссер такой есть в базе возвращает сет из id режиссеров
+        String values = isDirector(film).stream()
+                .map(dId-> String.format("(%s, %s)",filmId,dId))
+                .collect(Collectors.joining(","));
 
         //добавить связь межу режиссерами и фильмом
-
-
-        String sql = "insert into directors_film (film_id, director_id) values(?, ?);";
-
-       setDirectorsId.stream().peek(dId->
-           jdbcTemplate.update(con -> {
-               PreparedStatement statement = con.prepareStatement(sql);
-               statement.setInt(1, film.getId());
-               statement.setInt(2, dId);
-               return statement;
-           })
-       );
+        jdbcTemplate.update("insert into directors_film (film_id, director_id) values " + values + ";");
 
     }
 
     //проверка есть ли режиссеры в базе
-    private void isDirector(Set<Integer> setDirectorsId) {
+    private Set<Integer> isDirector(Film film) {
+
         List<Integer> directorsId = jdbcTemplate.queryForList("select director_id from directors",Integer.class);
-        setDirectorsId.stream().peek(dId-> {
-            if(!directorsId.contains(dId)) {
-                throw new NotFoundException("Не найден режиссер под id = " + dId);
-            }
-        });
+        return film.getDirectors().stream()
+                .map(Director::getId)
+                .map(dId-> {
+                    if(!directorsId.contains(dId)) {
+                    throw new NotFoundException("Не найден режиссер под id = " + dId);
+                    }
+                    return dId;
+                }).collect(Collectors.toSet());
     }
 
     @Override

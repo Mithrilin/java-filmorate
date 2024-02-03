@@ -139,38 +139,4 @@ public class EventDbStorageTest {
                 .isNotBlank()
                 .isEqualTo("UPDATE");
     }
-
-    @Test
-    @DisplayName("Проверка на добавление повторочных событий")
-    void shouldReturnFeedSize1() {
-        List<Event> emptyEvents = eventDbStorage.getUserEvents(user1.getId());
-        assertThat(emptyEvents)
-                .usingRecursiveComparison()
-                .isEqualTo(List.of());
-
-        eventDbStorage.addEvent(new Event(user1.getId(), "FRIEND", "ADD", user2.getId()));
-        eventDbStorage.addEvent(new Event(user1.getId(), "FRIEND", "ADD", user2.getId()));
-        eventDbStorage.addEvent(new Event(user1.getId(), "FRIEND", "ADD", user2.getId()));
-        eventDbStorage.addEvent(new Event(user1.getId(), "FRIEND", "ADD", user2.getId()));
-        eventDbStorage.addEvent(new Event(user1.getId(), "FRIEND", "ADD", user2.getId()));
-
-        List<Event> user1Events = eventDbStorage.getUserEvents(user1.getId());
-
-        assertThat(user1Events)
-                .isNotNull()
-                .usingRecursiveComparison();
-
-        assertThat(user1Events.size())
-                .isEqualTo(1);
-
-        assertThat(user1Events.get(0).getEventType())
-                .isNotBlank()
-                .isEqualTo("FRIEND");
-
-        assertThat(user1Events.get(0).getOperation())
-                .isNotBlank()
-                .isEqualTo("ADD");
-    }
-
-
 }

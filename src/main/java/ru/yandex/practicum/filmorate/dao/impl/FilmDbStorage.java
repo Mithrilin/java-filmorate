@@ -7,7 +7,6 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -23,11 +22,8 @@ import java.util.stream.Collectors;
 public class FilmDbStorage implements FilmDao {
     private final JdbcTemplate jdbcTemplate;
 
-    private final EventDbStorage eventDbStorage;
-
-    public FilmDbStorage(JdbcTemplate jdbcTemplate, EventDbStorage eventDbStorage) {
+    public FilmDbStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.eventDbStorage = eventDbStorage;
     }
 
     @Override
@@ -112,8 +108,6 @@ public class FilmDbStorage implements FilmDao {
     @Override
     public void addLike(int id, int userId) {
         String sql = "insert into likes values (?, ?);";
-
-        eventDbStorage.addEvent(new Event(userId, "LIKE", "ADD", id));
         jdbcTemplate.update(con -> {
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setInt(1, userId);

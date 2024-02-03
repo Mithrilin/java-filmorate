@@ -2,24 +2,35 @@ package ru.yandex.practicum.filmorate.model;
 
 import lombok.Data;
 
-import java.sql.Timestamp;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 @Data
 public class Event {
     private Integer eventId;
-    private Integer userId;
-    private String eventType;
-    private String operation;
-    private Integer entityId;
-    private final Timestamp timeStamp;
 
-    public Event(Integer eventId, Integer userId, String eventType, String operation, Integer entityId) {
+    @NotNull
+    private Integer userId;
+
+    @NotBlank
+    private String eventType;
+
+    @NotBlank
+    private String operation;
+
+    @NotNull
+    private Integer entityId;
+
+    @NotNull
+    private final Long timeStamp;
+
+    public Event(Integer eventId, Integer userId, String eventType, String operation, Integer entityId, Long timeStamp) {
         this.eventId = eventId;
         this.userId = userId;
         this.eventType = eventType;
         this.operation = operation;
         this.entityId = entityId;
-        this.timeStamp = new Timestamp(System.currentTimeMillis());
+        this.timeStamp = timeStamp;
     }
 
     public Event(Integer userId, String eventType, String operation, Integer entityId) {
@@ -27,6 +38,6 @@ public class Event {
         this.eventType = eventType;
         this.operation = operation;
         this.entityId = entityId;
-        this.timeStamp = new Timestamp(System.currentTimeMillis());
+        this.timeStamp = System.currentTimeMillis();
     }
 }

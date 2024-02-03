@@ -5,11 +5,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dao.UserDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.dao.UserDao;
+import ru.yandex.practicum.filmorate.service.event.EventService;
 
 import java.util.List;
 
@@ -18,9 +20,11 @@ import java.util.List;
 @Component
 public class UserServiceImpl implements UserService {
     private final UserDao userDao;
+    private final EventService eventService;
 
-    public UserServiceImpl(@Qualifier("userDbStorage") UserDao userStorage) {
+    public UserServiceImpl(@Qualifier("userDbStorage") UserDao userStorage, EventService eventService) {
         this.userDao = userStorage;
+        this.eventService = eventService;
     }
 
     @Override
@@ -77,6 +81,7 @@ public class UserServiceImpl implements UserService {
         } catch (DataIntegrityViolationException e) {
             throw new NotFoundException("Пользователь не найден.");
         }
+        eventService.addEvent(new Event(id, "FRIEND", "ADD", friendId));
     }
 
     @Override
@@ -85,6 +90,7 @@ public class UserServiceImpl implements UserService {
         if (result == 0) {
             throw new NotFoundException("Пользователь с id " + id + " или с id " + friendId + " не найден.");
         }
+        eventService.addEvent(new Event(id, "FRIEND", "REMOVE", friendId));
         log.info("Пользователи с id {} удалил из друзей пользователя с id {}.", id, friendId);
     }
 
@@ -109,6 +115,11 @@ public class UserServiceImpl implements UserService {
         List<Film> recommendations = userDao.getRecommendations(id);
         log.info("Список рекомендаций для пользователя с id {} возвращён.", id);
         return recommendations;
+    }
+
+    @Override
+    public List<Event> getEventsByUser(int userId) {
+        return eventService.getUserEvents(userId);
     }
 
     // Метод проверки наличия пробела в логине и замены пустого имени на логин

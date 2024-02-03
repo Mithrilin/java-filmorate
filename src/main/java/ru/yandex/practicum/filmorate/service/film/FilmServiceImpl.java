@@ -7,7 +7,9 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.event.EventService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,9 +20,11 @@ import java.util.List;
 public class FilmServiceImpl implements FilmService {
     private static final LocalDate INITIAL_RELEASE_DATE = LocalDate.of(1895, 12, 28);
     private final FilmDao filmDao;
+    private final EventService eventService;
 
-    public FilmServiceImpl(@Qualifier("filmDbStorage") FilmDao filmStorage) {
+    public FilmServiceImpl(@Qualifier("filmDbStorage") FilmDao filmStorage, EventService eventService) {
         this.filmDao = filmStorage;
+        this.eventService = eventService;
     }
 
     @Override
@@ -59,6 +63,7 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public void addLike(int id, int userId) {
         filmDao.addLike(id, userId);
+        eventService.addEvent(new Event(userId, "LIKE", "ADD", id));
         log.info("Пользователь с id {} лайкнул фильм с id {}.", userId, id);
     }
 
@@ -66,8 +71,9 @@ public class FilmServiceImpl implements FilmService {
     public void deleteLike(int id, int userId) {
         Integer result = filmDao.deleteLike(id, userId);
         if (result == 0) {
-            throw new NotFoundException("Фильм с id " + id + "или пользователь с id " + userId + " не найдены.");
+            throw new NotFoundException("Фильм с id " + id + " или пользователь с id " + userId + " не найдены.");
         }
+        eventService.addEvent(new Event(userId, "LIKE", "REMOVE", id));
         log.info("Пользователь с id {} удалил лайк к фильму с id {}.", userId, id);
     }
 

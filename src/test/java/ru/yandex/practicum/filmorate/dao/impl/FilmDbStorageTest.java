@@ -56,7 +56,7 @@ class FilmDbStorageTest {
 
     @BeforeEach
     void setUp() {
-        filmDbStorage = new FilmDbStorage(jdbcTemplate, eventDbStorage);
+        filmDbStorage = new FilmDbStorage(jdbcTemplate);
         userDbStorage = new UserDbStorage(jdbcTemplate);
 
         mpaOne.setId(MPA_ID_ONE);

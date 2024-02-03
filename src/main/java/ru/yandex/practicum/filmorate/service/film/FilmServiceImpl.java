@@ -85,8 +85,8 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public List<Film> getPopularFilms(String count) {
-        List<Film> films = filmDao.getPopularFilms(count);
+    public List<Film> getPopularFilms(String count, String genreId, String year) {
+        List<Film> films = filmDao.getPopularFilms(count, genreId, year);
         log.info("Список популярных фильмов возвращён.");
         return films;
     }
@@ -103,5 +103,19 @@ public class FilmServiceImpl implements FilmService {
         if (film.getReleaseDate().isBefore(INITIAL_RELEASE_DATE)) {
             throw new ValidationException("Фильм не прошёл валидацию. Дата релиза меньше минимального значения.");
         }
+    }
+
+    @Override
+    public List<Film> getFilmsSortByDirectorId(int directorId, String sortBy) {
+
+        switch (sortBy) {
+            case "year":
+                return filmDao.getFilmsSortYearByDirectorId(directorId);
+            case "likes":
+                return filmDao.getFilmsSortLikesByDirectorId(directorId);
+            default:
+                throw new NotFoundException("Параметр сортировки не определен! Параметр сортировки = " + sortBy);
+        }
+
     }
 }

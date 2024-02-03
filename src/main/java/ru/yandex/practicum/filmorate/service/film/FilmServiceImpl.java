@@ -101,13 +101,6 @@ public class FilmServiceImpl implements FilmService {
         return commonFilms;
     }
 
-    // Метод проверки минимальной даты
-    private void isFilmValid(Film film) {
-        if (film.getReleaseDate().isBefore(INITIAL_RELEASE_DATE)) {
-            throw new ValidationException("Фильм не прошёл валидацию. Дата релиза меньше минимального значения.");
-        }
-    }
-
     @Override
     public List<Film> getFilmsSortByDirectorId(int directorId, String sortBy) {
         switch (sortBy) {
@@ -137,5 +130,12 @@ public class FilmServiceImpl implements FilmService {
             log.info("Результат поиска фильма по части названия {}", query);
             return filmDao.getFilmsByTitleAndDirectorSearch(query);
         } else return new ArrayList<>();
+    }
+
+    // Метод проверки минимальной даты
+    private void isFilmValid(Film film) {
+        if (film.getReleaseDate().isBefore(INITIAL_RELEASE_DATE)) {
+            throw new ValidationException("Фильм не прошёл валидацию. Дата релиза меньше минимального значения.");
+        }
     }
 }

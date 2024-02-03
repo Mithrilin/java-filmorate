@@ -21,7 +21,6 @@ public class DirectorServiceImpl implements DirectorService {
         this.directorDao = directorDao;
     }
 
-
     @Override
     public List<Director> getDirectors() {
         log.info("Получены все режиссеры");
@@ -53,11 +52,10 @@ public class DirectorServiceImpl implements DirectorService {
 
     @Override
     public void deleteDirector(int id) {
-      int check = directorDao.deleteDirector(id);
-      if (check == 0) {
-          throw new NotFoundException("Режиссер не найден под id = " + id);
-      }
+        int check = directorDao.deleteDirector(id);
+        if (check == 0) {
+            throw new NotFoundException("Режиссер не найден под id = " + id);
+        }
         log.info("Удален режиссер под id = {}", id);
     }
-
 }

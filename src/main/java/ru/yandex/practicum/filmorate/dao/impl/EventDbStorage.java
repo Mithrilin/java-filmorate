@@ -37,7 +37,7 @@ public class EventDbStorage implements EventDao {
     @Override
     public List<Event> getUserEvents(int userId) {
         if (!isUserInDb(userId)) {
-            throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден",userId));
+            throw new NotFoundException(String.format("Пользователь с идентификатором %s не найден", userId));
         }
         String sql = "select * from users_events where user_id = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) -> new Event(

@@ -9,7 +9,6 @@ import ru.yandex.practicum.filmorate.dao.DirectorDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 
-
 import java.sql.PreparedStatement;
 import java.util.List;
 
@@ -47,12 +46,11 @@ public class DirectorDbStorage implements DirectorDao {
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
-             jdbcTemplate.update(con -> {
-                PreparedStatement ps = con.prepareStatement(sql,new String[]{"director_id"});
-                ps.setString(1,director.getName());
-                return ps;
-            },keyHolder);
-
+        jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql, new String[]{"director_id"});
+            ps.setString(1, director.getName());
+            return ps;
+        }, keyHolder);
 
         return getDirectorById((int) keyHolder.getKey());
     }
@@ -72,12 +70,9 @@ public class DirectorDbStorage implements DirectorDao {
         return jdbcTemplate.update("delete from public.directors where director_id = " + id);
     }
 
-
     private RowMapper<Director> directorRowMapper() {
         return (rs, rowNum) -> new Director(rs.getInt("director_id"),
-                    rs.getString("director_name"));
-
+                rs.getString("director_name"));
     }
-
 }
 

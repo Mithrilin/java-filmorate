@@ -157,7 +157,7 @@ public class FilmDbStorage implements FilmDao {
         if (year != null) {
             y = Integer.parseInt(year);
         }
-// Делаем запрос всех популярных фильмов по году и/или жанру
+        // Делаем запрос всех популярных фильмов по году и/или жанру
         if (count == null) {
             if (gId == 0) {
                 if (y == 0) {
@@ -239,7 +239,7 @@ public class FilmDbStorage implements FilmDao {
                         "LIMIT ?", this::filmRowWithLikes, gId, y, length);
             }
         }
-// Добавляем жанры и режиссеров к выбранным фильмам
+        // Добавляем жанры и режиссеров к выбранным фильмам
         List<Integer> filmsId = films.stream().map(Film::getId).collect(Collectors.toList());
         String inSql = String.join(",", Collections.nCopies(filmsId.size(), "?"));
         String sqlGenres = String.format("SELECT fg.film_id AS filmId, g.id AS genreId, g.name AS genreName " +
@@ -285,6 +285,88 @@ public class FilmDbStorage implements FilmDao {
         return insertGenresAndDirectorsIntoFilms(commonFilms);
     }
 
+
+    @Override
+    public List<Film> getFilmsSortYearByDirectorId(int directorId) {
+        String sqlSortYear = "select df.film_id " +
+                "from directors_film df " +
+                "join films f on df.film_id = f.id " +
+                "where df.director_id = ? " +
+                "order by extract(year from cast(f.releasedate as date));";
+
+        List<Integer> filmsId = jdbcTemplate.queryForList(sqlSortYear, Integer.class, directorId);
+
+        return filmsId.stream().map(fId -> getFilmById(fId).get(0)).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Film> getFilmsSortLikesByDirectorId(int directorId) {
+        //проверка на наличие режиссера
+        if (jdbcTemplate.queryForList(
+                "select director_id from directors where director_id = ?;", Integer.class, directorId).isEmpty()
+        ) {
+            throw new NotFoundException(String.format("Режиссер под id = %s не найден", directorId));
+        }
+
+        String sqlSortLikes = "select df.film_id " +
+                "from directors_film df " +
+                "left join likes l on df.film_id = l.film_id " +
+                "where df.director_id = ? " +
+                "group by df.film_id " +
+                "order by count(l.user_id);";
+
+        List<Integer> filmsId = jdbcTemplate.queryForList(sqlSortLikes, Integer.class, directorId);
+
+        return filmsId.stream().map(fId -> getFilmById(fId).get(0)).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Film> getFilmsByTitleSearch(String query) {
+        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+                "FROM films AS f " +
+                "JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                "WHERE UPPER (f.name) LIKE UPPER (?) " +
+                "GROUP BY f.id " +
+                "ORDER BY film_likes DESC";
+        List<Film> movies = jdbcTemplate.query(sql, this::filmRowWithLikes, "%" + query + "%");
+        if (movies.isEmpty()) return new ArrayList<>();
+        return insertGenresAndDirectorsIntoFilms(movies);
+    }
+
+    @Override
+    public List<Film> getFilmsByTitleAndDirectorSearch(String query) {
+        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+                "FROM films AS f " +
+                "JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                "LEFT JOIN directors_film AS df ON df.film_id = f.id " +
+                "LEFT JOIN directors AS d ON d.director_id = df.director_id " +
+                "WHERE UPPER (f.name) LIKE UPPER (?) OR UPPER (d.director_name) LIKE UPPER (?) " +
+                "GROUP BY f.id " +
+                "ORDER BY film_likes DESC";
+        String param = "%" + query + "%";
+        List<Film> movies = jdbcTemplate.query(sql, this::filmRowWithLikes, param, param);
+        if (movies.isEmpty()) return new ArrayList<>();
+        return insertGenresAndDirectorsIntoFilms(movies);
+    }
+
+    @Override
+    public List<Film> getFilmsByDirectorSearch(String query) {
+        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+                "FROM films AS f " +
+                "JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                "LEFT JOIN directors_film AS df ON df.film_id = f.id " +
+                "LEFT JOIN directors AS d ON d.director_id = df.director_id " +
+                "WHERE UPPER (d.director_name) LIKE UPPER (?) " +
+                "GROUP BY f.id " +
+                "ORDER BY film_likes DESC";
+        List<Film> movies = jdbcTemplate.query(sql, this::filmRowWithLikes, "%" + query + "%");
+        if (movies.isEmpty()) return new ArrayList<>();
+        return insertGenresAndDirectorsIntoFilms(movies);
+    }
+
     private RowMapper<Film> filmRowMapper() {
         return (rs, rowNum) -> {
             Film film = getNewFilm(rs);
@@ -305,7 +387,8 @@ public class FilmDbStorage implements FilmDao {
         };
     }
 
-    private Set<Director> getDirectorsFilm(int filmId) { //для добавления режиссеров к объекту фильма
+    //для добавления режиссеров к объекту фильма
+    private Set<Director> getDirectorsFilm(int filmId) {
 
         Set<Director> setDirectors = new HashSet<>(1);
 
@@ -426,87 +509,6 @@ public class FilmDbStorage implements FilmDao {
                     }
                     return dId;
                 }).collect(Collectors.toSet());
-    }
-
-    @Override
-    public List<Film> getFilmsSortYearByDirectorId(int directorId) {
-        String sqlSortYear = "select df.film_id " +
-                "from directors_film df " +
-                "join films f on df.film_id = f.id " +
-                "where df.director_id = ? " +
-                "order by extract(year from cast(f.releasedate as date));";
-
-        List<Integer> filmsId = jdbcTemplate.queryForList(sqlSortYear, Integer.class, directorId);
-
-        return filmsId.stream().map(fId -> getFilmById(fId).get(0)).collect(Collectors.toList());
-    }
-
-    @Override
-    public List<Film> getFilmsSortLikesByDirectorId(int directorId) {
-        //проверка на наличие режиссера
-        if (jdbcTemplate.queryForList(
-                "select director_id from directors where director_id = ?;", Integer.class, directorId).isEmpty()
-        ) {
-            throw new NotFoundException(String.format("Режиссер под id = %s не найден", directorId));
-        }
-
-        String sqlSortLikes = "select df.film_id " +
-                "from directors_film df " +
-                "left join likes l on df.film_id = l.film_id " +
-                "where df.director_id = ? " +
-                "group by df.film_id " +
-                "order by count(l.user_id);";
-
-        List<Integer> filmsId = jdbcTemplate.queryForList(sqlSortLikes, Integer.class, directorId);
-
-        return filmsId.stream().map(fId -> getFilmById(fId).get(0)).collect(Collectors.toList());
-    }
-
-    @Override
-    public List<Film> getFilmsByTitleSearch(String query) {
-        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
-                "FROM films AS f " +
-                "JOIN mpa AS m ON f.mpa_id = m.id " +
-                "LEFT JOIN likes AS l ON l.film_id = f.id " +
-                "WHERE UPPER (f.name) LIKE UPPER (?) " +
-                "GROUP BY f.id " +
-                "ORDER BY film_likes DESC";
-        List<Film> movies = jdbcTemplate.query(sql, this::filmRowWithLikes, "%" + query + "%");
-        if (movies.isEmpty()) return new ArrayList<>();
-        return insertGenresAndDirectorsIntoFilms(movies);
-    }
-
-    @Override
-    public List<Film> getFilmsByTitleAndDirectorSearch(String query) {
-        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
-                "FROM films AS f " +
-                "JOIN mpa AS m ON f.mpa_id = m.id " +
-                "LEFT JOIN likes AS l ON l.film_id = f.id " +
-                "LEFT JOIN directors_film AS df ON df.film_id = f.id " +
-                "LEFT JOIN directors AS d ON d.director_id = df.director_id " +
-                "WHERE UPPER (f.name) LIKE UPPER (?) OR UPPER (d.director_name) LIKE UPPER (?) " +
-                "GROUP BY f.id " +
-                "ORDER BY film_likes DESC";
-        String param = "%" + query + "%";
-        List<Film> movies = jdbcTemplate.query(sql, this::filmRowWithLikes, param, param);
-        if (movies.isEmpty()) return new ArrayList<>();
-        return insertGenresAndDirectorsIntoFilms(movies);
-    }
-
-    @Override
-    public List<Film> getFilmsByDirectorSearch(String query) {
-        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
-                "FROM films AS f " +
-                "JOIN mpa AS m ON f.mpa_id = m.id " +
-                "LEFT JOIN likes AS l ON l.film_id = f.id " +
-                "LEFT JOIN directors_film AS df ON df.film_id = f.id " +
-                "LEFT JOIN directors AS d ON d.director_id = df.director_id " +
-                "WHERE UPPER (d.director_name) LIKE UPPER (?) " +
-                "GROUP BY f.id " +
-                "ORDER BY film_likes DESC";
-        List<Film> movies = jdbcTemplate.query(sql, this::filmRowWithLikes, "%" + query + "%");
-        if (movies.isEmpty()) return new ArrayList<>();
-        return insertGenresAndDirectorsIntoFilms(movies);
     }
 
     private List<Film> insertGenresAndDirectorsIntoFilms(List<Film> films) {

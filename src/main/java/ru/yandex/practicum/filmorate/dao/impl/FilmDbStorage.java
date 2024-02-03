@@ -139,19 +139,23 @@ public class FilmDbStorage implements FilmDao {
      * Если значение count не задано, то в список попадут все фильмы.
      **/
     @Override
-    public List<Film> getPopularFilms(String count) {
+    public List<Film> getPopularFilms(String count, String genreId, String year) {
         Map<Integer, Integer> liksMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
         List<Integer> priority;
         int length = 0;
+        int gId = 0;
+        int y = 0;
         String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
                 "m.name as mpa_name, g.id as genre_id, g.name as genre_name " +
                 "from films f " +
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id order by f.id;";
+
         // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = getFilmMap(sql);
+
         // Проверка наличия значения count (размера списка)
         if (count == null) {
             priority = jdbcTemplate.query("select film_id, count(user_id) from likes " +
@@ -171,11 +175,36 @@ public class FilmDbStorage implements FilmDao {
                 films.add(film);
             }
         }
+
+        if (genreId != null) {
+            gId = Integer.parseInt(genreId);
+        }
+        if (year != null) {
+            y = Integer.parseInt(year);
+        }
         // Формирование итогового списка с учётом заданного размера
         for (Film film : filmMap.values()) {
             if (count != null && films.size() >= length) break;
+
+            Map<Integer, Genre> genresMap = new HashMap<>();
+            for (Genre genre : film.getGenres()) {
+                if (!genresMap.containsKey(genre.getId())) {
+                    genresMap.put(genre.getId(), genre);
+                }
+            }
+
             if (!liksMap.containsKey(film.getId())) {
-                films.add(film);
+                if (gId == 0) {
+                    if (y == 0) {
+                        films.add(film);
+                    } else if (film.getReleaseDate().getYear() == y) {
+                        films.add(film);
+                    }
+                } else if (y == 0 && genresMap.containsKey(gId)) {
+                    films.add(film);
+                } else if (film.getReleaseDate().getYear() == y && genresMap.containsKey(gId)) {
+                    films.add(film);
+                }
             }
         }
         return films;

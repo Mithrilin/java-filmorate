@@ -22,14 +22,8 @@ public class EventDbStorage implements EventDao {
 
     @Override
     public Integer addEvent(Event event) {
-        String sql = "merge into users_events as ue1 " +
-                "using (values(?, ?, ?, ?, ?)) as ue2 (user_id, event_type, operation, entity_id, timestamp) " +
-                "ON ue1.user_id=ue2.user_id and ue1.entity_id=ue2.entity_id and ue1.event_type=ue2.event_type " +
-                "and ue1.operation=ue2.operation " +
-                "when matched then update set ue1.user_id=ue2.user_id and ue1.entity_id=ue2.entity_id " +
-                "and ue1.event_type=ue2.event_type and ue1.operation=ue2.operation " +
-                "when not matched then insert (user_id, event_type, operation, entity_id, timestamp) " +
-                "values (ue2.user_id, ue2.event_type, ue2.operation, ue2.entity_id, ue2.timestamp);";
+        String sql = "insert into users_events (user_id, event_type, operation, entity_id, timestamp) " +
+                "values(?, ?, ?, ?, ?);";
         return jdbcTemplate.update(sql, event.getUserId(), event.getEventType(),
                 event.getOperation(), event.getEntityId(), event.getTimestamp());
     }

@@ -119,7 +119,11 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public void addLike(int id, int userId) {
-        String sql = "insert into likes values (?, ?);";
+        String sql = "merge into likes as l1 " +
+                "using (values(?, ?)) as l2 (user_id, film_id) " +
+                "ON l1.user_id=l2.user_id and l1.FILM_ID=l2.film_id " +
+                "when matched then update set l1.USER_ID=l2.user_id and l1.FILM_ID=l2.film_id " +
+                "when not matched then insert (user_id, film_id) values(l2.user_id, l2.film_id);";
         jdbcTemplate.update(con -> {
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setInt(1, userId);

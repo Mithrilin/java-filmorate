@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -17,6 +18,8 @@ import java.util.List;
 @Component
 public class FilmServiceImpl implements FilmService {
     private static final LocalDate INITIAL_RELEASE_DATE = LocalDate.of(1895, 12, 28);
+    public static final String DIRECTOR_PARAM = "director";
+    public static final String TITLE_PARAM = "title";
     private final FilmDao filmDao;
 
     public FilmServiceImpl(@Qualifier("filmDbStorage") FilmDao filmStorage) {
@@ -101,7 +104,6 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public List<Film> getFilmsSortByDirectorId(int directorId, String sortBy) {
-
         switch (sortBy) {
             case "year":
                 return filmDao.getFilmsSortYearByDirectorId(directorId);
@@ -110,6 +112,24 @@ public class FilmServiceImpl implements FilmService {
             default:
                 throw new NotFoundException("Параметр сортировки не определен! Параметр сортировки = " + sortBy);
         }
+    }
 
+    @Override
+    public List<Film> getFilmsBySearch(String query, List<String> params) {
+        if (params.size() == 1) {
+            switch (params.get(0)) {
+                case TITLE_PARAM:
+                    log.info("Результат поиска фильма по части названия {}", query);
+                    return filmDao.getFilmsByTitleSearch(query);
+                case DIRECTOR_PARAM:
+                    log.info("Результат поиска фильма по части названия {}", query);
+                    return filmDao.getFilmsByDirectorSearch(query);
+                default:
+                    return new ArrayList<>();
+            }
+        } else if (params.size() == 2 && params.containsAll(List.of(TITLE_PARAM, DIRECTOR_PARAM))) {
+            log.info("Результат поиска фильма по части названия {}", query);
+            return filmDao.getFilmsByTitleAndDirectorSearch(query);
+        } else return new ArrayList<>();
     }
 }

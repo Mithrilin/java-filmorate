@@ -26,4 +26,11 @@ public interface FilmDao {
     List<Film> getFilmsSortYearByDirectorId(int directorId);
 
     List<Film> getFilmsSortLikesByDirectorId(int directorId);
+
+    List<Film> getFilmsByTitleSearch(String query);
+
+    List<Film> getFilmsByDirectorSearch(String query);
+
+    List<Film> getFilmsByTitleAndDirectorSearch(String query);
+
 }

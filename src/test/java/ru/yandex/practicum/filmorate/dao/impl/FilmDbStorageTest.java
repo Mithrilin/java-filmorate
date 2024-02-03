@@ -278,10 +278,80 @@ class FilmDbStorageTest {
     }
 
     @Test
-    @DisplayName(("Удаление фильма"))
+    @DisplayName("Удаление фильма")
     void testDeleteFilm() {
         filmDbStorage.addFilm(filmOne);
         filmDbStorage.deleteFilm(1);
         assertEquals(0, filmDbStorage.getAllFilms().size());
+    }
+
+    @Test
+    @DisplayName("Поиск фильма по названию")
+    void testSearchByTitle() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        filmDbStorage.addLike(2, 1);
+        filmTwo.setLike(1);
+        List<Film> films = filmDbStorage.getFilmsByTitleSearch("фильм");
+        assertEquals(2, films.size());
+        assertEquals(filmTwo, films.get(0));
+    }
+    @Test
+    @DisplayName("Поиск фильма по неправильному названию")
+    void testSearchByWrongTitle() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        filmDbStorage.addLike(2, 1);
+        filmTwo.setLike(1);
+        List<Film> films = filmDbStorage.getFilmsByTitleSearch("pbvf");
+        assertEquals(0, films.size());
+    }
+    @Test
+    @DisplayName("Поиск фильма по названию и режиссеру")
+    void testSearchByTitleAndDirector() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        filmDbStorage.addLike(2, 1);
+        filmTwo.setLike(1);
+        List<Film> films = filmDbStorage.getFilmsByTitleAndDirectorSearch("dir");
+        assertEquals(2, films.size());
+        assertEquals(filmTwo, films.get(0));
+    }
+    @Test
+    @DisplayName("Поиск фильма по неправильному названию и режиссеру")
+    void testSearchByWrongTitleAndDirector() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        filmDbStorage.addLike(2, 1);
+        filmTwo.setLike(1);
+        List<Film> films = filmDbStorage.getFilmsByTitleAndDirectorSearch("pbvf");
+        assertEquals(0, films.size());
+    }
+    @Test
+    @DisplayName("Поиск фильма по режиссеру")
+    void testSearchByDirector() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        filmDbStorage.addLike(2, 1);
+        filmTwo.setLike(1);
+        List<Film> films = filmDbStorage.getFilmsByDirectorSearch("dir");
+        assertEquals(2, films.size());
+        assertEquals(filmTwo, films.get(0));
+    }
+    @Test
+    @DisplayName("Поиск фильма по режиссеру")
+    void testSearchByWrongDirector() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        filmDbStorage.addLike(2, 1);
+        filmTwo.setLike(1);
+        List<Film> films = filmDbStorage.getFilmsByDirectorSearch("pbvf");
+        assertEquals(0, films.size());
     }
 }

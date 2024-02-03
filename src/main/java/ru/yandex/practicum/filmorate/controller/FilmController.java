@@ -60,10 +60,13 @@ public class FilmController {
     }
 
     @GetMapping("/director/{directorId}")
-    public List<Film> getFilmsSortByDirectorId(//GET /films/director/{directorId}?sortBy=[year,likes]
-            @PathVariable int directorId,
-            @RequestParam String sortBy
-    ) {
-    return filmService.getFilmsSortByDirectorId(directorId, sortBy);
+    //GET /films/director/{directorId}?sortBy=[year,likes]
+    public List<Film> getFilmsSortByDirectorId(@PathVariable int directorId, @RequestParam String sortBy) {
+        return filmService.getFilmsSortByDirectorId(directorId, sortBy);
+    }
+
+    @GetMapping("/search")
+    public List<Film> getFilmsBySearch(@RequestParam String query, @RequestParam List<String> by) {
+        return filmService.getFilmsBySearch(query, by);
     }
 }

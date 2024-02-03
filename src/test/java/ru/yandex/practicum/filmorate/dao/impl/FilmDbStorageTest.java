@@ -405,7 +405,7 @@ class FilmDbStorageTest {
         assertEquals(2, films.size());
         assertEquals(filmTwo, films.get(0));
     }
-    
+
     @Test
     @DisplayName("Поиск фильма по режиссеру")
     void testSearchByWrongDirector() {

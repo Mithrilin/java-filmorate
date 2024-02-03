@@ -226,7 +226,7 @@ class FilmDbStorageTest {
         filmOne.setId(filmId);
         filmDbStorage.addLike(filmId, userId);
 
-        List<Film> films = filmDbStorage.getPopularFilms(null);
+        List<Film> films = filmDbStorage.getPopularFilms(null, null, null);
 
         assertEquals(2, films.size());
         assertEquals(filmId, films.get(0).getId());
@@ -241,7 +241,7 @@ class FilmDbStorageTest {
         filmOne.setId(filmId);
         filmDbStorage.addLike(filmId, userId);
 
-        List<Film> films = filmDbStorage.getPopularFilms("1");
+        List<Film> films = filmDbStorage.getPopularFilms("1", null, null);
 
         assertEquals(1, films.size());
         assertEquals(filmId, films.get(0).getId());
@@ -283,5 +283,63 @@ class FilmDbStorageTest {
         filmDbStorage.addFilm(filmOne);
         filmDbStorage.deleteFilm(1);
         assertEquals(0, filmDbStorage.getAllFilms().size());
+    }
+
+    @Test
+    @DisplayName("Получение всех популярных фильмов с жанром 1")
+    void testGetAllPopularFilmsWithGenreId1ShouldBe1() {
+        int userId = userDbStorage.addUser(userOne).getId();
+        int filmId = filmDbStorage.addFilm(filmOne).getId();
+        filmDbStorage.addFilm(filmTwo);
+        filmOne.setId(filmId);
+        filmDbStorage.addLike(filmId, userId);
+
+        List<Film> films = filmDbStorage.getPopularFilms(null, "1", null);
+
+        assertEquals(1, films.size());
+        assertEquals(filmId, films.get(0).getId());
+    }
+
+    @Test
+    @DisplayName("Получение всех популярных фильмов с жанром 2")
+    void testGetAllPopularFilmsWithGenreId2ShouldBe1() {
+        int userId = userDbStorage.addUser(userOne).getId();
+        int filmId = filmDbStorage.addFilm(filmTwo).getId();
+        filmDbStorage.addLike(filmId, userId);
+
+        List<Film> films = filmDbStorage.getPopularFilms(null, "2", null);
+
+        assertEquals(1, films.size());
+        assertEquals(filmId, films.get(0).getId());
+    }
+
+    @Test
+    @DisplayName("Получение всех популярных фильмов 1986 года")
+    void testGetAllPopularFilmsWithYear1986ShouldBe1() {
+        int userId = userDbStorage.addUser(userOne).getId();
+        int filmId = filmDbStorage.addFilm(filmOne).getId();
+        filmDbStorage.addFilm(filmTwo);
+        filmOne.setId(filmId);
+        filmDbStorage.addLike(filmId, userId);
+
+        List<Film> films = filmDbStorage.getPopularFilms(null, null, "1986");
+
+        assertEquals(1, films.size());
+        assertEquals(filmId, films.get(0).getId());
+    }
+
+    @Test
+    @DisplayName("Получение всех популярных фильмов 1986 года и жанра 1")
+    void testGetAllPopularFilmsWithYear1986AndGenreId1ShouldBe1() {
+        int userId = userDbStorage.addUser(userOne).getId();
+        int filmId = filmDbStorage.addFilm(filmOne).getId();
+        filmDbStorage.addFilm(filmTwo);
+        filmOne.setId(filmId);
+        filmDbStorage.addLike(filmId, userId);
+
+        List<Film> films = filmDbStorage.getPopularFilms(null, "1", "1986");
+
+        assertEquals(1, films.size());
+        assertEquals(filmId, films.get(0).getId());
     }
 }

@@ -7,6 +7,7 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -143,12 +144,6 @@ public class FilmDbStorage implements FilmDao {
         return jdbcTemplate.update("delete from films where id = ?;", id);
     }
 
-    /**
-     * Метод получения популярных фильмов.
-     * Если значение count задано, то такое количество фильмов и попадёт в список.
-     * Если фильмов с лайками меньше чем значение count, то остаток заполнится фильмами без лайков.
-     * Если значение count не задано, то в список попадут все фильмы.
-     **/
     @Override
     public List<Film> getPopularFilms(String count, String genreId, String year) {
         List<Film> films;
@@ -244,13 +239,29 @@ public class FilmDbStorage implements FilmDao {
                         "LIMIT ?", this::filmRowWithLikes, gId, y, length);
             }
         }
-// Добавляем жанры к выбранным фильмам
+// Добавляем жанры и режиссеров к выбранным фильмам
+        List<Integer> filmsId = films.stream().map(Film::getId).collect(Collectors.toList());
+        String inSql = String.join(",", Collections.nCopies(filmsId.size(), "?"));
+        String sqlGenres = String.format("SELECT fg.film_id AS filmId, g.id AS genreId, g.name AS genreName " +
+                "FROM film_genres AS fg " +
+                "JOIN genres AS g ON fg.genre_id = g.id " +
+                "WHERE fg.film_id IN (%s)", inSql);
+        SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sqlGenres, filmsId.toArray());
+        Map<Integer, List<Genre>> genresMap = new HashMap<>();
+        while (sqlRowSet.next()) {
+            int filmId = sqlRowSet.getInt("FILMID");
+            int genrId = sqlRowSet.getInt("GENREID");
+            String genreName = sqlRowSet.getString("GENRENAME");
+            Genre genre = new Genre(genrId, genreName);
+            if (!genresMap.containsKey(filmId)) {
+                genresMap.put(filmId, new ArrayList<>());
+            }
+            genresMap.get(filmId).add(genre);
+        }
         for (Film film : films) {
-            Map<Integer, Genre> genresMap = new HashMap<>();
-            for (Genre genre : film.getGenres()) {
-                if (!genresMap.containsKey(genre.getId())) {
-                    genresMap.put(genre.getId(), genre);
-                }
+            if (genresMap.containsKey(film.getId())) {
+                film.setGenres(genresMap.get(film.getId()));
+                film.setDirectors(getDirectorsFilm(film.getId()));
             }
         }
         return films;
@@ -311,13 +322,6 @@ public class FilmDbStorage implements FilmDao {
                 }
             } while (rs.next());
             return film;
-        };
-    }
-
-    private RowMapper<Integer> likeRowMapper(Map<Integer, Integer> liksMap) {
-        return (rs, rowNum) -> {
-            liksMap.put(rs.getInt("film_id"), rs.getInt("count(user_id)"));
-            return rs.getInt("film_id");
         };
     }
 

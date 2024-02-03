@@ -119,6 +119,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<Event> getEventsByUser(int userId) {
+        getUserById(userId); // Проверка на наличие пользователя в базе
         return eventService.getUserEvents(userId);
     }
 

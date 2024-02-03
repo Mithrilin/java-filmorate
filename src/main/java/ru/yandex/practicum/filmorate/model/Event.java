@@ -22,7 +22,7 @@ public class Event {
     private Integer entityId;
 
     @NotNull
-    private final Long timeStamp;
+    private final Long timestamp;
 
     public Event(Integer eventId, Integer userId, String eventType, String operation, Integer entityId, Long timeStamp) {
         this.eventId = eventId;
@@ -30,7 +30,7 @@ public class Event {
         this.eventType = eventType;
         this.operation = operation;
         this.entityId = entityId;
-        this.timeStamp = timeStamp;
+        this.timestamp = timeStamp;
     }
 
     public Event(Integer userId, String eventType, String operation, Integer entityId) {
@@ -38,6 +38,6 @@ public class Event {
         this.eventType = eventType;
         this.operation = operation;
         this.entityId = entityId;
-        this.timeStamp = System.currentTimeMillis();
+        this.timestamp = System.currentTimeMillis();
     }
 }

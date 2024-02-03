@@ -361,7 +361,6 @@ public class FilmDbStorage implements FilmDao {
         return filmMap;
     }
 
-
     // Метод добавления жанров в фильмы
     private Film addGenresFromFilm(Film film) {
         // Проверка, что у фильма есть жанры

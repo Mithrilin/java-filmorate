@@ -355,6 +355,7 @@ class FilmDbStorageTest {
         assertEquals(2, films.size());
         assertEquals(filmTwo, films.get(0));
     }
+
     @Test
     @DisplayName("Поиск фильма по неправильному названию")
     void testSearchByWrongTitle() {
@@ -366,6 +367,7 @@ class FilmDbStorageTest {
         List<Film> films = filmDbStorage.getFilmsByTitleSearch("pbvf");
         assertEquals(0, films.size());
     }
+
     @Test
     @DisplayName("Поиск фильма по названию и режиссеру")
     void testSearchByTitleAndDirector() {
@@ -378,6 +380,7 @@ class FilmDbStorageTest {
         assertEquals(2, films.size());
         assertEquals(filmTwo, films.get(0));
     }
+
     @Test
     @DisplayName("Поиск фильма по неправильному названию и режиссеру")
     void testSearchByWrongTitleAndDirector() {
@@ -389,6 +392,7 @@ class FilmDbStorageTest {
         List<Film> films = filmDbStorage.getFilmsByTitleAndDirectorSearch("pbvf");
         assertEquals(0, films.size());
     }
+
     @Test
     @DisplayName("Поиск фильма по режиссеру")
     void testSearchByDirector() {
@@ -401,6 +405,7 @@ class FilmDbStorageTest {
         assertEquals(2, films.size());
         assertEquals(filmTwo, films.get(0));
     }
+    
     @Test
     @DisplayName("Поиск фильма по режиссеру")
     void testSearchByWrongDirector() {

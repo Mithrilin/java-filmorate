@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.ReviewDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.service.event.EventService;
 import ru.yandex.practicum.filmorate.service.film.FilmService;
 import ru.yandex.practicum.filmorate.service.user.UserService;
 
@@ -20,10 +22,12 @@ public class ReviewServiceImpl implements ReviewService {
 
     private final UserService userService;
 
+    private final EventService eventService;
+
     @Override
     public Review getReviewById(int id) {
         return reviewDao.getReviewById(id).orElseThrow(() ->
-                        new NotFoundException("Ревью не найдено"));
+                new NotFoundException("Ревью не найдено"));
     }
 
     @Override
@@ -37,8 +41,9 @@ public class ReviewServiceImpl implements ReviewService {
     public Review createReview(Review review) {
         userService.getUserById(review.getUserId());
         filmService.getFilmById(review.getFilmId());
-
-        return reviewDao.createReview(review);
+        Review addedReview = reviewDao.createReview(review);
+        eventService.addEvent(new Event(addedReview.getUserId(), "REVIEW", "ADD", addedReview.getReviewId()));
+        return addedReview;
     }
 
     @Override
@@ -46,13 +51,15 @@ public class ReviewServiceImpl implements ReviewService {
         reviewDao.getReviewById(review.getReviewId());
         userService.getUserById(review.getUserId());
         filmService.getFilmById(review.getFilmId());
-
+        Review updatedReview = reviewDao.updateReview(review);
+        eventService.addEvent(new Event(updatedReview.getUserId(), "REVIEW", "UPDATE", updatedReview.getReviewId()));
         return reviewDao.updateReview(review);
     }
 
     @Override
     public void deleteReview(int id) {
         getReviewById(id);
+        eventService.addEvent(new Event(getReviewById(id).getUserId(), "REVIEW", "REMOVE", id));
         reviewDao.deleteReview(id);
     }
 

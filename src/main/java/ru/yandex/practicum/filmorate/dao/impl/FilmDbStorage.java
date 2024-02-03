@@ -144,51 +144,124 @@ public class FilmDbStorage implements FilmDao {
         return jdbcTemplate.update("delete from films where id = ?;", id);
     }
 
-    /**
-     * Метод получения популярных фильмов.
-     * Если значение count задано, то такое количество фильмов и попадёт в список.
-     * Если фильмов с лайками меньше чем значение count, то остаток заполнится фильмами без лайков.
-     * Если значение count не задано, то в список попадут все фильмы.
-     **/
     @Override
-    public List<Film> getPopularFilms(String count) {
-        Map<Integer, Integer> liksMap = new HashMap<>();
-        List<Film> films = new ArrayList<>();
-        List<Integer> priority;
+    public List<Film> getPopularFilms(String count, String genreId, String year) {
+        List<Film> films;
         int length = 0;
-        String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
-                "m.name as mpa_name, g.id as genre_id, g.name as genre_name, " +
-                "from films f " +
-                "left outer join mpa m on f.mpa_id = m.id " +
-                "left outer join film_genres fg on f.id = fg.film_id " +
-                "left outer join genres g on fg.genre_id = g.id order by f.id;";
+        int gId = 0;
+        int y = 0;
 
-        // Сборка всех фильмов в мапу
-        Map<Integer, Film> filmMap = getFilmMap(sql);
-        // Проверка наличия значения count (размера списка)
+        if (genreId != null) {
+            gId = Integer.parseInt(genreId);
+        }
+        if (year != null) {
+            y = Integer.parseInt(year);
+        }
+// Делаем запрос всех популярных фильмов по году и/или жанру
         if (count == null) {
-            priority = jdbcTemplate.query("select film_id, count(user_id) from likes " +
-                            "group by film_id order by count(user_id) desc;",
-                    likeRowMapper(liksMap));
+            if (gId == 0) {
+                if (y == 0) {
+                    films = jdbcTemplate.query("SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+                            "FROM films AS f " +
+                            "JOIN mpa AS m ON f.mpa_id = m.id " +
+                            "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                            "GROUP BY f.id " +
+                            "ORDER BY film_likes DESC", this::filmRowWithLikes);
+                } else {
+                    films = jdbcTemplate.query("SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+                            "FROM films AS f " +
+                            "JOIN mpa AS m ON f.mpa_id = m.id " +
+                            "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                            "WHERE YEAR(f.releasedate) = ? " +
+                            "GROUP BY f.id " +
+                            "ORDER BY film_likes DESC", this::filmRowWithLikes, y);
+                }
+            } else if (y == 0) {
+                films = jdbcTemplate.query("SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+                        "FROM films AS f " +
+                        "JOIN mpa AS m ON f.mpa_id = m.id " +
+                        "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                        "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                        "WHERE fg.genre_id = ? " +
+                        "GROUP BY f.id " +
+                        "ORDER BY film_likes DESC", this::filmRowWithLikes, gId);
+            } else {
+                films = jdbcTemplate.query("SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+                        "FROM films AS f " +
+                        "JOIN mpa AS m ON f.mpa_id = m.id " +
+                        "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                        "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                        "WHERE fg.genre_id = ? AND YEAR(f.releasedate) = ? " +
+                        "GROUP BY f.id " +
+                        "ORDER BY film_likes DESC", this::filmRowWithLikes, gId, y);
+            }
+            // Делаем запрос популярных фильмов по году и/или жанру с ограничением по количеству
         } else {
             length = Integer.parseInt(count);
-            priority = jdbcTemplate.query("select film_id, count(user_id) from likes " +
-                            "group by film_id order by count(user_id) desc limit ?;",
-                    likeRowMapper(liksMap), length);
-        }
-        // Проверка наличия лайков
-        if (!priority.isEmpty()) {
-            for (Integer i : priority) {
-                Film film = filmMap.get(i);
-                film.setLike(liksMap.get(i));
-                films.add(film);
+            if (gId == 0) {
+                if (y == 0) {
+                    films = jdbcTemplate.query("SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+                            "FROM films AS f " +
+                            "JOIN mpa AS m ON f.mpa_id = m.id " +
+                            "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                            "GROUP BY f.id " +
+                            "ORDER BY film_likes DESC " +
+                            "LIMIT ?", this::filmRowWithLikes, length);
+                } else {
+                    films = jdbcTemplate.query("SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+                            "FROM films AS f " +
+                            "JOIN mpa AS m ON f.mpa_id = m.id " +
+                            "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                            "WHERE YEAR(f.releasedate) = ? " +
+                            "GROUP BY f.id " +
+                            "ORDER BY film_likes DESC " +
+                            "LIMIT ?", this::filmRowWithLikes, y, length);
+                }
+            } else if (y == 0) {
+                films = jdbcTemplate.query("SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+                        "FROM films AS f " +
+                        "JOIN mpa AS m ON f.mpa_id = m.id " +
+                        "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                        "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                        "WHERE fg.genre_id = ? " +
+                        "GROUP BY f.id " +
+                        "ORDER BY film_likes DESC " +
+                        "LIMIT ?", this::filmRowWithLikes, gId, length);
+            } else {
+                films = jdbcTemplate.query("SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+                        "FROM films AS f " +
+                        "JOIN mpa AS m ON f.mpa_id = m.id " +
+                        "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                        "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                        "WHERE fg.genre_id = ? AND YEAR(f.releasedate) = ? " +
+                        "GROUP BY f.id " +
+                        "ORDER BY film_likes DESC " +
+                        "LIMIT ?", this::filmRowWithLikes, gId, y, length);
             }
         }
-        // Формирование итогового списка с учётом заданного размера
-        for (Film film : filmMap.values()) {
-            if (count != null && films.size() >= length) break;
-            if (!liksMap.containsKey(film.getId())) {
-                films.add(film);
+// Добавляем жанры и режиссеров к выбранным фильмам
+        List<Integer> filmsId = films.stream().map(Film::getId).collect(Collectors.toList());
+        String inSql = String.join(",", Collections.nCopies(filmsId.size(), "?"));
+        String sqlGenres = String.format("SELECT fg.film_id AS filmId, g.id AS genreId, g.name AS genreName " +
+                "FROM film_genres AS fg " +
+                "JOIN genres AS g ON fg.genre_id = g.id " +
+                "WHERE fg.film_id IN (%s)", inSql);
+        SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sqlGenres, filmsId.toArray());
+        Map<Integer, List<Genre>> genresMap = new HashMap<>();
+        while (sqlRowSet.next()) {
+            int filmId = sqlRowSet.getInt("FILMID");
+            int id = sqlRowSet.getInt("GENREID");
+            String genreName = sqlRowSet.getString("GENRENAME");
+            Genre genre = new Genre(id, genreName);
+            if (!genresMap.containsKey(filmId)) {
+                genresMap.put(filmId, new ArrayList<>());
+            }
+            genresMap.get(filmId).add(genre);
+        }
+        for (Film film : films) {
+            if (genresMap.containsKey(film.getId())) {
+                film.setGenres(genresMap.get(film.getId()));
+                film.setDirectors(getDirectorsFilm(film.getId()));
             }
         }
         return films;
@@ -229,13 +302,6 @@ public class FilmDbStorage implements FilmDao {
             film.setDirectors(getDirectorsFilm(film.getId()));
 
             return film;
-        };
-    }
-
-    private RowMapper<Integer> likeRowMapper(Map<Integer, Integer> liksMap) {
-        return (rs, rowNum) -> {
-            liksMap.put(rs.getInt("film_id"), rs.getInt("count(user_id)"));
-            return rs.getInt("film_id");
         };
     }
 

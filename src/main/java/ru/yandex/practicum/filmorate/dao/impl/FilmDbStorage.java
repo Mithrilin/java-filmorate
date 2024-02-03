@@ -7,6 +7,7 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -32,19 +33,23 @@ public class FilmDbStorage implements FilmDao {
                 .withTableName("films")
                 .usingGeneratedKeyColumns("id");
         Map<String, String> params = Map.of(
-                "name", film.getName(),
-                "releaseDate", film.getReleaseDate().toString(),
-                "description", film.getDescription(),
-                "duration", film.getDuration().toString(),
-                "mpa_id", film.getMpa().getId().toString());
+                    "name", film.getName(),
+                    "releaseDate", film.getReleaseDate().toString(),
+                    "description", film.getDescription(),
+                    "duration", film.getDuration().toString(),
+                    "mpa_id", film.getMpa().getId().toString());
         film.setId(simpleJdbcInsert.executeAndReturnKey(params).intValue());
+
+        //добавить связи фильм - директор
+        addDirectorsFromFilm(film);
+
         return addGenresFromFilm(film);
     }
 
     @Override
     public Film updateFilm(Film film) {
         String sql = "update films set name = ?, releaseDate = ?, description = ?, " +
-                "duration = ?, mpa_id = ? where id = ?;";
+                "duration = ?, mpa_id = ?  where id = ?;";
         int result = jdbcTemplate.update(con -> {
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setString(1, film.getName());
@@ -60,6 +65,10 @@ public class FilmDbStorage implements FilmDao {
             throw new NotFoundException("Фильм с id " + film.getId() + " не найден.");
         }
         jdbcTemplate.update("delete from film_genres where film_id = ?;", film.getId());
+
+        //добавить связи фильм - директор
+        addDirectorsFromFilm(film);
+
         return addGenresFromFilm(film);
     }
 
@@ -70,7 +79,8 @@ public class FilmDbStorage implements FilmDao {
                 "from films f " +
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
-                "left outer join genres g on fg.genre_id = g.id where f.id = ?;";
+                "left outer join genres g on fg.genre_id = g.id " +
+                "where f.id = ?;";
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper(), id);
         // Проверка на наличие фильма в БД
         if (films.size() == 0) {
@@ -87,11 +97,13 @@ public class FilmDbStorage implements FilmDao {
     @Override
     public List<Film> getAllFilms() {
         String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
-                "m.name as mpa_name, g.id as genre_id, g.name as genre_name " +
+                "m.name as mpa_name, " +
+                "g.id as genre_id, g.name as genre_name " +
                 "from films f " +
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
-                "left outer join genres g on fg.genre_id = g.id order by f.id;";
+                "left outer join genres g on fg.genre_id = g.id " +
+                "order by f.id;";
         // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = getFilmMap(sql);
         // Добавление в фильм количество лайков
@@ -145,11 +157,12 @@ public class FilmDbStorage implements FilmDao {
         List<Integer> priority;
         int length = 0;
         String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
-                "m.name as mpa_name, g.id as genre_id, g.name as genre_name " +
+                "m.name as mpa_name, g.id as genre_id, g.name as genre_name, " +
                 "from films f " +
                 "left outer join mpa m on f.mpa_id = m.id " +
                 "left outer join film_genres fg on f.id = fg.film_id " +
                 "left outer join genres g on fg.genre_id = g.id order by f.id;";
+
         // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = getFilmMap(sql);
         // Проверка наличия значения count (размера списка)
@@ -215,8 +228,10 @@ public class FilmDbStorage implements FilmDao {
             genresMap.get(filmId).add(genre);
         }
         for (Film film : commonFilms) {
-            if (genresMap.containsKey(film.getId()))
+            if (genresMap.containsKey(film.getId())) {
                 film.setGenres(genresMap.get(film.getId()));
+                film.setDirectors(getDirectorsFilm(film.getId()));
+            }
         }
         return commonFilms;
     }
@@ -233,6 +248,10 @@ public class FilmDbStorage implements FilmDao {
                     film.getGenres().add(genre);
                 }
             } while (rs.next());
+
+            //добавить режиссеров в фильм
+            film.setDirectors(getDirectorsFilm(film.getId()));
+
             return film;
         };
     }
@@ -244,6 +263,28 @@ public class FilmDbStorage implements FilmDao {
         };
     }
 
+    private Set<Director> getDirectorsFilm(int filmId) { //для добавления режиссеров к объекту фильма
+
+        Set<Director> setDirectors = new HashSet<>(1);
+
+        SqlRowSet directors = jdbcTemplate.queryForRowSet(
+                "select d.director_id, d.director_name " +
+                "from public.directors_film df " +
+                "join directors d on df.director_id = d.director_id " +
+                "where df.film_id = " + filmId + ";"
+        );
+
+        while (directors.next()) {
+            Director director = new Director(
+                    directors.getInt("director_id"),
+                    directors.getString("director_name")
+            );
+             setDirectors.add(director);
+        }
+
+        return  setDirectors;
+    }
+
     private Film getNewFilm(ResultSet rs) throws SQLException {
         return new Film(
                 rs.getString("name"),
@@ -251,7 +292,8 @@ public class FilmDbStorage implements FilmDao {
                 rs.getDate("releasedate").toLocalDate(),
                 rs.getInt("duration"),
                 new Mpa(rs.getInt("mpa_id"),
-                        rs.getString("mpa_name")));
+                        rs.getString("mpa_name"))
+                );
     }
 
     // Метод сборки всех фильмов в мапу с записью жанров
@@ -270,10 +312,13 @@ public class FilmDbStorage implements FilmDao {
             if (genre.getId() != 0) {
                 filmMap.get(filmId).getGenres().add(genre);
             }
+                //добавить режиссеров в фильм
+                filmMap.get(filmId).setDirectors(getDirectorsFilm(filmId));
             return null;
         });
         return filmMap;
     }
+
 
     // Метод добавления жанров в фильмы
     private Film addGenresFromFilm(Film film) {
@@ -303,6 +348,77 @@ public class FilmDbStorage implements FilmDao {
             return statement;
         });
         return film;
+    }
+
+    private void addDirectorsFromFilm(Film film) {
+        int filmId = film.getId();
+
+        // Проверка, что у фильма есть режиссеры
+        if (film.getDirectors().isEmpty()) {
+            //удалить все связи фильм - режиссер если они были
+            jdbcTemplate.update("delete from directors_film where film_id = " + filmId + ";");
+            return;
+        }
+
+        //проверить что режиссер такой есть в базе возвращает сет из id режиссеров
+        String values = isDirector(film).stream()
+                .map(dId -> String.format("(%s, %s)",filmId,dId))
+                .collect(Collectors.joining(","));
+
+        //удалить все связи фильм - режиссер
+        jdbcTemplate.update("delete from directors_film where film_id = " + filmId + ";");
+
+        //добавить связь межу режиссерами и фильмом
+        jdbcTemplate.update("insert into directors_film (film_id, director_id) values " + values + ";");
+
+    }
+
+    //проверка есть ли режиссеры в базе
+    private Set<Integer> isDirector(Film film) {
+
+        List<Integer> directorsId = jdbcTemplate.queryForList("select director_id from directors",Integer.class);
+        return film.getDirectors().stream()
+                .map(Director::getId)
+                .map(dId -> {
+                    if (!directorsId.contains(dId)) {
+                    throw new NotFoundException("Не найден режиссер под id = " + dId);
+                    }
+                    return dId;
+                }).collect(Collectors.toSet());
+    }
+
+    @Override
+    public List<Film> getFilmsSortYearByDirectorId(int directorId) {
+        String sqlSortYear = "select df.film_id " +
+                "from directors_film df " +
+                "join films f on df.film_id = f.id " +
+                "where df.director_id = ? " +
+                "order by extract(year from cast(f.releasedate as date));";
+
+        List<Integer> filmsId = jdbcTemplate.queryForList(sqlSortYear,Integer.class,directorId);
+
+        return filmsId.stream().map(fId -> getFilmById(fId).get(0)).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Film> getFilmsSortLikesByDirectorId(int directorId) {
+        //проверка на наличие режиссера
+        if (jdbcTemplate.queryForList(
+                "select director_id from directors where director_id = ?;", Integer.class, directorId).isEmpty()
+        ) {
+            throw new NotFoundException(String.format("Режиссер под id = %s не найден", directorId));
+        }
+
+        String sqlSortLikes = "select df.film_id " +
+                "from directors_film df " +
+                "left join likes l on df.film_id = l.film_id " +
+                "where df.director_id = ? " +
+                "group by df.film_id " +
+                "order by count(l.user_id);";
+
+        List<Integer>  filmsId = jdbcTemplate.queryForList(sqlSortLikes,Integer.class,directorId);
+
+        return filmsId.stream().map(fId -> getFilmById(fId).get(0)).collect(Collectors.toList());
     }
 
     private Film filmRowWithLikes(ResultSet rs, int rowNum) throws SQLException {

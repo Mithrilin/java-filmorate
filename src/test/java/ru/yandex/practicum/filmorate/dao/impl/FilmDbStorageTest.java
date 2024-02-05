@@ -7,14 +7,12 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,6 +40,9 @@ class FilmDbStorageTest {
     private static final Integer DURATION_FILM_TWO = 100;
     private static final Mpa mpaOne = new Mpa();
     private static final Mpa mpaTwo = new Mpa();
+
+    private static final Director directorOne = new Director(1, "Director one");
+    private static final Director directorTwo = new Director(2, "Director two");
     private static final Integer INITIAL_LIKE = 0;
     private static Film filmOne = null;
     private static Film filmTwo = null;
@@ -52,12 +53,17 @@ class FilmDbStorageTest {
     private static User userOne = null;
     private FilmDbStorage filmDbStorage;
     private UserDbStorage userDbStorage;
+    private DirectorDbStorage directorDbStorage;
     private final JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() {
         filmDbStorage = new FilmDbStorage(jdbcTemplate);
         userDbStorage = new UserDbStorage(jdbcTemplate);
+        directorDbStorage = new DirectorDbStorage(jdbcTemplate);
+
+        directorDbStorage.addDirector(directorOne);
+        directorDbStorage.addDirector(directorTwo);
 
         mpaOne.setId(MPA_ID_ONE);
         mpaOne.setName(MPA_NAME_ONE);
@@ -65,8 +71,13 @@ class FilmDbStorageTest {
         genreOne.setName(GENRE_NAME_ONE);
         List<Genre> genresFilmOne = new ArrayList<>();
         genresFilmOne.add(genreOne);
-        filmOne = new Film(NAME_FILM_ONE, DESCRIPTION_FILM_ONE, RELEASE_DATE_FILM_ONE, DURATION_FILM_ONE, mpaOne);
+        filmOne = new Film(NAME_FILM_ONE,
+                DESCRIPTION_FILM_ONE,
+                RELEASE_DATE_FILM_ONE,
+                DURATION_FILM_ONE,
+                mpaOne);
         filmOne.setGenres(genresFilmOne);
+        filmOne.setDirectors(Set.of(directorOne, directorTwo));
 
         mpaTwo.setId(MPA_ID_TWO);
         mpaTwo.setName(MPA_NAME_TWO);
@@ -74,17 +85,21 @@ class FilmDbStorageTest {
         genreTwo.setName(GENRE_NAME_TWO);
         List<Genre> genresFilmTwo = new ArrayList<>();
         genresFilmTwo.add(genreTwo);
-        filmTwo = new Film(NAME_FILM_TWO, DESCRIPTION_FILM_TWO, RELEASE_DATE_FILM_TWO, DURATION_FILM_TWO, mpaOne);
+        filmTwo = new Film(NAME_FILM_TWO,
+                DESCRIPTION_FILM_TWO,
+                RELEASE_DATE_FILM_TWO,
+                DURATION_FILM_TWO,
+                mpaOne);
         filmTwo.setGenres(genresFilmTwo);
-
+        filmTwo.setDirectors(Set.of(directorTwo));
         userOne = new User(EMAIL_USER_ONE, LOGIN_USER_ONE, NAME_USER_ONE, BIRTHDAY_USER_ONE);
+
     }
 
     @Test
     @DisplayName("Добавление фильма")
     void testAddFilmShouldBeEquals() {
         filmOne.setLike(INITIAL_LIKE);
-
         int filmId = filmDbStorage.addFilm(filmOne).getId();
         Film savedFilm = filmDbStorage.getFilmById(filmId).get(0);
 
@@ -226,10 +241,180 @@ class FilmDbStorageTest {
         filmOne.setId(filmId);
         filmDbStorage.addLike(filmId, userId);
 
-        List<Film> films = filmDbStorage.getPopularFilms("1");
+        List<Film> films = filmDbStorage.getPopularFilms(1);
 
         assertEquals(1, films.size());
         assertEquals(filmId, films.get(0).getId());
         assertEquals(1, films.get(0).getLike());
+    }
+
+    @Test
+    @DisplayName("Получение списка общих фильмов")
+    void testGetCommonFilms() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        userDbStorage.addUser(new User("ford@ya.ru", "ford", "Ford", BIRTHDAY_USER_ONE));
+        filmDbStorage.addLike(1, 1);
+        filmDbStorage.addLike(2, 1);
+        filmDbStorage.addLike(2, 2);
+        filmTwo.setLike(2);
+        List<Film> films = filmDbStorage.getCommonFilms(1, 2);
+        assertEquals(1, films.size());
+        assertEquals(filmTwo, films.get(0));
+    }
+
+    @Test
+    @DisplayName("Получение пустого списка общих фильмов")
+    void testGetCommonFilmsEmpty() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        userDbStorage.addUser(new User("ford@ya.ru", "ford", "Ford", BIRTHDAY_USER_ONE));
+        filmDbStorage.addLike(1, 1);
+        filmDbStorage.addLike(2, 2);
+        List<Film> films = filmDbStorage.getCommonFilms(1, 2);
+        assertEquals(0, films.size());
+    }
+
+    @Test
+    @DisplayName("Удаление фильма")
+    void testDeleteFilm() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.deleteFilm(1);
+        assertEquals(0, filmDbStorage.getAllFilms().size());
+    }
+
+    @Test
+    @DisplayName("Получение всех популярных фильмов с жанром 1")
+    void testGetAllPopularFilmsWithGenreId1ShouldBe1() {
+        int userId = userDbStorage.addUser(userOne).getId();
+        int filmId = filmDbStorage.addFilm(filmOne).getId();
+        filmDbStorage.addFilm(filmTwo);
+        filmOne.setId(filmId);
+        filmDbStorage.addLike(filmId, userId);
+
+        List<Film> films = filmDbStorage.getPopularFilmsByGenre(null, 1);
+
+        assertEquals(1, films.size());
+        assertEquals(filmId, films.get(0).getId());
+    }
+
+    @Test
+    @DisplayName("Получение всех популярных фильмов с жанром 2")
+    void testGetAllPopularFilmsWithGenreId2ShouldBe1() {
+        int userId = userDbStorage.addUser(userOne).getId();
+        int filmId = filmDbStorage.addFilm(filmTwo).getId();
+        filmDbStorage.addLike(filmId, userId);
+
+        List<Film> films = filmDbStorage.getPopularFilmsByGenre(null, 2);
+
+        assertEquals(1, films.size());
+        assertEquals(filmId, films.get(0).getId());
+    }
+
+    @Test
+    @DisplayName("Получение всех популярных фильмов 1986 года")
+    void testGetAllPopularFilmsWithYear1986ShouldBe1() {
+        int userId = userDbStorage.addUser(userOne).getId();
+        int filmId = filmDbStorage.addFilm(filmOne).getId();
+        filmDbStorage.addFilm(filmTwo);
+        filmOne.setId(filmId);
+        filmDbStorage.addLike(filmId, userId);
+
+        List<Film> films = filmDbStorage.getPopularFilmsByYear(null, 1986);
+
+        assertEquals(1, films.size());
+        assertEquals(filmId, films.get(0).getId());
+    }
+
+    @Test
+    @DisplayName("Получение всех популярных фильмов 1986 года и жанра 1")
+    void testGetAllPopularFilmsWithYear1986AndGenreId1ShouldBe1() {
+        int userId = userDbStorage.addUser(userOne).getId();
+        int filmId = filmDbStorage.addFilm(filmOne).getId();
+        filmDbStorage.addFilm(filmTwo);
+        filmOne.setId(filmId);
+        filmDbStorage.addLike(filmId, userId);
+
+        List<Film> films = filmDbStorage.getPopularFilmsByYearAndGenre(null, 1, 1986);
+
+        assertEquals(1, films.size());
+        assertEquals(filmId, films.get(0).getId());
+    }
+
+    @Test
+    @DisplayName("Поиск фильма по названию")
+    void testSearchByTitle() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        filmDbStorage.addLike(2, 1);
+        filmTwo.setLike(1);
+        List<Film> films = filmDbStorage.getFilmsByTitleSearch("фильм");
+        assertEquals(2, films.size());
+        assertEquals(filmTwo, films.get(0));
+    }
+
+    @Test
+    @DisplayName("Поиск фильма по неправильному названию")
+    void testSearchByWrongTitle() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        filmDbStorage.addLike(2, 1);
+        filmTwo.setLike(1);
+        List<Film> films = filmDbStorage.getFilmsByTitleSearch("pbvf");
+        assertEquals(0, films.size());
+    }
+
+    @Test
+    @DisplayName("Поиск фильма по названию и режиссеру")
+    void testSearchByTitleAndDirector() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        filmDbStorage.addLike(2, 1);
+        filmTwo.setLike(1);
+        List<Film> films = filmDbStorage.getFilmsByTitleAndDirectorSearch("dir");
+        assertEquals(2, films.size());
+        assertEquals(filmTwo, films.get(0));
+    }
+
+    @Test
+    @DisplayName("Поиск фильма по неправильному названию и режиссеру")
+    void testSearchByWrongTitleAndDirector() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        filmDbStorage.addLike(2, 1);
+        filmTwo.setLike(1);
+        List<Film> films = filmDbStorage.getFilmsByTitleAndDirectorSearch("pbvf");
+        assertEquals(0, films.size());
+    }
+
+    @Test
+    @DisplayName("Поиск фильма по режиссеру")
+    void testSearchByDirector() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        filmDbStorage.addLike(2, 1);
+        filmTwo.setLike(1);
+        List<Film> films = filmDbStorage.getFilmsByDirectorSearch("dir");
+        assertEquals(2, films.size());
+        assertEquals(filmTwo, films.get(0));
+    }
+
+    @Test
+    @DisplayName("Поиск фильма по режиссеру")
+    void testSearchByWrongDirector() {
+        filmDbStorage.addFilm(filmOne);
+        filmDbStorage.addFilm(filmTwo);
+        userDbStorage.addUser(userOne);
+        filmDbStorage.addLike(2, 1);
+        filmTwo.setLike(1);
+        List<Film> films = filmDbStorage.getFilmsByDirectorSearch("pbvf");
+        assertEquals(0, films.size());
     }
 }

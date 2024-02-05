@@ -17,5 +17,26 @@ public interface FilmDao {
 
     Integer deleteLike(int id, int userId);
 
-    List<Film> getPopularFilms(String count);
+    Integer deleteFilm(int id);
+
+    List<Film> getPopularFilms(Integer count);
+
+    List<Film> getPopularFilmsByYear(Integer count, Integer year);
+
+    List<Film> getPopularFilmsByGenre(Integer count, Integer genreId);
+
+    List<Film> getPopularFilmsByYearAndGenre(Integer count, Integer genreId, Integer year);
+
+    List<Film> getCommonFilms(int userId, int friendId);
+
+    List<Film> getFilmsSortYearByDirectorId(int directorId);
+
+    List<Film> getFilmsSortLikesByDirectorId(int directorId);
+
+    List<Film> getFilmsByTitleSearch(String query);
+
+    List<Film> getFilmsByDirectorSearch(String query);
+
+    List<Film> getFilmsByTitleAndDirectorSearch(String query);
+
 }

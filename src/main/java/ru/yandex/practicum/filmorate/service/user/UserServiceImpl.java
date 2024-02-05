@@ -3,23 +3,26 @@ package ru.yandex.practicum.filmorate.service.user;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dao.UserDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.dao.UserDao;
+import ru.yandex.practicum.filmorate.service.event.EventService;
 
 import java.util.List;
 
 @Slf4j
 @Service
-@Component
 public class UserServiceImpl implements UserService {
     private final UserDao userDao;
+    private final EventService eventService;
 
-    public UserServiceImpl(@Qualifier("userDbStorage") UserDao userStorage) {
+    public UserServiceImpl(@Qualifier("userDbStorage") UserDao userStorage, EventService eventService) {
         this.userDao = userStorage;
+        this.eventService = eventService;
     }
 
     @Override
@@ -76,6 +79,7 @@ public class UserServiceImpl implements UserService {
         } catch (DataIntegrityViolationException e) {
             throw new NotFoundException("Пользователь не найден.");
         }
+        eventService.addEvent(new Event(id, "FRIEND", "ADD", friendId));
     }
 
     @Override
@@ -84,11 +88,14 @@ public class UserServiceImpl implements UserService {
         if (result == 0) {
             throw new NotFoundException("Пользователь с id " + id + " или с id " + friendId + " не найден.");
         }
+        eventService.addEvent(new Event(id, "FRIEND", "REMOVE", friendId));
         log.info("Пользователи с id {} удалил из друзей пользователя с id {}.", id, friendId);
     }
 
     @Override
     public List<User> getAllFriends(int id) {
+        userDao.getUserById(id).stream().findAny().orElseThrow(() ->
+                new NotFoundException(String.format("Пользователь с id %d не найден", id)));
         List<User> users = userDao.getAllFriends(id);
         log.info("Список друзей пользователя с id {} возвращён.", id);
         return users;
@@ -99,6 +106,19 @@ public class UserServiceImpl implements UserService {
         List<User> commonFriends = userDao.getAllCommonFriends(id, otherId);
         log.info("Список общих друзей пользователей с id {} и с id {} возвращён.", id, otherId);
         return commonFriends;
+    }
+
+    @Override
+    public List<Film> getRecommendations(int id) {
+        List<Film> recommendations = userDao.getRecommendations(id);
+        log.info("Список рекомендаций для пользователя с id {} возвращён.", id);
+        return recommendations;
+    }
+
+    @Override
+    public List<Event> getEventsByUser(int userId) {
+        getUserById(userId); // Проверка на наличие пользователя в базе
+        return eventService.getUserEvents(userId);
     }
 
     // Метод проверки наличия пробела в логине и замены пустого имени на логин

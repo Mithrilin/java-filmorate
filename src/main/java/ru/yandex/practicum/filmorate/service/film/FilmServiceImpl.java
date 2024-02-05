@@ -86,7 +86,7 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public List<Film> getPopularFilms(String count, String genreId, String year) {
+    public List<Film> getPopularFilms(Integer count, String genreId, Integer year) {
         List<Film> films = filmDao.getPopularFilms(count, genreId, year);
         log.info("Список популярных фильмов возвращён.");
         return films;

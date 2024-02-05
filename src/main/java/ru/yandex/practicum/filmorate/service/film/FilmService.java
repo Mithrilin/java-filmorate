@@ -19,7 +19,7 @@ public interface FilmService {
 
     void deleteFilm(int id);
 
-    List<Film> getPopularFilms(String count, String genreId, String year);
+    List<Film> getPopularFilms(Integer count, String genreId, Integer year);
 
     List<Film> getCommonFilms(int userId, int friendId);
 

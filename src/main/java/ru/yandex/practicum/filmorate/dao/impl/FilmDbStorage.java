@@ -149,7 +149,7 @@ public class FilmDbStorage implements FilmDao {
     }
 
     @Override
-    public List<Film> getPopularFilms(String count, String genreId, String year) {
+    public List<Film> getPopularFilms(Integer count, String genreId, Integer year) {
         List<Film> films;
         int length = 0;
         int gId = 0;
@@ -159,7 +159,7 @@ public class FilmDbStorage implements FilmDao {
             gId = Integer.parseInt(genreId);
         }
         if (year != null) {
-            y = Integer.parseInt(year);
+            y = year;
         }
         // Делаем запрос всех популярных фильмов по году и/или жанру
         if (count == null) {
@@ -201,7 +201,7 @@ public class FilmDbStorage implements FilmDao {
             }
             // Делаем запрос популярных фильмов по году и/или жанру с ограничением по количеству
         } else {
-            length = Integer.parseInt(count);
+            length = count;
             if (gId == 0) {
                 if (y == 0) {
                     films = jdbcTemplate.query("SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +

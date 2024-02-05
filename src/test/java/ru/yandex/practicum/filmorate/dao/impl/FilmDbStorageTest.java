@@ -226,7 +226,7 @@ class FilmDbStorageTest {
         filmOne.setId(filmId);
         filmDbStorage.addLike(filmId, userId);
 
-        List<Film> films = filmDbStorage.getPopularFilms(null, null, null);
+        List<Film> films = filmDbStorage.getPopularFilms(null);
 
         assertEquals(2, films.size());
         assertEquals(filmId, films.get(0).getId());
@@ -241,7 +241,7 @@ class FilmDbStorageTest {
         filmOne.setId(filmId);
         filmDbStorage.addLike(filmId, userId);
 
-        List<Film> films = filmDbStorage.getPopularFilms(1, null, null);
+        List<Film> films = filmDbStorage.getPopularFilms(1);
 
         assertEquals(1, films.size());
         assertEquals(filmId, films.get(0).getId());
@@ -294,7 +294,7 @@ class FilmDbStorageTest {
         filmOne.setId(filmId);
         filmDbStorage.addLike(filmId, userId);
 
-        List<Film> films = filmDbStorage.getPopularFilms(null, "1", null);
+        List<Film> films = filmDbStorage.getPopularFilmsByGenre(null, 1);
 
         assertEquals(1, films.size());
         assertEquals(filmId, films.get(0).getId());
@@ -307,7 +307,7 @@ class FilmDbStorageTest {
         int filmId = filmDbStorage.addFilm(filmTwo).getId();
         filmDbStorage.addLike(filmId, userId);
 
-        List<Film> films = filmDbStorage.getPopularFilms(null, "2", null);
+        List<Film> films = filmDbStorage.getPopularFilmsByGenre(null, 2);
 
         assertEquals(1, films.size());
         assertEquals(filmId, films.get(0).getId());
@@ -322,7 +322,7 @@ class FilmDbStorageTest {
         filmOne.setId(filmId);
         filmDbStorage.addLike(filmId, userId);
 
-        List<Film> films = filmDbStorage.getPopularFilms(null, null, 1986);
+        List<Film> films = filmDbStorage.getPopularFilmsByYear(null, 1986);
 
         assertEquals(1, films.size());
         assertEquals(filmId, films.get(0).getId());
@@ -337,7 +337,7 @@ class FilmDbStorageTest {
         filmOne.setId(filmId);
         filmDbStorage.addLike(filmId, userId);
 
-        List<Film> films = filmDbStorage.getPopularFilms(null, "1", 1986);
+        List<Film> films = filmDbStorage.getPopularFilmsByYearAndGenre(null, 1, 1986);
 
         assertEquals(1, films.size());
         assertEquals(filmId, films.get(0).getId());

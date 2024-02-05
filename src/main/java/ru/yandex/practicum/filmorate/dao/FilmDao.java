@@ -19,7 +19,13 @@ public interface FilmDao {
 
     Integer deleteFilm(int id);
 
-    List<Film> getPopularFilms(Integer count, String genreId, Integer year);
+    List<Film> getPopularFilms(Integer count);
+
+    List<Film> getPopularFilmsByYear(Integer count, Integer year);
+
+    List<Film> getPopularFilmsByGenre(Integer count, Integer genreId);
+
+    List<Film> getPopularFilmsByYearAndGenre(Integer count, Integer genreId, Integer year);
 
     List<Film> getCommonFilms(int userId, int friendId);
 

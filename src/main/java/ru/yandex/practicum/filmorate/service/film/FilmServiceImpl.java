@@ -88,10 +88,10 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public List<Film> getPopularFilms(Integer count, Integer genreId, Integer year) {
         List<Film> films;
-        if (genreId == 0 && year == 0) {
+        if (genreId == 0 && year == null) {
             films = filmDao.getPopularFilms(count);
             log.info("Список популярных фильмов возвращён.");
-        } else if (year == 0) {
+        } else if (year == null) {
             films = filmDao.getPopularFilmsByGenre(count, genreId);
             log.info("Список популярных фильмов {} жанра возвращён.", genreId);
         } else if (genreId == 0) {

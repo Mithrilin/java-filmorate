@@ -8,19 +8,14 @@ import javax.validation.constraints.NotNull;
 @Data
 public class Event {
     private Integer eventId;
-
     @NotNull
     private Integer userId;
-
     @NotBlank
     private String eventType;
-
     @NotBlank
     private String operation;
-
     @NotNull
     private Integer entityId;
-
     @NotNull
     private final Long timestamp;
 

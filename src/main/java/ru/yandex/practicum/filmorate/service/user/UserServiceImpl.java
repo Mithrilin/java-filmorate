@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.service.user;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.UserDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
@@ -17,7 +16,6 @@ import java.util.List;
 
 @Slf4j
 @Service
-@Component
 public class UserServiceImpl implements UserService {
     private final UserDao userDao;
     private final EventService eventService;

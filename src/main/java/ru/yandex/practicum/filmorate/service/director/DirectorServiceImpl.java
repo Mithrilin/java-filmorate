@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.service.director;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.DirectorDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
@@ -12,7 +11,6 @@ import java.util.List;
 
 @Slf4j
 @Service
-@Component
 public class DirectorServiceImpl implements DirectorService {
 
     private final DirectorDao directorDao;

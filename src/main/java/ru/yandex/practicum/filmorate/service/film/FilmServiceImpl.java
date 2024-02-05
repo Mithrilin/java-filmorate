@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.service.film;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
@@ -17,7 +16,6 @@ import java.util.List;
 
 @Slf4j
 @Service
-@Component
 public class FilmServiceImpl implements FilmService {
     private static final LocalDate INITIAL_RELEASE_DATE = LocalDate.of(1895, 12, 28);
     public static final String DIRECTOR_PARAM = "director";

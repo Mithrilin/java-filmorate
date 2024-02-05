@@ -28,7 +28,7 @@ public class ReviewController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Review> getAllReviewsByFilmId(
             @RequestParam(required = false) Integer filmId,
-            @RequestParam(required = false, defaultValue = "10") int count
+            @RequestParam(defaultValue = "10") int count
     ) {
         return reviewService.getAllReviewsByFilmId(filmId, count);
     }

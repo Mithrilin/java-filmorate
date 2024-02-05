@@ -10,20 +10,15 @@ import javax.validation.constraints.Size;
 @Data
 public class Review {
     private Integer reviewId;
-
     @NotBlank
     @Size(max = 255)
     private String content;
-
     @NotNull
     private Boolean isPositive;
-
     @NotNull
     private Integer userId;
-
     @NotNull
     private Integer filmId;
-
     private Integer useful;
 
     public Review() {

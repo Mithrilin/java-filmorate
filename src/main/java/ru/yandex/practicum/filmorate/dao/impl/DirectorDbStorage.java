@@ -2,15 +2,14 @@ package ru.yandex.practicum.filmorate.dao.impl;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dao.DirectorDao;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 
-import java.sql.PreparedStatement;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Repository("directorDbStorage")
 public class DirectorDbStorage implements DirectorDao {
@@ -21,53 +20,44 @@ public class DirectorDbStorage implements DirectorDao {
     }
 
     @Override
-    public List<Director> getDirectors() {
-        return jdbcTemplate.query("select * from directors order by director_id;", directorRowMapper());
-    }
-
-    @Override
-    public Director getDirectorById(int id) {
-
-        List<Director> listDirector = jdbcTemplate.query(
-                "select * from directors where director_id = ?;", directorRowMapper(), id
-        );
-
-        if (listDirector.isEmpty()) {
-            throw new NotFoundException("Не найден режиссер под id = " + id);
-        }
-
-        return listDirector.get(0);
-    }
-
-
-    @Override
     public Director addDirector(Director director) {
-        String sql = "insert into directors (director_name) values(?);";
+        SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(Objects.requireNonNull(jdbcTemplate.getDataSource()))
+                .withTableName("directors")
+                .usingGeneratedKeyColumns("director_id");
+        Map<String, String> params = Map.of(
+                "director_name", director.getName());
+        director.setId(simpleJdbcInsert.executeAndReturnKey(params).intValue());
+        return director;
+    }
 
-        KeyHolder keyHolder = new GeneratedKeyHolder();
+    @Override
+    public List<Director> getDirectors() {
+        return jdbcTemplate.query("SELECT * " +
+                                      "FROM directors " +
+                                      "ORDER BY director_id", directorRowMapper());
+    }
 
-        jdbcTemplate.update(con -> {
-            PreparedStatement ps = con.prepareStatement(sql, new String[]{"director_id"});
-            ps.setString(1, director.getName());
-            return ps;
-        }, keyHolder);
-
-        return getDirectorById((int) keyHolder.getKey());
+    @Override
+    public List<Director> getDirectorById(int id) {
+        return jdbcTemplate.query("SELECT * " +
+                                      "FROM directors " +
+                                      "WHERE director_id = ?", directorRowMapper(), id);
     }
 
     @Override
     public Director updateDirector(Director director) {
-        int directorId = director.getId();
-
-        jdbcTemplate.update("update directors set director_name = ? where director_id = ?;",
-                director.getName(), directorId);
-
-        return getDirectorById(directorId);
+        int result = jdbcTemplate.update("update directors set director_name = ? where director_id = ?;",
+                director.getName(), director.getId());
+        // Проверка на наличие директора в БД
+        if (result == 0) {
+            return null;
+        }
+        return director;
     }
 
     @Override
     public int deleteDirector(int id) {
-        return jdbcTemplate.update("delete from public.directors where director_id = " + id);
+        return jdbcTemplate.update("DELETE FROM public.directors WHERE director_id = ?", id);
     }
 
     private RowMapper<Director> directorRowMapper() {

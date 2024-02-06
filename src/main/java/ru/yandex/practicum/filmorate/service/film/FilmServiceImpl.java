@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.event.EventService;
 
+import javax.validation.ConstraintViolationException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +40,11 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public Film updateFilm(Film film) {
         isFilmValid(film);
-        filmDao.updateFilm(film);
+        int filmId = film.getId();
+        film = filmDao.updateFilm(film);
+        if (film == null) {
+            throw new NotFoundException("Фильм с id " + filmId + " не найден.");
+        }
         log.info("Фильм с ID {} обновлён.", film.getId());
         return film;
     }
@@ -62,15 +67,15 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public void addLike(int id, int userId) {
-        filmDao.addLike(id, userId);
+    public void addMark(int id, int userId, String mark) {
+        filmDao.addMark(id, userId, mark);
         eventService.addEvent(new Event(userId, "LIKE", "ADD", id));
         log.info("Пользователь с id {} лайкнул фильм с id {}.", userId, id);
     }
 
     @Override
-    public void deleteLike(int id, int userId) {
-        Integer result = filmDao.deleteLike(id, userId);
+    public void deleteMark(int id, int userId) {
+        Integer result = filmDao.deleteMark(id, userId);
         if (result == 0) {
             throw new NotFoundException("Фильм с id " + id + " или пользователь с id " + userId + " не найдены.");
         }
@@ -88,18 +93,30 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public List<Film> getPopularFilms(Integer count, Integer genreId, Integer year) {
         List<Film> films;
-        if (genreId == 0 && year == null) {
-            films = filmDao.getPopularFilms(count);
-            log.info("Список популярных фильмов возвращён.");
-        } else if (year == null) {
-            films = filmDao.getPopularFilmsByGenre(count, genreId);
-            log.info("Список популярных фильмов {} жанра возвращён.", genreId);
-        } else if (genreId == 0) {
-            films = filmDao.getPopularFilmsByYear(count, year);
+        if (genreId == 0 && year == null && count == null) {
+            films = filmDao.getPopularFilms();
+            log.info("Список популярных фильмов без лимитов возвращён.");
+        } else if (genreId == 0 && year == null) {
+            films = filmDao.getPopularFilmsWithLimit(count);
+            log.info("Список популярных фильмов размером {} возвращён.", count);
+        } else if (genreId != 0 && year == null && count == null) {
+            films = filmDao.getPopularFilmsByGenre(genreId);
+            log.info("Список популярных фильмов жанра с ид {} без лимита возвращён.", genreId);
+        } else if (genreId != 0 && year == null) {
+            films = filmDao.getPopularFilmsByGenreWithLimit(count, genreId);
+            log.info("Список популярных фильмов с жанром с ид {} размером {} возвращён.", genreId, count);
+        } else if (genreId != 0 && count == null) {
+            films = filmDao.getPopularFilmsByYearAndGenre(genreId, year);
+            log.info("Список популярных фильмов {} года с жанром с ид {} возвращён.", year, genreId);
+        } else if (genreId != 0) {
+            films = filmDao.getPopularFilmsByYearAndGenreWithLimit(count, genreId, year);
+            log.info("Список популярных фильмов {} года с жанром с ид {} размером {} возвращён.", year, genreId, count);
+        } else if (count == null) {
+            films = filmDao.getPopularFilmsByYear(year);
             log.info("Список популярных фильмов {} года возвращён.", year);
         } else {
-            films = filmDao.getPopularFilmsByYearAndGenre(count, genreId, year);
-            log.info("Список популярных фильмов {} года {} жанра возвращён.", year, genreId);
+            films = filmDao.getPopularFilmsByYearWithLimit(count, year);
+            log.info("Список популярных фильмов {} года размером {} возвращён.", year, count);
         }
         return films;
     }
@@ -112,12 +129,12 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public List<Film> getFilmsSortByDirectorId(int directorId, String sortBy) {
+    public List<Film> getFilmsByDirectorId(int directorId, String sortBy) {
         switch (sortBy) {
             case "year":
-                return filmDao.getFilmsSortYearByDirectorId(directorId);
+                return filmDao.getFilmsByDirectorIdSortByYear(directorId);
             case "likes":
-                return filmDao.getFilmsSortLikesByDirectorId(directorId);
+                return filmDao.getFilmsByDirectorIdSortByLikes(directorId);
             default:
                 throw new NotFoundException("Параметр сортировки не определен! Параметр сортировки = " + sortBy);
         }
@@ -139,7 +156,9 @@ public class FilmServiceImpl implements FilmService {
         } else if (params.size() == 2 && params.containsAll(List.of(TITLE_PARAM, DIRECTOR_PARAM))) {
             log.info("Результат поиска фильма по части названия {}", query);
             return filmDao.getFilmsByTitleAndDirectorSearch(query);
-        } else return new ArrayList<>();
+        } else {
+            throw new ConstraintViolationException("Параметр поиска не определён.", null);
+        }
     }
 
     // Метод проверки минимальной даты

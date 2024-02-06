@@ -179,9 +179,13 @@ class UserDbStorageTest {
     @Test
     @DisplayName("Получение списка рекомендованных фильмов")
     void testGetRecommendationsShouldBeEquals() {
-        int userOneId = userDbStorage.addUser(userOne).getId();
-        int userTwoId = userDbStorage.addUser(userTwo).getId();
-        int userThreeId = userDbStorage.addUser(userThree).getId();
+        int user1Id = userDbStorage.addUser(userOne).getId();
+        int user2Id = userDbStorage.addUser(userTwo).getId();
+        int user3Id = userDbStorage.addUser(userThree).getId();
+        int user4Id = userDbStorage.addUser(new User("444@mail.ru", "log4", "name4", BIRTHDAY_USER_ONE)).getId();
+        int user5Id = userDbStorage.addUser(new User("555@mail.ru", "log5", "name5", BIRTHDAY_USER_ONE)).getId();
+        int user6Id = userDbStorage.addUser(new User("666@mail.ru", "log6", "name6", BIRTHDAY_USER_ONE)).getId();
+
         int film1Id = filmDbStorage.addFilm(new Film("filmName 1", "description 1",
                 LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
         int film2Id = filmDbStorage.addFilm(new Film("filmName 2", "description 2",
@@ -192,68 +196,65 @@ class UserDbStorageTest {
                 LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
         int film5Id = filmDbStorage.addFilm(new Film("filmName 5", "description 5",
                 LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
-        filmDbStorage.addLike(film1Id, userOneId);
-        filmDbStorage.addLike(film1Id, userTwoId);
-        filmDbStorage.addLike(film2Id, userOneId);
-        filmDbStorage.addLike(film2Id, userTwoId);
-        filmDbStorage.addLike(film3Id, userTwoId);
-        filmDbStorage.addLike(film4Id, userThreeId);
-        filmDbStorage.addLike(film5Id, userThreeId);
+        int film6Id = filmDbStorage.addFilm(new Film("filmName 6", "description 6",
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
+        int film9Id = filmDbStorage.addFilm(new Film("filmName 9", "description 9",
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
+        int film10Id = filmDbStorage.addFilm(new Film("filmName 10", "description 10",
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
 
-        List<Film> recommendations = userDbStorage.getRecommendations(userOneId);
+        // фильм для рекомендации
+        Film film7 = new Film("filmName 7", "description 7",
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"));
+        int film7Id = filmDbStorage.addFilm(film7).getId();
+        film7.setId(film7Id);
+        // фильм для рекомендации
+        Film film8 = new Film("filmName 8", "description 8",
+                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"));
+        int film8Id = filmDbStorage.addFilm(film8).getId();
+        film8.setId(film8Id);
+
+        // Целевой пользователь
+        filmDbStorage.addMark(film1Id, user1Id, "10");
+        filmDbStorage.addMark(film4Id, user1Id, "3");
+        filmDbStorage.addMark(film6Id, user1Id, "8");
+
+        // Похожий по оценкам пользователь
+        filmDbStorage.addMark(film1Id, user2Id, "10");
+        filmDbStorage.addMark(film4Id, user2Id, "4");
+        filmDbStorage.addMark(film6Id, user2Id, "8");
+        // фильм для рекомендации
+        filmDbStorage.addMark(film7Id, user2Id, "6");
+        film7.setMark(6.0);
+        // фильм для рекомендации
+        filmDbStorage.addMark(film8Id, user2Id, "10");
+        film8.setMark(10.0);
+        List<Film> films = new ArrayList<>();
+        films.add(film7);
+        films.add(film8);
+
+        filmDbStorage.addMark(film1Id, user3Id, "5");
+        filmDbStorage.addMark(film2Id, user3Id, "10");
+        filmDbStorage.addMark(film4Id, user3Id, "10");
+
+        filmDbStorage.addMark(film5Id, user4Id, "2");
+        filmDbStorage.addMark(film9Id, user4Id, "10");
+        filmDbStorage.addMark(film10Id, user4Id, "7");
+        filmDbStorage.addMark(film4Id, user4Id, "10");
+
+        filmDbStorage.addMark(film2Id, user5Id, "3");
+        filmDbStorage.addMark(film5Id, user5Id, "7");
+        filmDbStorage.addMark(film9Id, user5Id, "10");
+
+        filmDbStorage.addMark(film9Id, user6Id, "10");
+        filmDbStorage.addMark(film7Id, user6Id, "6");
+        filmDbStorage.addMark(film3Id, user6Id, "9");
+
+        List<Film> recommendations = userDbStorage.getRecommendations(user1Id);
 
         assertNotNull(recommendations);
-        assertEquals(1, recommendations.size());
-        assertEquals(film3Id, recommendations.get(0).getId());
-    }
-
-    @Test
-    @DisplayName("Получение списка рекомендованных фильмов, когда у 2х пользователей полностью совпадают лайки ")
-    void testGetRecommendationsShouldEquals3() {
-        int userOneId = userDbStorage.addUser(userOne).getId();
-        int userTwoId = userDbStorage.addUser(userTwo).getId();
-        int userThreeId = userDbStorage.addUser(userThree).getId();
-        int film1Id = filmDbStorage.addFilm(new Film("filmName 1", "description 1",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
-        int film2Id = filmDbStorage.addFilm(new Film("filmName 2", "description 2",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
-        int film3Id = filmDbStorage.addFilm(new Film("filmName 3", "description 3",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
-        int film4Id = filmDbStorage.addFilm(new Film("filmName 4", "description 4",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
-        filmDbStorage.addLike(film1Id, userOneId);
-        filmDbStorage.addLike(film1Id, userTwoId);
-        filmDbStorage.addLike(film2Id, userOneId);
-        filmDbStorage.addLike(film2Id, userTwoId);
-        filmDbStorage.addLike(film3Id, userOneId);
-        filmDbStorage.addLike(film3Id, userTwoId);
-        filmDbStorage.addLike(film1Id, userThreeId);
-        filmDbStorage.addLike(film2Id, userThreeId);
-        filmDbStorage.addLike(film4Id, userThreeId);
-
-        List<Film> recommendations = userDbStorage.getRecommendations(userOneId);
-
-        assertNotNull(recommendations);
-        assertEquals(1, recommendations.size());
-        assertEquals(film4Id, recommendations.get(0).getId());
-    }
-
-    @Test
-    @DisplayName("Получение пустого списка рекомендованных фильмов, когда нет лайков")
-    void testGetRecommendationsShouldBe0WithoutLikes() {
-        int userOneId = userDbStorage.addUser(userOne).getId();
-        userDbStorage.addUser(userTwo);
-        filmDbStorage.addFilm(new Film("filmName 1", "description 1",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G")));
-        filmDbStorage.addFilm(new Film("filmName 2", "description 2",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G")));
-        filmDbStorage.addFilm(new Film("filmName 3", "description 3",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G")));
-
-        List<Film> recommendations = userDbStorage.getRecommendations(userOneId);
-
-        assertNotNull(recommendations);
-        assertEquals(0, recommendations.size());
+        assertEquals(2, recommendations.size());
+        assertTrue(recommendations.containsAll(films));
     }
 
     @Test

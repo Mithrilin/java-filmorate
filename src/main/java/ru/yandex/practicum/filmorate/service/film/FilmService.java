@@ -13,9 +13,9 @@ public interface FilmService {
 
     List<Film> getAllFilms();
 
-    void addLike(int id, int userId);
+    void addMark(int id, int userId, String mark);
 
-    void deleteLike(int id, int userId);
+    void deleteMark(int id, int userId);
 
     void deleteFilm(int id);
 
@@ -23,7 +23,7 @@ public interface FilmService {
 
     List<Film> getCommonFilms(int userId, int friendId);
 
-    List<Film> getFilmsSortByDirectorId(int directorId, String sortBy);
+    List<Film> getFilmsByDirectorId(int directorId, String sortBy);
 
     List<Film> getFilmsBySearch(String query, List<String> params);
 }

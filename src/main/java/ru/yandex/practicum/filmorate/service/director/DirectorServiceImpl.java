@@ -27,11 +27,12 @@ public class DirectorServiceImpl implements DirectorService {
 
     @Override
     public Director getDirectorById(int id) {
-
-        Director director = directorDao.getDirectorById(id);
-
-        log.info("Получен режиссер = {}", director);
-        return director;
+        List<Director> listDirector = directorDao.getDirectorById(id);
+        if (listDirector.isEmpty()) {
+            throw new NotFoundException("Не найден режиссер с id = " + id);
+        }
+        log.info("Получен режиссер с ид {}", id);
+        return listDirector.get(0);
     }
 
     @Override
@@ -43,8 +44,12 @@ public class DirectorServiceImpl implements DirectorService {
 
     @Override
     public Director updateDirector(Director director) {
+        int directorId = director.getId();
         Director upDirector = directorDao.updateDirector(director);
-        log.info("Обновлен режиссер = {}", upDirector);
+        if (upDirector == null) {
+            throw new NotFoundException("Директор с id " + directorId + " не найден.");
+        }
+        log.info("Обновлен режиссер с ид {}", directorId);
         return upDirector;
     }
 

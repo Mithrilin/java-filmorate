@@ -5,10 +5,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dao.UserDao;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -131,109 +128,119 @@ public class UserDbStorage implements UserDao {
 
     @Override
     public List<Film> getRecommendations(int id) {
-        // Пользователи, которые вообще лайкали фильмы
-        List<Integer> usersId = new ArrayList<>();
-        // Список фильмов, которые лайкнул целевой пользователь
-        Map<Integer, Film> usersFavoriteFilms = new HashMap<>();
-        // Список всех фильмов, у которых есть лайки
+        // Список фильмов с оценками целевого пользователя
+        Map<Integer, Double> userMark = new HashMap<>();
+        // Список пользователей с оценками, которые оценили теже фильмы
+        Map<Integer, HashMap<Integer, Double>> allUsersMarks = new HashMap<>();
+        // Различия между оценками пользователей с целевым пользователем
+        Map<Integer, HashMap<Integer, Double>> diff = new HashMap<>();
+        Map<Integer, Integer> match = new HashMap<>();
+        String allUsersMarksSql =
+                "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, d.*, " +
+                "m2.user_id, m2.mark , mk.mark_count " +
+                "FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN marks AS m2 ON f.id = m2.film_id " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                "ORDER BY mk.mark_count DESC NULLS LAST";
         Map<Integer, Film> filmMap = new HashMap<>();
-        // Общий список всех фильмов с лайками по пользователям
-        Map<Integer, HashMap<Integer, Film>> allLikes = new HashMap<>();
-        String sql = "select l.user_id, l.film_id, " +
-                "f.name as film_name, f.releasedate, f.description, f.duration, f.mpa_id, " +
-                "m.name as mpa_name, fg.genre_id, g.name as genre_name " +
-                "from likes l " +
-                "join films f on f.id = l.film_id " +
-                "join mpa m on f.mpa_id = m.id " +
-                "left outer join film_genres fg on f.id = fg.film_id " +
-                "left outer join genres g on fg.genre_id = g.id " +
-                "order by l.user_id, l.film_id;";
-        // Собираем все списки
-        jdbcTemplate.query(sql, likedFilmsRowMapper(allLikes, usersId, filmMap, usersFavoriteFilms, id));
-        // Проставляем количество лайков к каждому фильму
-        jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by film_id;",
-                (RowMapper<Film>) (rs, rowNum) -> {
-                    do {
-                        filmMap.get(rs.getInt("film_id")).setLike(rs.getInt("count(user_id)"));
-                    } while (rs.next());
-                    return null;
-                });
-        // Максимальное количество совпадений
-        int matchesMax = 0;
-        // Список рекомендаций
-        List<Film> recommendations = new ArrayList<>();
-        // Проходим по списку пользователей
-        for (Integer userId : usersId) {
-            // Проверяем, что пользователь не целевой
-            if (userId != id) {
-                HashMap<Integer, Film> likedFilms = allLikes.get(userId);
-                // Количество совпадений лайков с конкретным пользователем
-                int matches = 0;
-                List<Film> recommendationsTemp = new ArrayList<>();
-                // Проходим по списку фильмов пользователя
-                for (Integer filmId : likedFilms.keySet()) {
-                    // Проверяем совпадает ли лайк с целевым пользователем
-                    if (usersFavoriteFilms.containsKey(filmId)) {
-                        // Если совпадает, то увеличиваем счётчик
-                        matches++;
-                    } else {
-                        // Если не совпадает, добавляем во временные рекомендации
-                        recommendationsTemp.add(filmMap.get(filmId));
-                    }
+        Map<Integer, HashMap<Integer, Genre>> filmGenreMap = new HashMap<>();
+        Map<Integer, HashMap<Integer, Director>> filmDirectorMap = new HashMap<>();
+        jdbcTemplate.query(allUsersMarksSql, (RowMapper<Film>) (rs, rowNum) -> {
+            int userId = rs.getInt("user_id");
+            int filmId = rs.getInt("id");
+            double mark = rs.getDouble("mark_count");
+
+            if (!filmMap.containsKey(filmId)) {
+                Film film = new Film(
+                        rs.getString("name"),
+                        rs.getString("description"),
+                        rs.getDate("releasedate").toLocalDate(),
+                        rs.getInt("duration"),
+                        new Mpa(rs.getInt("mpa_id"),
+                                rs.getString("mpa_name")));
+                film.setMark(rs.getDouble("mark_count"));
+                film.setId(filmId);
+                filmMap.put(filmId, film);
+                filmGenreMap.put(filmId, new HashMap<>());
+                filmDirectorMap.put(filmId, new HashMap<>());
+            }
+            int genreId = rs.getInt("genre_id");
+            if (genreId != 0 && !filmGenreMap.get(filmId).containsKey(genreId)) {
+                Genre genre = new Genre(genreId, rs.getString("genre_name"));
+                filmGenreMap.get(filmId).put(genreId, genre);
+                filmMap.get(filmId).getGenres().add(genre);
+            }
+            int directorId = rs.getInt("director_id");
+            if (directorId != 0 && !filmDirectorMap.get(filmId).containsKey(directorId)) {
+                Director director = new Director(directorId, rs.getString("director_name"));
+                filmDirectorMap.get(filmId).put(directorId, director);
+                filmMap.get(filmId).getDirectors().add(director);
+            }
+            if (userId == id) {
+                if (!userMark.containsKey(filmId)) {
+                    userMark.put(filmId, mark);
                 }
-                // Проверяем, что у пользователя помимо совпавших фильмов есть и фильмы для рекомендации
-                // И что у этого пользователя наибольшее количество совпадений
-                if (matches < likedFilms.size() && matches > matchesMax) {
-                    matchesMax = matches;
-                    recommendations = recommendationsTemp;
+            } else {
+                if (!allUsersMarks.containsKey(userId)) {
+                    allUsersMarks.put(userId, new HashMap<>());
+                }
+                if (!allUsersMarks.get(userId).containsKey(filmId)) {
+                    allUsersMarks.get(userId).put(filmId, mark);
+                }
+            }
+            return null;
+        });
+
+        for (Map.Entry<Integer, HashMap<Integer, Double>> users : allUsersMarks.entrySet()) {
+            for (Map.Entry<Integer, Double> e : users.getValue().entrySet()) {
+                // ид пользователя
+                int userId = users.getKey();
+                if (!diff.containsKey(userId)) {
+                    diff.put(userId, new HashMap<>());
+                    match.put(userId, 0);
+                }
+                // ИД фильма
+                int filmId = e.getKey();
+                // Оценка
+                double mark = e.getValue();
+                if (userMark.containsKey(filmId)) {
+                    diff.get(userId).put(filmId, userMark.get(filmId) - mark);
+                    int newMatch = match.get(userId) + 1;
+                    match.put(userId, newMatch);
+                }
+            }
+        }
+        int userMinDiff = 0;
+        double minDiffCount = Double.MAX_VALUE;
+        for (Map.Entry<Integer, HashMap<Integer, Double>> users : diff.entrySet()) {
+            double sumDiff = 0;
+            for (Double e : users.getValue().values()) {
+                sumDiff += e;
+            }
+            double count = Math.abs(sumDiff / match.get(users.getKey()));
+            if (count < minDiffCount) {
+                minDiffCount = count;
+                userMinDiff = users.getKey();
+            }
+        }
+        List<Film> recommendations = new ArrayList<>();
+        Map<Integer, Double> recommendationMap = allUsersMarks.get(userMinDiff);
+        for (Map.Entry<Integer, Double> e : recommendationMap.entrySet()) {
+            if (!userMark.containsKey(e.getKey())) {
+                if (e.getValue() > 5) {
+                    recommendations.add(filmMap.get(e.getKey()));
                 }
             }
         }
         return recommendations;
-    }
-
-    private RowMapper<Object> likedFilmsRowMapper(Map<Integer, HashMap<Integer, Film>> allLikes,
-                                                  List<Integer> usersId,
-                                                  Map<Integer, Film> filmMap,
-                                                  Map<Integer, Film> usersFavoriteFilms,
-                                                  int id) {
-        return (rs, rowNum) -> {
-            int userId = rs.getInt("user_id");
-            // Проверяем есть ли такой пользователь в списке
-            if (!allLikes.containsKey(userId)) {
-                allLikes.put(userId, new HashMap<>());
-                usersId.add(userId);
-            }
-            int filmId = rs.getInt("film_id");
-            // Проверяем есть ли этот фильм в списке лайков пользователя
-            if (!allLikes.get(userId).containsKey(filmId)) {
-                // Проверяем есть ли этот фильм в списке фильмов
-                if (!filmMap.containsKey(filmId)) {
-                    Film film = new Film(
-                            rs.getString("film_name"),
-                            rs.getString("description"),
-                            rs.getDate("releasedate").toLocalDate(),
-                            rs.getInt("duration"),
-                            new Mpa(rs.getInt("mpa_id"),
-                                    rs.getString("mpa_name")));
-                    film.setId(filmId);
-                    filmMap.put(filmId, film);
-                }
-                allLikes.get(userId).put(filmId, filmMap.get(filmId));
-                // Проверяем является ли данный пользователь целевым
-                if (userId == id) {
-                    usersFavoriteFilms.put(filmId, filmMap.get(filmId));
-                }
-            }
-            Genre genre = new Genre(
-                    rs.getInt("genre_id"),
-                    rs.getString("genre_name"));
-            // Проверяем есть ли у фильма жанры
-            if (genre.getId() != 0) {
-                allLikes.get(userId).get(filmId).getGenres().add(genre);
-            }
-            return null;
-        };
     }
 
     private RowMapper<User> usersListRowMapper(Map<Integer, User> usersMap) {

@@ -69,7 +69,7 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public void addMark(int id, int userId, int mark) {
         filmDao.addMark(id, userId, mark);
-        eventService.addEvent(new Event(userId, "LIKE", "ADD", id));
+        eventService.addEvent(new Event(userId, "MARK", "ADD", id));
         log.info("Пользователь с id {} лайкнул фильм с id {}.", userId, id);
     }
 
@@ -79,7 +79,7 @@ public class FilmServiceImpl implements FilmService {
         if (result == 0) {
             throw new NotFoundException("Фильм с id " + id + " или пользователь с id " + userId + " не найдены.");
         }
-        eventService.addEvent(new Event(userId, "LIKE", "REMOVE", id));
+        eventService.addEvent(new Event(userId, "MARK", "REMOVE", id));
         log.info("Пользователь с id {} удалил лайк к фильму с id {}.", userId, id);
     }
 

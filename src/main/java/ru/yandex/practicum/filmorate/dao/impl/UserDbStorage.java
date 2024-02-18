@@ -15,6 +15,21 @@ import java.util.*;
 
 @Repository("userDbStorage")
 public class UserDbStorage implements UserDao {
+    private static final String ALL_USERS_MARKS_SQL =
+            "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, d.*, " +
+                    "m2.user_id, m2.mark , mk.rating_count " +
+            "FROM films AS f " +
+            "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+            "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+            "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+            "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+            "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+            "LEFT JOIN marks AS m2 ON f.id = m2.film_id " +
+            "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                        "FROM marks " +
+                        "GROUP BY film_id " +
+                        "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+            "ORDER BY mk.rating_count DESC NULLS LAST";
     private final JdbcTemplate jdbcTemplate;
 
     public UserDbStorage(JdbcTemplate jdbcTemplate) {
@@ -128,30 +143,14 @@ public class UserDbStorage implements UserDao {
 
     @Override
     public List<Film> getRecommendations(int id) {
-        // Список фильмов с оценками целевого пользователя
-        Map<Integer, Double> userMark = new HashMap<>();
+        Map<Integer, Double> filmIdToMarkForUser = new HashMap<>();
         // Список пользователей с оценками, которые оценили те же фильмы
         Map<Integer, HashMap<Integer, Double>> allUsersMarks = new HashMap<>();
         // Различия между оценками пользователей с целевым пользователем
         Map<Integer, HashMap<Integer, Double>> diff = new HashMap<>();
         Map<Integer, Integer> match = new HashMap<>();
-        String allUsersMarksSql =
-                "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, d.*, " +
-                "m2.user_id, m2.mark , mk.rating_count " +
-                "FROM films AS f " +
-                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
-                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
-                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
-                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
-                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN marks AS m2 ON f.id = m2.film_id " +
-                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
-                            "FROM marks " +
-                            "GROUP BY film_id " +
-                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
-                "ORDER BY mk.rating_count DESC NULLS LAST";
         Map<Integer, Film> filmByIds = new HashMap<>();
-        jdbcTemplate.query(allUsersMarksSql, recommendedFilmsRowMapper(filmByIds, userMark, allUsersMarks, id));
+        jdbcTemplate.query(ALL_USERS_MARKS_SQL, recommendedFilmsRowMapper(filmByIds, filmIdToMarkForUser, allUsersMarks, id));
 
         for (Map.Entry<Integer, HashMap<Integer, Double>> users : allUsersMarks.entrySet()) {
             for (Map.Entry<Integer, Double> e : users.getValue().entrySet()) {
@@ -165,8 +164,8 @@ public class UserDbStorage implements UserDao {
                 int filmId = e.getKey();
                 // Оценка
                 double mark = e.getValue();
-                if (userMark.containsKey(filmId)) {
-                    diff.get(userId).put(filmId, userMark.get(filmId) - mark);
+                if (filmIdToMarkForUser.containsKey(filmId)) {
+                    diff.get(userId).put(filmId, filmIdToMarkForUser.get(filmId) - mark);
                     int newMatch = match.get(userId) + 1;
                     match.put(userId, newMatch);
                 }
@@ -188,7 +187,7 @@ public class UserDbStorage implements UserDao {
         List<Film> recommendations = new ArrayList<>();
         Map<Integer, Double> recommendationMap = allUsersMarks.get(userMinDiff);
         for (Map.Entry<Integer, Double> e : recommendationMap.entrySet()) {
-            if (!userMark.containsKey(e.getKey())) {
+            if (!filmIdToMarkForUser.containsKey(e.getKey())) {
                 if (e.getValue() > 5) {
                     recommendations.add(filmByIds.get(e.getKey()));
                 }
@@ -198,7 +197,7 @@ public class UserDbStorage implements UserDao {
     }
 
     private RowMapper<Film> recommendedFilmsRowMapper(Map<Integer, Film> filmByIds,
-                                                      Map<Integer, Double> userMark,
+                                                      Map<Integer, Double> filmIdToMarkForUser,
                                                       Map<Integer, HashMap<Integer, Double>> allUsersMarks,
                                                       int id) {
         Map<Integer, HashMap<Integer, Genre>> filmGenreMap = new HashMap<>();
@@ -235,8 +234,8 @@ public class UserDbStorage implements UserDao {
                 filmByIds.get(filmId).getDirectors().add(director);
             }
             if (userId == id) {
-                if (!userMark.containsKey(filmId)) {
-                    userMark.put(filmId, mark);
+                if (!filmIdToMarkForUser.containsKey(filmId)) {
+                    filmIdToMarkForUser.put(filmId, mark);
                 }
             } else {
                 if (!allUsersMarks.containsKey(userId)) {

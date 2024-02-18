@@ -112,12 +112,12 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public List<Film> getFilmsSortByDirectorId(int directorId, String sortBy) {
+    public List<Film> getFilmsByDirectorId(int directorId, String sortBy) {
         switch (sortBy) {
             case "year":
-                return filmDao.getFilmsSortYearByDirectorId(directorId);
+                return filmDao.getFilmsByDirectorIdSortByYear(directorId);
             case "likes":
-                return filmDao.getFilmsSortLikesByDirectorId(directorId);
+                return filmDao.getFilmsByDirectorIdSortByLikes(directorId);
             default:
                 throw new NotFoundException("Параметр сортировки не определен! Параметр сортировки = " + sortBy);
         }

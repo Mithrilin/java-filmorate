@@ -12,7 +12,6 @@ import java.util.List;
 @AllArgsConstructor
 @RequestMapping("/directors")
 public class DirectorController {
-
     private final DirectorService directorService;
 
     //GET /directors - Список всех режиссёров

@@ -237,7 +237,7 @@ public class FilmDbStorage implements FilmDao {
 
 
     @Override
-    public List<Film> getFilmsSortYearByDirectorId(int directorId) {
+    public List<Film> getFilmsByDirectorIdSortByYear(int directorId) {
         String sqlSortYear = "select df.film_id " +
                 "from directors_film df " +
                 "join films f on df.film_id = f.id " +
@@ -250,7 +250,7 @@ public class FilmDbStorage implements FilmDao {
     }
 
     @Override
-    public List<Film> getFilmsSortLikesByDirectorId(int directorId) {
+    public List<Film> getFilmsByDirectorIdSortByLikes(int directorId) {
         //проверка на наличие режиссера
         if (jdbcTemplate.queryForList(
                 "select director_id from directors where director_id = ?;", Integer.class, directorId).isEmpty()

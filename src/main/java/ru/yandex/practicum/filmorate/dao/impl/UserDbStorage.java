@@ -145,7 +145,7 @@ public class UserDbStorage implements UserDao {
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
                 "LEFT JOIN marks AS m2 ON f.id = m2.film_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +

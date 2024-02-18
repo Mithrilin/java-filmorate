@@ -81,7 +81,7 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS mark_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
@@ -101,7 +101,7 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
@@ -139,7 +139,7 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
@@ -160,13 +160,13 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
@@ -187,7 +187,7 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
@@ -209,13 +209,13 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
@@ -238,14 +238,14 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
                                 "LEFT JOIN film_genres AS fg2 ON f2.id = fg2.film_id " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
@@ -267,14 +267,14 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
                                 "LEFT JOIN film_genres AS fg2 ON f2.id = fg2.film_id " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
@@ -297,14 +297,14 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
                                 "LEFT JOIN film_genres AS fg2 ON f2.id = fg2.film_id " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
@@ -327,14 +327,14 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
                                 "LEFT JOIN film_genres AS fg2 ON f2.id = fg2.film_id " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
@@ -358,7 +358,7 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
@@ -386,14 +386,14 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mrating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
                                 "LEFT JOIN directors_film AS df2 ON f2.id = df2.film_id " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
@@ -414,14 +414,14 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
                                 "LEFT JOIN directors_film AS df2 ON f2.id = df2.film_id " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
@@ -442,7 +442,7 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
@@ -464,7 +464,7 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
@@ -487,7 +487,7 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
@@ -508,7 +508,7 @@ public class FilmDbStorage implements FilmDao {
                 rs.getInt("duration"),
                 new Mpa(rs.getInt("mpa_id"),
                         rs.getString("mpa_name")));
-        film.setRating(rs.getDouble("mark_count"));
+        film.setRating(rs.getDouble("rating_count"));
         return film;
     }
 

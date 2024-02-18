@@ -38,7 +38,7 @@ primary key (film_id, director_id)
 create table if not exists marks (
 	user_id integer not null references users(id) on delete cascade,
 	film_id integer not null references films(id) on delete cascade,
-	mark real not null CHECK (mark > 0 AND mark <= 10),
+	mark integer not null CHECK (mark > 0 AND mark <= 10),
 	primary key (user_id, film_id)
 );
 

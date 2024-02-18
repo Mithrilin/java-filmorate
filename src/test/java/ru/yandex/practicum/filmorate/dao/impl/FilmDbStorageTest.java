@@ -182,7 +182,7 @@ class FilmDbStorageTest {
         List<Film> returnedFilms = filmDbStorage.getAllFilms();
 
         assertEquals(2, returnedFilms.size());
-        assertEquals(6, returnedFilms.get(0).getMark());
+        assertEquals(6, returnedFilms.get(0).getRating());
     }
 
     @Test
@@ -196,7 +196,7 @@ class FilmDbStorageTest {
         filmDbStorage.addMark(filmId, userIdTwo, 6);
 
         Film film = filmDbStorage.getFilmById(filmId).get(0);
-        assertEquals(8, film.getMark());
+        assertEquals(8, film.getRating());
     }
 
     @Test
@@ -209,7 +209,7 @@ class FilmDbStorageTest {
         filmDbStorage.deleteMark(filmId, userId);
 
         Film film = filmDbStorage.getFilmById(filmId).get(0);
-        assertEquals(0, film.getMark());
+        assertEquals(0, film.getRating());
     }
 
     @Test
@@ -242,7 +242,7 @@ class FilmDbStorageTest {
 
         assertEquals(1, films.size());
         assertEquals(filmId, films.get(0).getId());
-        assertEquals(7, films.get(0).getMark());
+        assertEquals(7, films.get(0).getRating());
     }
 
     @Test
@@ -355,7 +355,7 @@ class FilmDbStorageTest {
         filmDbStorage.addMark(2, 1, 10);
         List<Film> films = filmDbStorage.getFilmsByTitleSearch("фильм");
         assertEquals(2, films.size());
-        assertEquals(10, films.get(0).getMark());
+        assertEquals(10, films.get(0).getRating());
     }
 
     @Test
@@ -381,7 +381,7 @@ class FilmDbStorageTest {
         List<Film> films = filmDbStorage.getFilmsByTitleAndDirectorSearch("dir");
 
         assertEquals(2, films.size());
-        assertEquals(10, films.get(0).getMark());
+        assertEquals(10, films.get(0).getRating());
     }
 
     @Test
@@ -407,7 +407,7 @@ class FilmDbStorageTest {
         List<Film> films = filmDbStorage.getFilmsByDirectorSearch("dir");
 
         assertEquals(2, films.size());
-        assertEquals(10, films.get(0).getMark());
+        assertEquals(10, films.get(0).getRating());
     }
 
     @Test

@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.model;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
@@ -15,7 +14,6 @@ public class Film {
     private static final int MAX_DESCRIPTION_SIZE = 200;
     private Integer id;
     @NotBlank
-    @NotNull
     private final String name;
     @Size(max = MAX_DESCRIPTION_SIZE)
     private final String description;
@@ -24,7 +22,7 @@ public class Film {
     private final Integer duration;
     private final Mpa mpa;
     private List<Genre> genres = new ArrayList<>();
-    private Double mark;
+    private Double rating;
     private List<Director> directors = new ArrayList<>();
 
     public Film(String name, String description, LocalDate releaseDate, Integer duration, Mpa mpa) {
@@ -33,6 +31,6 @@ public class Film {
         this.releaseDate = releaseDate;
         this.duration = duration;
         this.mpa = mpa;
-        this.mark = 0.0;
+        this.rating = 0.0;
     }
 }

@@ -137,7 +137,7 @@ public class UserDbStorage implements UserDao {
         Map<Integer, Integer> match = new HashMap<>();
         String allUsersMarksSql =
                 "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, d.*, " +
-                "m2.user_id, m2.mark , mk.mark_count " +
+                "m2.user_id, m2.mark , mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
@@ -145,11 +145,11 @@ public class UserDbStorage implements UserDao {
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
                 "LEFT JOIN marks AS m2 ON f.id = m2.film_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         Map<Integer, Film> filmMap = new HashMap<>();
         jdbcTemplate.query(allUsersMarksSql, recommendedFilmsRowMapper(filmMap, userMark, allUsersMarks, id));
 
@@ -216,7 +216,7 @@ public class UserDbStorage implements UserDao {
                         rs.getInt("duration"),
                         new Mpa(rs.getInt("mpa_id"),
                                 rs.getString("mpa_name")));
-                film.setMark(rs.getDouble("mark_count"));
+                film.setRating(rs.getDouble("rating_count"));
                 film.setId(filmId);
                 filmMap.put(filmId, film);
                 filmGenreMap.put(filmId, new HashMap<>());

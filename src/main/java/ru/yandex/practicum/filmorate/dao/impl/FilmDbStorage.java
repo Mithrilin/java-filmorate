@@ -74,7 +74,7 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getFilmById(int id) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
@@ -84,7 +84,7 @@ public class FilmDbStorage implements FilmDao {
                 "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id = ?";
         Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
@@ -94,18 +94,18 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getAllFilms() {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
@@ -132,18 +132,18 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getPopularFilms() {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
@@ -153,25 +153,25 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getPopularFilmsWithLimit(Integer count) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
-                                            "ORDER BY mark_count DESC) AS mk ON f2.id = mk.film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "LIMIT ?) " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
         jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), count);
@@ -180,19 +180,19 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getPopularFilmsByYear(Integer year) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE EXTRACT(YEAR FROM f.releasedate) = ? " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
@@ -202,26 +202,26 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getPopularFilmsByYearWithLimit(Integer count, Integer year) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
-                                            "ORDER BY mark_count DESC) AS mk ON f2.id = mk.film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "WHERE EXTRACT(YEAR FROM f2.releasedate) = ? " +
                                 "LIMIT ?) " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
@@ -231,26 +231,26 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getPopularFilmsByGenre(Integer genreId) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
                                 "LEFT JOIN film_genres AS fg2 ON f2.id = fg2.film_id " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
-                                            "ORDER BY mark_count DESC) AS mk ON f2.id = mk.film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "WHERE fg2.genre_id = ?) " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
@@ -260,27 +260,27 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getPopularFilmsByGenreWithLimit(Integer count, Integer genreId) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
                                 "LEFT JOIN film_genres AS fg2 ON f2.id = fg2.film_id " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
-                                            "ORDER BY mark_count DESC) AS mk ON f2.id = mk.film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "WHERE fg2.genre_id = ? " +
                                 "LIMIT ?) " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
@@ -290,27 +290,27 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getPopularFilmsByYearAndGenre(Integer genreId, Integer year) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
                                 "LEFT JOIN film_genres AS fg2 ON f2.id = fg2.film_id " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
-                                            "ORDER BY mark_count DESC) AS mk ON f2.id = mk.film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "WHERE EXTRACT(YEAR FROM f2.releasedate) = ? " +
                                 "AND fg2.genre_id = ?) " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
@@ -320,28 +320,28 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getPopularFilmsByYearAndGenreWithLimit(Integer count, Integer genreId, Integer year) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
                                 "LEFT JOIN film_genres AS fg2 ON f2.id = fg2.film_id " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
-                                            "ORDER BY mark_count DESC) AS mk ON f2.id = mk.film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "WHERE EXTRACT(YEAR FROM f2.releasedate) = ? " +
                                 "AND fg2.genre_id = ? " +
                                 "LIMIT ?) " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         // Сборка всех фильмов в мапу
         Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
@@ -351,17 +351,17 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getCommonFilms(int userId, int friendId) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT mk2.film_id " +
                                 "FROM marks AS mk2 " +
                                 "WHERE mk2.user_id = ? " +
@@ -370,7 +370,7 @@ public class FilmDbStorage implements FilmDao {
                                                 "FROM marks " +
                                                 "WHERE user_id = ? " +
                                                 "AND mark > 5)) " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
         jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), userId, friendId);
@@ -379,24 +379,24 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getFilmsByDirectorIdSortByYear(int directorId) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mrating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
                                 "LEFT JOIN directors_film AS df2 ON f2.id = df2.film_id " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
-                                            "ORDER BY mark_count DESC) AS mk ON f2.id = mk.film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "WHERE df2.director_id = ?) " +
                 "ORDER BY f.releasedate";
         Map<Integer, Film> filmMap = new HashMap<>();
@@ -407,26 +407,26 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getFilmsByDirectorIdSortByLikes(int directorId) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id IN (SELECT f2.id " +
                                 "FROM films AS f2 " +
                                 "LEFT JOIN directors_film AS df2 ON f2.id = df2.film_id " +
-                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                                             "FROM marks " +
                                             "GROUP BY film_id " +
-                                            "ORDER BY mark_count DESC) AS mk ON f2.id = mk.film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "WHERE df2.director_id = ?) " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
         jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), directorId);
@@ -435,19 +435,19 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getFilmsByTitleSearch(String query) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE UPPER (f.name) LIKE UPPER (?) " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         Map<Integer, Film> filmMap = new HashMap<>();
         String param = "%" + query + "%";
         List<Film> films = new ArrayList<>();
@@ -457,20 +457,20 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getFilmsByTitleAndDirectorSearch(String query) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE UPPER (f.name) LIKE UPPER (?) " +
                 "OR UPPER (d.director_name) LIKE UPPER (?) " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         Map<Integer, Film> filmMap = new HashMap<>();
         String param = "%" + query + "%";
         List<Film> films = new ArrayList<>();
@@ -480,19 +480,19 @@ public class FilmDbStorage implements FilmDao {
 
     @Override
     public List<Film> getFilmsByDirectorSearch(String query) {
-        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.mark_count " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
                 "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
                 "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
                 "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS mark_count " +
+                "LEFT JOIN (SELECT film_id, sum(mark)/count(film_id) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
-                            "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE UPPER (d.director_name) LIKE UPPER (?) " +
-                "ORDER BY mk.mark_count DESC NULLS LAST";
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         Map<Integer, Film> filmMap = new HashMap<>();
         String param = "%" + query + "%";
         List<Film> films = new ArrayList<>();
@@ -508,7 +508,7 @@ public class FilmDbStorage implements FilmDao {
                 rs.getInt("duration"),
                 new Mpa(rs.getInt("mpa_id"),
                         rs.getString("mpa_name")));
-        film.setMark(rs.getDouble("mark_count"));
+        film.setRating(rs.getDouble("mark_count"));
         return film;
     }
 

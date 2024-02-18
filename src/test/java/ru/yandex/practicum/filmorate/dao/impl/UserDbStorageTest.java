@@ -225,10 +225,10 @@ class UserDbStorageTest {
         filmDbStorage.addMark(film6Id, user2Id, 8);
         // фильм для рекомендации
         filmDbStorage.addMark(film7Id, user2Id, 6);
-        film7.setMark(6.0);
+        film7.setRating(6.0);
         // фильм для рекомендации
         filmDbStorage.addMark(film8Id, user2Id, 10);
-        film8.setMark(10.0);
+        film8.setRating(10.0);
         List<Film> films = new ArrayList<>();
         films.add(film7);
         films.add(film8);

@@ -150,8 +150,8 @@ public class UserDbStorage implements UserDao {
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        Map<Integer, Film> filmMap = new HashMap<>();
-        jdbcTemplate.query(allUsersMarksSql, recommendedFilmsRowMapper(filmMap, userMark, allUsersMarks, id));
+        Map<Integer, Film> filmByIds = new HashMap<>();
+        jdbcTemplate.query(allUsersMarksSql, recommendedFilmsRowMapper(filmByIds, userMark, allUsersMarks, id));
 
         for (Map.Entry<Integer, HashMap<Integer, Double>> users : allUsersMarks.entrySet()) {
             for (Map.Entry<Integer, Double> e : users.getValue().entrySet()) {
@@ -190,14 +190,14 @@ public class UserDbStorage implements UserDao {
         for (Map.Entry<Integer, Double> e : recommendationMap.entrySet()) {
             if (!userMark.containsKey(e.getKey())) {
                 if (e.getValue() > 5) {
-                    recommendations.add(filmMap.get(e.getKey()));
+                    recommendations.add(filmByIds.get(e.getKey()));
                 }
             }
         }
         return recommendations;
     }
 
-    private RowMapper<Film> recommendedFilmsRowMapper(Map<Integer, Film> filmMap,
+    private RowMapper<Film> recommendedFilmsRowMapper(Map<Integer, Film> filmByIds,
                                                       Map<Integer, Double> userMark,
                                                       Map<Integer, HashMap<Integer, Double>> allUsersMarks,
                                                       int id) {
@@ -208,7 +208,7 @@ public class UserDbStorage implements UserDao {
             int filmId = rs.getInt("id");
             double mark = rs.getDouble("mark_count");
 
-            if (!filmMap.containsKey(filmId)) {
+            if (!filmByIds.containsKey(filmId)) {
                 Film film = new Film(
                         rs.getString("name"),
                         rs.getString("description"),
@@ -218,7 +218,7 @@ public class UserDbStorage implements UserDao {
                                 rs.getString("mpa_name")));
                 film.setRating(rs.getDouble("rating_count"));
                 film.setId(filmId);
-                filmMap.put(filmId, film);
+                filmByIds.put(filmId, film);
                 filmGenreMap.put(filmId, new HashMap<>());
                 filmDirectorMap.put(filmId, new HashMap<>());
             }
@@ -226,13 +226,13 @@ public class UserDbStorage implements UserDao {
             if (genreId != 0 && !filmGenreMap.get(filmId).containsKey(genreId)) {
                 Genre genre = new Genre(genreId, rs.getString("genre_name"));
                 filmGenreMap.get(filmId).put(genreId, genre);
-                filmMap.get(filmId).getGenres().add(genre);
+                filmByIds.get(filmId).getGenres().add(genre);
             }
             int directorId = rs.getInt("director_id");
             if (directorId != 0 && !filmDirectorMap.get(filmId).containsKey(directorId)) {
                 Director director = new Director(directorId, rs.getString("director_name"));
                 filmDirectorMap.get(filmId).put(directorId, director);
-                filmMap.get(filmId).getDirectors().add(director);
+                filmByIds.get(filmId).getDirectors().add(director);
             }
             if (userId == id) {
                 if (!userMark.containsKey(filmId)) {

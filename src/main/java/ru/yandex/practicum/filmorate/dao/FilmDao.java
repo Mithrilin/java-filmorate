@@ -13,7 +13,7 @@ public interface FilmDao {
 
     List<Film> getAllFilms();
 
-    void addMark(int id, int userId, String mark);
+    void addMark(int id, int userId, int mark);
 
     Integer deleteMark(int id, int userId);
 

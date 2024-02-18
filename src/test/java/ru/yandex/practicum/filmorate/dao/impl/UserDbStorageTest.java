@@ -215,40 +215,40 @@ class UserDbStorageTest {
         film8.setId(film8Id);
 
         // Целевой пользователь
-        filmDbStorage.addMark(film1Id, user1Id, "10");
-        filmDbStorage.addMark(film4Id, user1Id, "3");
-        filmDbStorage.addMark(film6Id, user1Id, "8");
+        filmDbStorage.addMark(film1Id, user1Id, 10);
+        filmDbStorage.addMark(film4Id, user1Id, 3);
+        filmDbStorage.addMark(film6Id, user1Id, 8);
 
         // Похожий по оценкам пользователь
-        filmDbStorage.addMark(film1Id, user2Id, "10");
-        filmDbStorage.addMark(film4Id, user2Id, "4");
-        filmDbStorage.addMark(film6Id, user2Id, "8");
+        filmDbStorage.addMark(film1Id, user2Id, 10);
+        filmDbStorage.addMark(film4Id, user2Id, 4);
+        filmDbStorage.addMark(film6Id, user2Id, 8);
         // фильм для рекомендации
-        filmDbStorage.addMark(film7Id, user2Id, "6");
+        filmDbStorage.addMark(film7Id, user2Id, 6);
         film7.setMark(6.0);
         // фильм для рекомендации
-        filmDbStorage.addMark(film8Id, user2Id, "10");
+        filmDbStorage.addMark(film8Id, user2Id, 10);
         film8.setMark(10.0);
         List<Film> films = new ArrayList<>();
         films.add(film7);
         films.add(film8);
 
-        filmDbStorage.addMark(film1Id, user3Id, "5");
-        filmDbStorage.addMark(film2Id, user3Id, "10");
-        filmDbStorage.addMark(film4Id, user3Id, "10");
+        filmDbStorage.addMark(film1Id, user3Id, 5);
+        filmDbStorage.addMark(film2Id, user3Id, 10);
+        filmDbStorage.addMark(film4Id, user3Id, 10);
 
-        filmDbStorage.addMark(film5Id, user4Id, "2");
-        filmDbStorage.addMark(film9Id, user4Id, "10");
-        filmDbStorage.addMark(film10Id, user4Id, "7");
-        filmDbStorage.addMark(film4Id, user4Id, "10");
+        filmDbStorage.addMark(film5Id, user4Id, 2);
+        filmDbStorage.addMark(film9Id, user4Id, 10);
+        filmDbStorage.addMark(film10Id, user4Id, 7);
+        filmDbStorage.addMark(film4Id, user4Id, 10);
 
-        filmDbStorage.addMark(film2Id, user5Id, "3");
-        filmDbStorage.addMark(film5Id, user5Id, "7");
-        filmDbStorage.addMark(film9Id, user5Id, "10");
+        filmDbStorage.addMark(film2Id, user5Id, 3);
+        filmDbStorage.addMark(film5Id, user5Id, 7);
+        filmDbStorage.addMark(film9Id, user5Id, 10);
 
-        filmDbStorage.addMark(film9Id, user6Id, "10");
-        filmDbStorage.addMark(film7Id, user6Id, "6");
-        filmDbStorage.addMark(film3Id, user6Id, "9");
+        filmDbStorage.addMark(film9Id, user6Id, 10);
+        filmDbStorage.addMark(film7Id, user6Id, 6);
+        filmDbStorage.addMark(film3Id, user6Id, 9);
 
         List<Film> recommendations = userDbStorage.getRecommendations(user1Id);
 

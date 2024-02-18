@@ -40,7 +40,7 @@ public class FilmController {
     @PutMapping("/{id}/mark/{userId}")
     public void addMark(@PathVariable int id,
                         @PathVariable int userId,
-                        @RequestParam String mark) {
+                        @RequestParam int mark) {
         filmService.addMark(id, userId, mark);
     }
 

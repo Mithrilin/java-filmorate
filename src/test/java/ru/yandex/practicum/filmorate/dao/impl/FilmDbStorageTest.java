@@ -177,7 +177,7 @@ class FilmDbStorageTest {
         int filmId = filmDbStorage.addFilm(filmOne).getId();
         filmDbStorage.addFilm(filmTwo);
         int userId = userDbStorage.addUser(userOne).getId();
-        filmDbStorage.addMark(filmId, userId, "6");
+        filmDbStorage.addMark(filmId, userId, 6);
 
         List<Film> returnedFilms = filmDbStorage.getAllFilms();
 
@@ -192,8 +192,8 @@ class FilmDbStorageTest {
         int userId = userDbStorage.addUser(userOne).getId();
         int userIdTwo = userDbStorage.addUser(new User("222@mail.ru", "22222", "2222", BIRTHDAY_USER_ONE)).getId();
 
-        filmDbStorage.addMark(filmId, userId, "10");
-        filmDbStorage.addMark(filmId, userIdTwo, "6");
+        filmDbStorage.addMark(filmId, userId, 10);
+        filmDbStorage.addMark(filmId, userIdTwo, 6);
 
         Film film = filmDbStorage.getFilmById(filmId).get(0);
         assertEquals(8, film.getMark());
@@ -205,7 +205,7 @@ class FilmDbStorageTest {
         int filmId = filmDbStorage.addFilm(filmOne).getId();
         int userId = userDbStorage.addUser(userOne).getId();
 
-        filmDbStorage.addMark(filmId, userId, "10");
+        filmDbStorage.addMark(filmId, userId, 10);
         filmDbStorage.deleteMark(filmId, userId);
 
         Film film = filmDbStorage.getFilmById(filmId).get(0);
@@ -220,8 +220,8 @@ class FilmDbStorageTest {
         int filmTwoId = filmDbStorage.addFilm(filmTwo).getId();
         filmDbStorage.addFilm(new Film("333", "333", RELEASE_DATE_FILM_ONE, 100, mpaOne));
         filmOne.setId(filmId);
-        filmDbStorage.addMark(filmId, userId, "10");
-        filmDbStorage.addMark(filmTwoId, userId, "6");
+        filmDbStorage.addMark(filmId, userId, 10);
+        filmDbStorage.addMark(filmTwoId, userId, 6);
 
         List<Film> films = filmDbStorage.getPopularFilms();
 
@@ -236,7 +236,7 @@ class FilmDbStorageTest {
         int filmId = filmDbStorage.addFilm(filmOne).getId();
         filmDbStorage.addFilm(filmTwo);
         filmOne.setId(filmId);
-        filmDbStorage.addMark(filmId, userId, "7");
+        filmDbStorage.addMark(filmId, userId, 7);
 
         List<Film> films = filmDbStorage.getPopularFilmsWithLimit(1);
 
@@ -252,9 +252,9 @@ class FilmDbStorageTest {
         filmDbStorage.addFilm(filmTwo);
         userDbStorage.addUser(userOne);
         userDbStorage.addUser(new User("ford@ya.ru", "ford", "Ford", BIRTHDAY_USER_ONE));
-        filmDbStorage.addMark(1, 1, "6");
-        filmDbStorage.addMark(2, 1, "8");
-        filmDbStorage.addMark(2, 2, "10");
+        filmDbStorage.addMark(1, 1, 6);
+        filmDbStorage.addMark(2, 1, 8);
+        filmDbStorage.addMark(2, 2, 10);
 
         List<Film> films = filmDbStorage.getCommonFilms(1, 2);
 
@@ -269,9 +269,9 @@ class FilmDbStorageTest {
         filmDbStorage.addFilm(filmTwo);
         userDbStorage.addUser(userOne);
         userDbStorage.addUser(new User("ford@ya.ru", "ford", "Ford", BIRTHDAY_USER_ONE));
-        filmDbStorage.addMark(1, 1, "10");
-        filmDbStorage.addMark(2, 1, "1");
-        filmDbStorage.addMark(2, 2, "10");
+        filmDbStorage.addMark(1, 1, 10);
+        filmDbStorage.addMark(2, 1, 1);
+        filmDbStorage.addMark(2, 2, 10);
         List<Film> films = filmDbStorage.getCommonFilms(1, 2);
         assertEquals(0, films.size());
     }
@@ -291,8 +291,8 @@ class FilmDbStorageTest {
         int filmId = filmDbStorage.addFilm(filmOne).getId();
         int filmIdTwo = filmDbStorage.addFilm(filmTwo).getId();
         filmOne.setId(filmId);
-        filmDbStorage.addMark(filmId, userId, "10");
-        filmDbStorage.addMark(filmIdTwo, userId, "8");
+        filmDbStorage.addMark(filmId, userId, 10);
+        filmDbStorage.addMark(filmIdTwo, userId, 8);
 
         List<Film> films = filmDbStorage.getPopularFilmsByGenre(1);
 
@@ -307,8 +307,8 @@ class FilmDbStorageTest {
         int filmId = filmDbStorage.addFilm(filmOne).getId();
         filmTwo.getGenres().add(genreOne);
         int filmIdTwo = filmDbStorage.addFilm(filmTwo).getId();
-        filmDbStorage.addMark(filmId, userId, "10");
-        filmDbStorage.addMark(filmIdTwo, userId, "8");
+        filmDbStorage.addMark(filmId, userId, 10);
+        filmDbStorage.addMark(filmIdTwo, userId, 8);
 
         List<Film> films = filmDbStorage.getPopularFilmsByGenreWithLimit(1, 1);
 
@@ -323,7 +323,7 @@ class FilmDbStorageTest {
         int filmId = filmDbStorage.addFilm(filmOne).getId();
         filmDbStorage.addFilm(filmTwo);
         filmOne.setId(filmId);
-        filmDbStorage.addMark(filmId, userId, "10");
+        filmDbStorage.addMark(filmId, userId, 10);
 
         List<Film> films = filmDbStorage.getPopularFilmsByYear(1986);
 
@@ -338,7 +338,7 @@ class FilmDbStorageTest {
         int filmId = filmDbStorage.addFilm(filmOne).getId();
         filmDbStorage.addFilm(filmTwo);
         filmOne.setId(filmId);
-        filmDbStorage.addMark(filmId, userId, "10");
+        filmDbStorage.addMark(filmId, userId, 10);
 
         List<Film> films = filmDbStorage.getPopularFilmsByYearAndGenre(1, 1986);
 
@@ -352,7 +352,7 @@ class FilmDbStorageTest {
         filmDbStorage.addFilm(filmOne);
         filmDbStorage.addFilm(filmTwo);
         userDbStorage.addUser(userOne);
-        filmDbStorage.addMark(2, 1, "10");
+        filmDbStorage.addMark(2, 1, 10);
         List<Film> films = filmDbStorage.getFilmsByTitleSearch("фильм");
         assertEquals(2, films.size());
         assertEquals(10, films.get(0).getMark());
@@ -376,7 +376,7 @@ class FilmDbStorageTest {
         filmDbStorage.addFilm(filmOne);
         filmDbStorage.addFilm(filmTwo);
         userDbStorage.addUser(userOne);
-        filmDbStorage.addMark(2, 1, "10");
+        filmDbStorage.addMark(2, 1, 10);
 
         List<Film> films = filmDbStorage.getFilmsByTitleAndDirectorSearch("dir");
 
@@ -402,7 +402,7 @@ class FilmDbStorageTest {
         filmDbStorage.addFilm(filmOne);
         filmDbStorage.addFilm(filmTwo);
         userDbStorage.addUser(userOne);
-        filmDbStorage.addMark(2, 1, "10");
+        filmDbStorage.addMark(2, 1, 10);
 
         List<Film> films = filmDbStorage.getFilmsByDirectorSearch("dir");
 

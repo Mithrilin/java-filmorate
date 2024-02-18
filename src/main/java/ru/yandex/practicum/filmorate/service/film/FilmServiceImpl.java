@@ -67,7 +67,7 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public void addMark(int id, int userId, String mark) {
+    public void addMark(int id, int userId, int mark) {
         filmDao.addMark(id, userId, mark);
         eventService.addEvent(new Event(userId, "LIKE", "ADD", id));
         log.info("Пользователь с id {} лайкнул фильм с id {}.", userId, id);

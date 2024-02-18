@@ -13,7 +13,7 @@ public interface FilmService {
 
     List<Film> getAllFilms();
 
-    void addMark(int id, int userId, String mark);
+    void addMark(int id, int userId, int mark);
 
     void deleteMark(int id, int userId);
 

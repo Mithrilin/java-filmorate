@@ -114,7 +114,7 @@ public class FilmDbStorage implements FilmDao {
     }
 
     @Override
-    public void addMark(int filmId, int userId, String mark) {
+    public void addMark(int filmId, int userId, int mark) {
         String sql = "INSERT INTO marks (user_id, film_id, mark) VALUES (?, ?, ?);";
         jdbcTemplate.update(sql, userId, filmId, mark);
     }

@@ -130,7 +130,7 @@ public class UserDbStorage implements UserDao {
     public List<Film> getRecommendations(int id) {
         // Список фильмов с оценками целевого пользователя
         Map<Integer, Double> userMark = new HashMap<>();
-        // Список пользователей с оценками, которые оценили теже фильмы
+        // Список пользователей с оценками, которые оценили те же фильмы
         Map<Integer, HashMap<Integer, Double>> allUsersMarks = new HashMap<>();
         // Различия между оценками пользователей с целевым пользователем
         Map<Integer, HashMap<Integer, Double>> diff = new HashMap<>();
@@ -151,53 +151,7 @@ public class UserDbStorage implements UserDao {
                             "ORDER BY mark_count DESC) AS mk ON f.id = mk.film_id " +
                 "ORDER BY mk.mark_count DESC NULLS LAST";
         Map<Integer, Film> filmMap = new HashMap<>();
-        Map<Integer, HashMap<Integer, Genre>> filmGenreMap = new HashMap<>();
-        Map<Integer, HashMap<Integer, Director>> filmDirectorMap = new HashMap<>();
-        jdbcTemplate.query(allUsersMarksSql, (RowMapper<Film>) (rs, rowNum) -> {
-            int userId = rs.getInt("user_id");
-            int filmId = rs.getInt("id");
-            double mark = rs.getDouble("mark_count");
-
-            if (!filmMap.containsKey(filmId)) {
-                Film film = new Film(
-                        rs.getString("name"),
-                        rs.getString("description"),
-                        rs.getDate("releasedate").toLocalDate(),
-                        rs.getInt("duration"),
-                        new Mpa(rs.getInt("mpa_id"),
-                                rs.getString("mpa_name")));
-                film.setMark(rs.getDouble("mark_count"));
-                film.setId(filmId);
-                filmMap.put(filmId, film);
-                filmGenreMap.put(filmId, new HashMap<>());
-                filmDirectorMap.put(filmId, new HashMap<>());
-            }
-            int genreId = rs.getInt("genre_id");
-            if (genreId != 0 && !filmGenreMap.get(filmId).containsKey(genreId)) {
-                Genre genre = new Genre(genreId, rs.getString("genre_name"));
-                filmGenreMap.get(filmId).put(genreId, genre);
-                filmMap.get(filmId).getGenres().add(genre);
-            }
-            int directorId = rs.getInt("director_id");
-            if (directorId != 0 && !filmDirectorMap.get(filmId).containsKey(directorId)) {
-                Director director = new Director(directorId, rs.getString("director_name"));
-                filmDirectorMap.get(filmId).put(directorId, director);
-                filmMap.get(filmId).getDirectors().add(director);
-            }
-            if (userId == id) {
-                if (!userMark.containsKey(filmId)) {
-                    userMark.put(filmId, mark);
-                }
-            } else {
-                if (!allUsersMarks.containsKey(userId)) {
-                    allUsersMarks.put(userId, new HashMap<>());
-                }
-                if (!allUsersMarks.get(userId).containsKey(filmId)) {
-                    allUsersMarks.get(userId).put(filmId, mark);
-                }
-            }
-            return null;
-        });
+        jdbcTemplate.query(allUsersMarksSql, recommendedFilmsRowMapper(filmMap, userMark, allUsersMarks, id));
 
         for (Map.Entry<Integer, HashMap<Integer, Double>> users : allUsersMarks.entrySet()) {
             for (Map.Entry<Integer, Double> e : users.getValue().entrySet()) {
@@ -241,6 +195,59 @@ public class UserDbStorage implements UserDao {
             }
         }
         return recommendations;
+    }
+
+    private RowMapper<Film> recommendedFilmsRowMapper(Map<Integer, Film> filmMap,
+                                                      Map<Integer, Double> userMark,
+                                                      Map<Integer, HashMap<Integer, Double>> allUsersMarks,
+                                                      int id) {
+        Map<Integer, HashMap<Integer, Genre>> filmGenreMap = new HashMap<>();
+        Map<Integer, HashMap<Integer, Director>> filmDirectorMap = new HashMap<>();
+        return (rs, rowNum) -> {
+            int userId = rs.getInt("user_id");
+            int filmId = rs.getInt("id");
+            double mark = rs.getDouble("mark_count");
+
+            if (!filmMap.containsKey(filmId)) {
+                Film film = new Film(
+                        rs.getString("name"),
+                        rs.getString("description"),
+                        rs.getDate("releasedate").toLocalDate(),
+                        rs.getInt("duration"),
+                        new Mpa(rs.getInt("mpa_id"),
+                                rs.getString("mpa_name")));
+                film.setMark(rs.getDouble("mark_count"));
+                film.setId(filmId);
+                filmMap.put(filmId, film);
+                filmGenreMap.put(filmId, new HashMap<>());
+                filmDirectorMap.put(filmId, new HashMap<>());
+            }
+            int genreId = rs.getInt("genre_id");
+            if (genreId != 0 && !filmGenreMap.get(filmId).containsKey(genreId)) {
+                Genre genre = new Genre(genreId, rs.getString("genre_name"));
+                filmGenreMap.get(filmId).put(genreId, genre);
+                filmMap.get(filmId).getGenres().add(genre);
+            }
+            int directorId = rs.getInt("director_id");
+            if (directorId != 0 && !filmDirectorMap.get(filmId).containsKey(directorId)) {
+                Director director = new Director(directorId, rs.getString("director_name"));
+                filmDirectorMap.get(filmId).put(directorId, director);
+                filmMap.get(filmId).getDirectors().add(director);
+            }
+            if (userId == id) {
+                if (!userMark.containsKey(filmId)) {
+                    userMark.put(filmId, mark);
+                }
+            } else {
+                if (!allUsersMarks.containsKey(userId)) {
+                    allUsersMarks.put(userId, new HashMap<>());
+                }
+                if (!allUsersMarks.get(userId).containsKey(filmId)) {
+                    allUsersMarks.get(userId).put(filmId, mark);
+                }
+            }
+            return null;
+        };
     }
 
     private RowMapper<User> usersListRowMapper(Map<Integer, User> usersMap) {

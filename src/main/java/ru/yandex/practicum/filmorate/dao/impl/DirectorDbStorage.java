@@ -33,15 +33,15 @@ public class DirectorDbStorage implements DirectorDao {
     @Override
     public List<Director> getDirectors() {
         return jdbcTemplate.query("SELECT * " +
-                "FROM directors " +
-                "ORDER BY director_id", directorRowMapper());
+                                      "FROM directors " +
+                                      "ORDER BY director_id", directorRowMapper());
     }
 
     @Override
     public List<Director> getDirectorById(int id) {
         return jdbcTemplate.query("SELECT * " +
-                "FROM directors " +
-                "WHERE director_id = ?", directorRowMapper(), id);
+                                      "FROM directors " +
+                                      "WHERE director_id = ?", directorRowMapper(), id);
     }
 
     @Override

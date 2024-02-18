@@ -143,50 +143,47 @@ public class UserDbStorage implements UserDao {
 
     @Override
     public List<Film> getRecommendations(int id) {
-        Map<Integer, Double> filmIdToMarkForUser = new HashMap<>();
+        Map<Integer, Integer> filmIdToMarkForUser = new HashMap<>();
         // Список пользователей с оценками, которые оценили те же фильмы
-        Map<Integer, HashMap<Integer, Double>> allUsersMarks = new HashMap<>();
+        Map<Integer, HashMap<Integer, Integer>> allUsersMarks = new HashMap<>();
         // Различия между оценками пользователей с целевым пользователем
-        Map<Integer, HashMap<Integer, Double>> diff = new HashMap<>();
+        Map<Integer, HashMap<Integer, Integer>> diff = new HashMap<>();
         Map<Integer, Integer> match = new HashMap<>();
         Map<Integer, Film> filmByIds = new HashMap<>();
         jdbcTemplate.query(ALL_USERS_MARKS_SQL, recommendedFilmsRowMapper(filmByIds, filmIdToMarkForUser, allUsersMarks, id));
 
-        for (Map.Entry<Integer, HashMap<Integer, Double>> users : allUsersMarks.entrySet()) {
-            for (Map.Entry<Integer, Double> e : users.getValue().entrySet()) {
-                // ид пользователя
+        for (Map.Entry<Integer, HashMap<Integer, Integer>> users : allUsersMarks.entrySet()) {
+            for (Map.Entry<Integer, Integer> e : users.getValue().entrySet()) {
                 int userId = users.getKey();
                 if (!diff.containsKey(userId)) {
                     diff.put(userId, new HashMap<>());
                     match.put(userId, 0);
                 }
-                // ИД фильма
                 int filmId = e.getKey();
-                // Оценка
-                double mark = e.getValue();
+                int mark = e.getValue();
                 if (filmIdToMarkForUser.containsKey(filmId)) {
                     diff.get(userId).put(filmId, filmIdToMarkForUser.get(filmId) - mark);
-                    int newMatch = match.get(userId) + 1;
-                    match.put(userId, newMatch);
+                    int newMatchCount = match.get(userId) + 1;
+                    match.put(userId, newMatchCount);
                 }
             }
         }
-        int userMinDiff = 0;
+        int userIdWithMinDiff = 0;
         double minDiffCount = Double.MAX_VALUE;
-        for (Map.Entry<Integer, HashMap<Integer, Double>> users : diff.entrySet()) {
-            double sumDiff = 0;
-            for (Double e : users.getValue().values()) {
+        for (Map.Entry<Integer, HashMap<Integer, Integer>> users : diff.entrySet()) {
+            int sumDiff = 0;
+            for (Integer e : users.getValue().values()) {
                 sumDiff += e;
             }
             double count = Math.abs(sumDiff / match.get(users.getKey()));
             if (count < minDiffCount) {
                 minDiffCount = count;
-                userMinDiff = users.getKey();
+                userIdWithMinDiff = users.getKey();
             }
         }
         List<Film> recommendations = new ArrayList<>();
-        Map<Integer, Double> recommendationMap = allUsersMarks.get(userMinDiff);
-        for (Map.Entry<Integer, Double> e : recommendationMap.entrySet()) {
+        Map<Integer, Integer> recommendationMap = allUsersMarks.get(userIdWithMinDiff);
+        for (Map.Entry<Integer, Integer> e : recommendationMap.entrySet()) {
             if (!filmIdToMarkForUser.containsKey(e.getKey())) {
                 if (e.getValue() > 5) {
                     recommendations.add(filmByIds.get(e.getKey()));
@@ -197,15 +194,15 @@ public class UserDbStorage implements UserDao {
     }
 
     private RowMapper<Film> recommendedFilmsRowMapper(Map<Integer, Film> filmByIds,
-                                                      Map<Integer, Double> filmIdToMarkForUser,
-                                                      Map<Integer, HashMap<Integer, Double>> allUsersMarks,
+                                                      Map<Integer, Integer> filmIdToMarkForUser,
+                                                      Map<Integer, HashMap<Integer, Integer>> allUsersMarks,
                                                       int id) {
         Map<Integer, HashMap<Integer, Genre>> filmGenreMap = new HashMap<>();
         Map<Integer, HashMap<Integer, Director>> filmDirectorMap = new HashMap<>();
         return (rs, rowNum) -> {
             int userId = rs.getInt("user_id");
             int filmId = rs.getInt("id");
-            double mark = rs.getDouble("mark_count");
+            int mark = rs.getInt("mark");
 
             if (!filmByIds.containsKey(filmId)) {
                 Film film = new Film(

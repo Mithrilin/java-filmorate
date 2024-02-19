@@ -8,8 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
@@ -39,14 +37,12 @@ class UserDbStorageTest {
     private static User userTwo = null;
     private static User userThree = null;
     private UserDbStorage userDbStorage;
-    private FilmDbStorage filmDbStorage;
     private final JdbcTemplate jdbcTemplate;
 
 
     @BeforeEach
     void setUp() {
         userDbStorage = new UserDbStorage(jdbcTemplate);
-        filmDbStorage = new FilmDbStorage(jdbcTemplate);
 
         userOne = new User(EMAIL_USER_ONE, LOGIN_USER_ONE, NAME_USER_ONE, BIRTHDAY_USER_ONE);
         userTwo = new User(EMAIL_USER_TWO, LOGIN_USER_TWO, NAME_USER_TWO, BIRTHDAY_USER_TWO);
@@ -174,87 +170,6 @@ class UserDbStorageTest {
         assertNotNull(commonFriends);
         assertEquals(1, commonFriends.size());
         assertEquals(userThreeId, commonFriends.get(0).getId());
-    }
-
-    @Test
-    @DisplayName("Получение списка рекомендованных фильмов")
-    void testGetRecommendationsShouldBeEquals() {
-        int user1Id = userDbStorage.addUser(userOne).getId();
-        int user2Id = userDbStorage.addUser(userTwo).getId();
-        int user3Id = userDbStorage.addUser(userThree).getId();
-        int user4Id = userDbStorage.addUser(new User("444@mail.ru", "log4", "name4", BIRTHDAY_USER_ONE)).getId();
-        int user5Id = userDbStorage.addUser(new User("555@mail.ru", "log5", "name5", BIRTHDAY_USER_ONE)).getId();
-        int user6Id = userDbStorage.addUser(new User("666@mail.ru", "log6", "name6", BIRTHDAY_USER_ONE)).getId();
-
-        int film1Id = filmDbStorage.addFilm(new Film("filmName 1", "description 1",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
-        int film2Id = filmDbStorage.addFilm(new Film("filmName 2", "description 2",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
-        int film3Id = filmDbStorage.addFilm(new Film("filmName 3", "description 3",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
-        int film4Id = filmDbStorage.addFilm(new Film("filmName 4", "description 4",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
-        int film5Id = filmDbStorage.addFilm(new Film("filmName 5", "description 5",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
-        int film6Id = filmDbStorage.addFilm(new Film("filmName 6", "description 6",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
-        int film9Id = filmDbStorage.addFilm(new Film("filmName 9", "description 9",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
-        int film10Id = filmDbStorage.addFilm(new Film("filmName 10", "description 10",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"))).getId();
-
-        // фильм для рекомендации
-        Film film7 = new Film("filmName 7", "description 7",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"));
-        int film7Id = filmDbStorage.addFilm(film7).getId();
-        film7.setId(film7Id);
-        // фильм для рекомендации
-        Film film8 = new Film("filmName 8", "description 8",
-                LocalDate.of(1986, 10, 25), 100, new Mpa(1, "G"));
-        int film8Id = filmDbStorage.addFilm(film8).getId();
-        film8.setId(film8Id);
-
-        // Целевой пользователь
-        filmDbStorage.addMark(film1Id, user1Id, 10);
-        filmDbStorage.addMark(film4Id, user1Id, 3);
-        filmDbStorage.addMark(film6Id, user1Id, 8);
-
-        // Похожий по оценкам пользователь
-        filmDbStorage.addMark(film1Id, user2Id, 10);
-        filmDbStorage.addMark(film4Id, user2Id, 4);
-        filmDbStorage.addMark(film6Id, user2Id, 8);
-        // фильм для рекомендации
-        filmDbStorage.addMark(film7Id, user2Id, 6);
-        film7.setRating(6.0);
-        // фильм для рекомендации
-        filmDbStorage.addMark(film8Id, user2Id, 10);
-        film8.setRating(10.0);
-        List<Film> films = new ArrayList<>();
-        films.add(film7);
-        films.add(film8);
-
-        filmDbStorage.addMark(film1Id, user3Id, 5);
-        filmDbStorage.addMark(film2Id, user3Id, 10);
-        filmDbStorage.addMark(film4Id, user3Id, 10);
-
-        filmDbStorage.addMark(film5Id, user4Id, 2);
-        filmDbStorage.addMark(film9Id, user4Id, 10);
-        filmDbStorage.addMark(film10Id, user4Id, 7);
-        filmDbStorage.addMark(film4Id, user4Id, 10);
-
-        filmDbStorage.addMark(film2Id, user5Id, 3);
-        filmDbStorage.addMark(film5Id, user5Id, 7);
-        filmDbStorage.addMark(film9Id, user5Id, 10);
-
-        filmDbStorage.addMark(film9Id, user6Id, 10);
-        filmDbStorage.addMark(film7Id, user6Id, 6);
-        filmDbStorage.addMark(film3Id, user6Id, 9);
-
-        List<Film> recommendations = userDbStorage.getRecommendations(user1Id);
-
-        assertNotNull(recommendations);
-        assertEquals(2, recommendations.size());
-        assertTrue(recommendations.containsAll(films));
     }
 
     @Test

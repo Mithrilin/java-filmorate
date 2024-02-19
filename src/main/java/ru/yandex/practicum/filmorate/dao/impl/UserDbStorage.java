@@ -159,7 +159,7 @@ public class UserDbStorage implements UserDao {
         Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = new HashMap<>();
         Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithDiff = new HashMap<>();
         Map<Integer, Integer> userIdToMatch = new HashMap<>();
-        jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(userIdToFilmIdWithMark));
+        jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(userIdToFilmIdWithMark), requesterId);
         for (Map.Entry<Integer, HashMap<Integer, Integer>> users : userIdToFilmIdWithMark.entrySet()) {
             if (users.getKey() == requesterId) {
                 continue;
@@ -190,9 +190,9 @@ public class UserDbStorage implements UserDao {
             for (Integer e : users.getValue().values()) {
                 sumDiff += e;
             }
-            double correctionCoefficient = 1;
+            double correctionCoefficient = 10;
             double count = (sumDiff + correctionCoefficient) / userIdToMatch.get(users.getKey());
-            int ratedFilmsCount
+
             if (count < minDiffCount && userIdToFilmIdWithMark.get(users.getKey()).size() > userIdToMatch.get(users.getKey())
                     || count == minDiffCount && userIdToMatch.get(users.getKey()) > userIdToMatch.get(userIdWithMinDiff)) {
                 minDiffCount = count;
@@ -244,7 +244,7 @@ public class UserDbStorage implements UserDao {
     private RowMapper<Film> marksRowMapper(Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark) {
         return (rs, rowNum) -> {
             int userId = rs.getInt("user_id");
-            int filmId = rs.getInt("id");
+            int filmId = rs.getInt("film_id");
             int mark = rs.getInt("mark");
             if (!userIdToFilmIdWithMark.containsKey(userId)) {
                 userIdToFilmIdWithMark.put(userId, new HashMap<>());

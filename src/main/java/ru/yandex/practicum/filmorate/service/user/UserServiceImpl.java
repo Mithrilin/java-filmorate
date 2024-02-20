@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.dao.UserDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -18,11 +19,15 @@ import java.util.List;
 @Service
 public class UserServiceImpl implements UserService {
     private final UserDao userDao;
+    private final FilmDao filmDao;
     private final EventService eventService;
 
-    public UserServiceImpl(@Qualifier("userDbStorage") UserDao userStorage, EventService eventService) {
+    public UserServiceImpl(@Qualifier("userDbStorage") UserDao userStorage,
+                           @Qualifier("filmDbStorage") FilmDao filmDao,
+                           EventService eventService) {
         this.userDao = userStorage;
         this.eventService = eventService;
+        this.filmDao = filmDao;
     }
 
     @Override
@@ -110,7 +115,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<Film> getRecommendations(int id) {
+        int limitCount = 5;
         List<Film> recommendations = userDao.getRecommendations(id);
+        if (recommendations.isEmpty()) {
+            recommendations = filmDao.getPopularFilmsWithLimit(limitCount);
+        }
         log.info("Список рекомендаций для пользователя с id {} возвращён.", id);
         return recommendations;
     }

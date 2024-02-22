@@ -3,7 +3,9 @@ package ru.yandex.practicum.filmorate.dao;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public interface UserDao {
     User addUser(User user);
@@ -24,5 +26,7 @@ public interface UserDao {
 
     List<User> getAllCommonFriends(int id, int otherId);
 
-    List<Film> getRecommendations(int id);
+    Map<Integer, HashMap<Integer, Integer>> getUserIdToFilmIdWithMark(int id);
+
+    List<Film> getRecommendations(int requesterId, Integer userIdWithMinDiff);
 }

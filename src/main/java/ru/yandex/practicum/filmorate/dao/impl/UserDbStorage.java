@@ -12,12 +12,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Repository("userDbStorage")
 public class UserDbStorage implements UserDao {
-    private static final int MAX_NEGATIVE_MARK_COUNT = 5;
-    private static final double CORRECTION_COEFFICIENT = 10;
     private static final String USERS_MARKS_SQL =
             "SELECT * " +
             "FROM marks AS m1 " +
@@ -157,113 +154,18 @@ public class UserDbStorage implements UserDao {
         return users;
     }
 
-    /**
-     * Получение списка рекомендованных к просмотру фильмов.
-     * Алгоритм определяет пользователя с наиболее похожими оценками, затем выбирает из списка положительно
-     * оценённых фильмов те, которые не были оценены искомым пользователем.
-     * Пользователь с наиболее похожими оценками определяются путём отношения суммы разниц всех оценок к одним и тем же
-     * фильмам и корректирующего коэффициента к количеству оценок.
-     *
-     * @return список рекомендованных к просмотру фильмов.
-     */
     @Override
-    public List<Film> getRecommendations(int requesterId) {
+    public Map<Integer, HashMap<Integer, Integer>> getUserIdToFilmIdWithMark(int requesterId) {
         Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = new HashMap<>();
-        Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithDiff = new HashMap<>();
-        Map<Integer, Integer> userIdToMatch = new HashMap<>();
         jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(userIdToFilmIdWithMark), requesterId);
-        differencesAndMatchesBetweenUsersGetter(userIdToFilmIdWithDiff,
-                userIdToFilmIdWithMark,
-                userIdToMatch,
-                requesterId);
-        Integer userIdWithMinDiff = minDiffCountAndUserIdGetter(userIdToFilmIdWithDiff,
-                userIdToFilmIdWithMark,
-                userIdToMatch,
-                requesterId);
+        return userIdToFilmIdWithMark;
+    }
+
+    @Override
+    public List<Film> getRecommendations(int requesterId, Integer userIdWithMinDiff) {
         List<Film> recommendations = new ArrayList<>();
-        if (userIdWithMinDiff == null) {
-            return recommendations;
-        }
         jdbcTemplate.query(RECOMMENDED_FILMS_SQL, filmListRowMapper(recommendations), userIdWithMinDiff, requesterId);
         return recommendations;
-    }
-
-    private void differencesAndMatchesAdder(Map.Entry<Integer, HashMap<Integer, Integer>> users,
-                                            Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithDiff,
-                                            Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark,
-                                            Map<Integer, Integer> userIdToMatch,
-                                            int requesterId) {
-        for (Map.Entry<Integer, Integer> e : users.getValue().entrySet()) {
-            int userId = users.getKey();
-            if (!userIdToFilmIdWithDiff.containsKey(userId)) {
-                userIdToFilmIdWithDiff.put(userId, new HashMap<>());
-                userIdToMatch.put(userId, 0);
-            }
-            int filmId = e.getKey();
-            int userMark = e.getValue();
-            if (userIdToFilmIdWithMark.get(requesterId).containsKey(filmId)) {
-                int requesterMark = userIdToFilmIdWithMark.get(requesterId).get(filmId);
-                userIdToFilmIdWithDiff.get(userId).put(filmId, Math.abs(requesterMark - userMark));
-                int newMatchCount = userIdToMatch.get(userId) + 1;
-                userIdToMatch.put(userId, newMatchCount);
-            }
-        }
-    }
-
-    private void differencesAndMatchesBetweenUsersGetter(Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithDiff,
-                                                         Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark,
-                                                         Map<Integer, Integer> userIdToMatch,
-                                                         int requesterId) {
-        for (Map.Entry<Integer, HashMap<Integer, Integer>> users : userIdToFilmIdWithMark.entrySet()) {
-            if (users.getKey() == requesterId) {
-                continue;
-            }
-            differencesAndMatchesAdder(users,
-                    userIdToFilmIdWithDiff,
-                    userIdToFilmIdWithMark,
-                    userIdToMatch,
-                    requesterId);
-        }
-    }
-
-    private Integer minDiffCountAndUserIdGetter(Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithDiff,
-                                             Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark,
-                                             Map<Integer, Integer> userIdToMatch,
-                                             int requesterId) {
-        double minDiffCount = Double.MAX_VALUE;
-        Integer userIdWithMinDiff = null;
-        for (Map.Entry<Integer, HashMap<Integer, Integer>> users : userIdToFilmIdWithDiff.entrySet()) {
-            int checkedUserId = users.getKey();
-            if (userIdToMatch.get(checkedUserId) == 0
-                    || isUserHaveNotFilmsForRecommendations(userIdToFilmIdWithMark, requesterId, checkedUserId)) {
-                continue;
-            }
-            int sumDiff = 0;
-            for (Integer e : users.getValue().values()) {
-                sumDiff += e;
-            }
-            double diffCount = (sumDiff + CORRECTION_COEFFICIENT) / userIdToMatch.get(checkedUserId);
-
-            if ((diffCount < minDiffCount)
-                    || ((diffCount == minDiffCount) && (userIdToMatch.get(checkedUserId) > userIdToMatch.get(userIdWithMinDiff)))) {
-                minDiffCount = diffCount;
-                userIdWithMinDiff = checkedUserId;
-            }
-        }
-        return userIdWithMinDiff;
-    }
-
-    private boolean isUserHaveNotFilmsForRecommendations(Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark,
-                                                         int requesterId,
-                                                         int checkedUserId) {
-        Map<Integer, Integer> requesterMarksMap = userIdToFilmIdWithMark.get(requesterId);
-        Map<Integer, Integer> checkedUserMarksMap = userIdToFilmIdWithMark.get(checkedUserId);
-        List<Integer> filmsIdWithPositiveMark = checkedUserMarksMap.entrySet().stream()
-                .filter(filmIdToMarkMap -> !requesterMarksMap.containsKey(filmIdToMarkMap.getKey())
-                        && filmIdToMarkMap.getValue() > MAX_NEGATIVE_MARK_COUNT)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
-        return filmsIdWithPositiveMark.isEmpty();
     }
 
     private RowMapper<Film> filmListRowMapper(List<Film> films) {

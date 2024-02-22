@@ -86,9 +86,8 @@ public class FilmDbStorage implements FilmDao {
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id = ?";
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), id);
+        jdbcTemplate.query(sql, filmListRowMapper(films), id);
         return films;
     }
 
@@ -106,10 +105,8 @@ public class FilmDbStorage implements FilmDao {
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        // Сборка всех фильмов в мапу
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films));
+        jdbcTemplate.query(sql, filmListRowMapper(films));
         return films;
     }
 
@@ -144,10 +141,8 @@ public class FilmDbStorage implements FilmDao {
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        // Сборка всех фильмов в мапу
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films));
+        jdbcTemplate.query(sql, filmListRowMapper(films));
         return films;
     }
 
@@ -172,9 +167,8 @@ public class FilmDbStorage implements FilmDao {
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "LIMIT ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), count);
+        jdbcTemplate.query(sql, filmListRowMapper(films), count);
         return films;
     }
 
@@ -193,10 +187,8 @@ public class FilmDbStorage implements FilmDao {
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE EXTRACT(YEAR FROM f.releasedate) = ? " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        // Сборка всех фильмов в мапу
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), year);
+        jdbcTemplate.query(sql, filmListRowMapper(films), year);
         return films;
     }
 
@@ -222,10 +214,8 @@ public class FilmDbStorage implements FilmDao {
                                 "WHERE EXTRACT(YEAR FROM f2.releasedate) = ? " +
                                 "LIMIT ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        // Сборка всех фильмов в мапу
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), year, count);
+        jdbcTemplate.query(sql, filmListRowMapper(films), year, count);
         return films;
     }
 
@@ -251,10 +241,8 @@ public class FilmDbStorage implements FilmDao {
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "WHERE fg2.genre_id = ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        // Сборка всех фильмов в мапу
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), genreId);
+        jdbcTemplate.query(sql, filmListRowMapper(films), genreId);
         return films;
     }
 
@@ -281,10 +269,8 @@ public class FilmDbStorage implements FilmDao {
                                 "WHERE fg2.genre_id = ? " +
                                 "LIMIT ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        // Сборка всех фильмов в мапу
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), genreId, count);
+        jdbcTemplate.query(sql, filmListRowMapper(films), genreId, count);
         return films;
     }
 
@@ -311,10 +297,8 @@ public class FilmDbStorage implements FilmDao {
                                 "WHERE EXTRACT(YEAR FROM f2.releasedate) = ? " +
                                 "AND fg2.genre_id = ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        // Сборка всех фильмов в мапу
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), year, genreId);
+        jdbcTemplate.query(sql, filmListRowMapper(films), year, genreId);
         return films;
     }
 
@@ -342,10 +326,8 @@ public class FilmDbStorage implements FilmDao {
                                 "AND fg2.genre_id = ? " +
                                 "LIMIT ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        // Сборка всех фильмов в мапу
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), year, genreId, count);
+        jdbcTemplate.query(sql, filmListRowMapper(films), year, genreId, count);
         return films;
     }
 
@@ -371,9 +353,8 @@ public class FilmDbStorage implements FilmDao {
                                                 "WHERE user_id = ? " +
                                                 "AND mark > 5)) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), userId, friendId);
+        jdbcTemplate.query(sql, filmListRowMapper(films), userId, friendId);
         return films;
     }
 
@@ -399,9 +380,8 @@ public class FilmDbStorage implements FilmDao {
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "WHERE df2.director_id = ?) " +
                 "ORDER BY f.releasedate";
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), directorId);
+        jdbcTemplate.query(sql, filmListRowMapper(films), directorId);
         return films;
     }
 
@@ -427,9 +407,8 @@ public class FilmDbStorage implements FilmDao {
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "WHERE df2.director_id = ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        Map<Integer, Film> filmMap = new HashMap<>();
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), directorId);
+        jdbcTemplate.query(sql, filmListRowMapper(films), directorId);
         return films;
     }
 
@@ -448,10 +427,9 @@ public class FilmDbStorage implements FilmDao {
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE UPPER (f.name) LIKE UPPER (?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        Map<Integer, Film> filmMap = new HashMap<>();
         String param = "%" + query + "%";
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), param);
+        jdbcTemplate.query(sql, filmListRowMapper(films), param);
         return films;
     }
 
@@ -471,10 +449,9 @@ public class FilmDbStorage implements FilmDao {
                 "WHERE UPPER (f.name) LIKE UPPER (?) " +
                 "OR UPPER (d.director_name) LIKE UPPER (?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        Map<Integer, Film> filmMap = new HashMap<>();
         String param = "%" + query + "%";
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), param, param);
+        jdbcTemplate.query(sql, filmListRowMapper(films), param, param);
         return films;
     }
 
@@ -493,10 +470,9 @@ public class FilmDbStorage implements FilmDao {
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE UPPER (d.director_name) LIKE UPPER (?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        Map<Integer, Film> filmMap = new HashMap<>();
         String param = "%" + query + "%";
         List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(filmMap, films), param);
+        jdbcTemplate.query(sql, filmListRowMapper(films), param);
         return films;
     }
 
@@ -512,7 +488,8 @@ public class FilmDbStorage implements FilmDao {
         return film;
     }
 
-    private RowMapper<Film> filmListRowMapper(Map<Integer, Film> filmMap, List<Film> films) {
+    private RowMapper<Film> filmListRowMapper(List<Film> films) {
+        Map<Integer, Film> filmMap = new HashMap<>();
         Map<Integer, HashMap<Integer, Genre>> filmGenreMap = new HashMap<>();
         Map<Integer, HashMap<Integer, Director>> filmDirectorMap = new HashMap<>();
         return (rs, rowNum) -> {

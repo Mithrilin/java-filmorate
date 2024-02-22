@@ -130,7 +130,7 @@ public class RecommendationsTest {
         filmDbStorage.addMark(filmsId.get(13), usersId.get(6), 7);
         filmDbStorage.addMark(filmsId.get(14), usersId.get(6), 9);
 
-        List<Film> recommendations = userDbStorage.getRecommendations(usersId.get(0));
+        List<Film> recommendations = userServiceImpl.getRecommendations(usersId.get(0));
 
         assertNotNull(recommendations);
         assertEquals(2, recommendations.size());
@@ -226,7 +226,7 @@ public class RecommendationsTest {
         filmDbStorage.addMark(filmsId.get(13), usersId.get(6), 7);
         filmDbStorage.addMark(filmsId.get(14), usersId.get(6), 9);
 
-        List<Film> recommendations = userDbStorage.getRecommendations(usersId.get(0));
+        List<Film> recommendations = userServiceImpl.getRecommendations(usersId.get(0));
 
         assertNotNull(recommendations);
         assertEquals(2, recommendations.size());

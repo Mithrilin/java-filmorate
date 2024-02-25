@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.dao.UserDao;
+import ru.yandex.practicum.filmorate.dto.RecommendationsParams;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Event;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 @Service
 public class UserServiceImpl implements UserService {
     private static final int MAX_NEGATIVE_MARK_COUNT = 5;
+    private static final int STANDARD_LIMIT_COUNT = 5;
     private static final double CORRECTION_COEFFICIENT = 10;
     private final UserDao userDao;
     private final FilmDao filmDao;
@@ -129,21 +131,18 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public List<Film> getRecommendations(int requesterId) {
-        int limitCount = 5;
         Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = userDao.getUserIdToFilmIdWithMark(requesterId);
         Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithDiff = new HashMap<>();
         Map<Integer, Integer> userIdToMatch = new HashMap<>();
-        calculateDifferencesAndMatchesBetweenUsers(userIdToFilmIdWithDiff,
+        RecommendationsParams params = new RecommendationsParams(userIdToFilmIdWithDiff,
                 userIdToFilmIdWithMark,
                 userIdToMatch,
                 requesterId);
-        Integer userIdWithMinDiff = getUserIdWithMinDiff(userIdToFilmIdWithDiff,
-                userIdToFilmIdWithMark,
-                userIdToMatch,
-                requesterId);
+        calculateDifferencesAndMatchesBetweenUsers(params);
+        Integer userIdWithMinDiff = getUserIdWithMinDiff(params);
         List<Film> recommendations;
         if (userIdWithMinDiff == null) {
-            recommendations = filmDao.getPopularFilmsWithLimit(limitCount);
+            recommendations = filmDao.getPopularFilmsWithLimit(STANDARD_LIMIT_COUNT);
         } else {
             recommendations = userDao.getRecommendations(requesterId, userIdWithMinDiff);
         }
@@ -151,39 +150,29 @@ public class UserServiceImpl implements UserService {
         return recommendations;
     }
 
-    private void calculateDifferencesAndMatchesBetweenUsers(Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithDiff,
-                                                            Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark,
-                                                            Map<Integer, Integer> userIdToMatch,
-                                                            int requesterId) {
-        for (Map.Entry<Integer, HashMap<Integer, Integer>> users : userIdToFilmIdWithMark.entrySet()) {
-            if (users.getKey() == requesterId) {
+    private void calculateDifferencesAndMatchesBetweenUsers(RecommendationsParams params) {
+        for (Map.Entry<Integer, HashMap<Integer, Integer>> currentUserIdToFilmIdWithMark : params.getUserIdToFilmIdWithMark().entrySet()) {
+            if (currentUserIdToFilmIdWithMark.getKey() == params.getRequesterId()) {
                 continue;
             }
-            enrichDifferencesAndMatches(users,
-                    userIdToFilmIdWithDiff,
-                    userIdToFilmIdWithMark,
-                    userIdToMatch,
-                    requesterId);
+            enrichDifferencesAndMatches(currentUserIdToFilmIdWithMark, params);
         }
     }
 
-    private Integer getUserIdWithMinDiff(Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithDiff,
-                                         Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark,
-                                         Map<Integer, Integer> userIdToMatch,
-                                         int requesterId) {
+    private Integer getUserIdWithMinDiff(RecommendationsParams params) {
         double minDiffCount = Double.MAX_VALUE;
         Integer userIdWithMinDiff = null;
-        for (Map.Entry<Integer, HashMap<Integer, Integer>> checkedUserIdToFilmIdWithDiff : userIdToFilmIdWithDiff.entrySet()) {
+        for (Map.Entry<Integer, HashMap<Integer, Integer>> checkedUserIdToFilmIdWithDiff : params.getUserIdToFilmIdWithDiff().entrySet()) {
             int checkedUserId = checkedUserIdToFilmIdWithDiff.getKey();
-            if (userIdToMatch.get(checkedUserId) == 0
-                    || isUserHaveNotFilmsForRecommendations(userIdToFilmIdWithMark, requesterId, checkedUserId)) {
+            if (params.getUserIdToMatch().get(checkedUserId) == 0
+                    || isUserHaveNotFilmsForRecommendations(params.getUserIdToFilmIdWithMark(), params.getRequesterId(), checkedUserId)) {
                 continue;
             }
             int sumDiff = checkedUserIdToFilmIdWithDiff.getValue().values().stream().mapToInt(e -> e).sum();
-            double diffCount = (sumDiff + CORRECTION_COEFFICIENT) / userIdToMatch.get(checkedUserId);
+            double diffCount = (sumDiff + CORRECTION_COEFFICIENT) / params.getUserIdToMatch().get(checkedUserId);
 
             if ((diffCount < minDiffCount)
-                    || ((diffCount == minDiffCount) && (userIdToMatch.get(checkedUserId) > userIdToMatch.get(userIdWithMinDiff)))) {
+                    || ((diffCount == minDiffCount) && (params.getUserIdToMatch().get(checkedUserId) > params.getUserIdToMatch().get(userIdWithMinDiff)))) {
                 minDiffCount = diffCount;
                 userIdWithMinDiff = checkedUserId;
             }
@@ -191,24 +180,21 @@ public class UserServiceImpl implements UserService {
         return userIdWithMinDiff;
     }
 
-    private void enrichDifferencesAndMatches(Map.Entry<Integer, HashMap<Integer, Integer>> users,
-                                             Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithDiff,
-                                             Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark,
-                                             Map<Integer, Integer> userIdToMatch,
-                                             int requesterId) {
-        for (Map.Entry<Integer, Integer> e : users.getValue().entrySet()) {
-            int userId = users.getKey();
-            if (!userIdToFilmIdWithDiff.containsKey(userId)) {
-                userIdToFilmIdWithDiff.put(userId, new HashMap<>());
-                userIdToMatch.put(userId, 0);
+    private void enrichDifferencesAndMatches(Map.Entry<Integer, HashMap<Integer, Integer>> currentUserIdToFilmIdWithMark,
+                                             RecommendationsParams params) {
+        for (Map.Entry<Integer, Integer> e : currentUserIdToFilmIdWithMark.getValue().entrySet()) {
+            int userId = currentUserIdToFilmIdWithMark.getKey();
+            if (!params.getUserIdToFilmIdWithDiff().containsKey(userId)) {
+                params.getUserIdToFilmIdWithDiff().put(userId, new HashMap<>());
+                params.getUserIdToMatch().put(userId, 0);
             }
             int filmId = e.getKey();
             int userMark = e.getValue();
-            if (userIdToFilmIdWithMark.get(requesterId).containsKey(filmId)) {
-                int requesterMark = userIdToFilmIdWithMark.get(requesterId).get(filmId);
-                userIdToFilmIdWithDiff.get(userId).put(filmId, Math.abs(requesterMark - userMark));
-                int newMatchCount = userIdToMatch.get(userId) + 1;
-                userIdToMatch.put(userId, newMatchCount);
+            if (params.getUserIdToFilmIdWithMark().get(params.getRequesterId()).containsKey(filmId)) {
+                int requesterMark = params.getUserIdToFilmIdWithMark().get(params.getRequesterId()).get(filmId);
+                params.getUserIdToFilmIdWithDiff().get(userId).put(filmId, Math.abs(requesterMark - userMark));
+                int newMatchCount = params.getUserIdToMatch().get(userId) + 1;
+                params.getUserIdToMatch().put(userId, newMatchCount);
             }
         }
     }

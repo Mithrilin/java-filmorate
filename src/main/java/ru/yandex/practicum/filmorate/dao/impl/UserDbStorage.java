@@ -158,6 +158,7 @@ public class UserDbStorage implements UserDao {
     public Map<Integer, HashMap<Integer, Integer>> getUserIdToFilmIdWithMark(int requesterId) {
         Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = new HashMap<>();
         jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(userIdToFilmIdWithMark), requesterId);
+//        Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark =
         return userIdToFilmIdWithMark;
     }
 

@@ -5,12 +5,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.SearchParameterException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.event.EventService;
 
-import javax.validation.ConstraintViolationException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -157,7 +157,7 @@ public class FilmServiceImpl implements FilmService {
             log.info("Результат поиска фильма по части названия {}", query);
             return filmDao.getFilmsByTitleAndDirectorSearch(query);
         } else {
-            throw new ConstraintViolationException("Параметр поиска не определён.", null);
+            throw new SearchParameterException("Параметр поиска не определён.");
         }
     }
 

@@ -4,6 +4,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.model.Director;
@@ -86,9 +87,7 @@ public class FilmDbStorage implements FilmDao {
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE f.id = ?";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), id);
-        return films;
+        return getFilmsList(sql, id);
     }
 
     @Override
@@ -105,9 +104,7 @@ public class FilmDbStorage implements FilmDao {
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films));
-        return films;
+        return getFilmsList(sql);
     }
 
     @Override
@@ -141,9 +138,7 @@ public class FilmDbStorage implements FilmDao {
                             "GROUP BY film_id " +
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films));
-        return films;
+        return getFilmsList(sql);
     }
 
     @Override
@@ -167,9 +162,7 @@ public class FilmDbStorage implements FilmDao {
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "LIMIT ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), count);
-        return films;
+        return getFilmsList(sql, count);
     }
 
     @Override
@@ -187,9 +180,7 @@ public class FilmDbStorage implements FilmDao {
                             "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE EXTRACT(YEAR FROM f.releasedate) = ? " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), year);
-        return films;
+        return getFilmsList(sql, year);
     }
 
     @Override
@@ -214,9 +205,7 @@ public class FilmDbStorage implements FilmDao {
                                 "WHERE EXTRACT(YEAR FROM f2.releasedate) = ? " +
                                 "LIMIT ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), year, count);
-        return films;
+        return getFilmsList(sql, year, count);
     }
 
     @Override
@@ -241,9 +230,7 @@ public class FilmDbStorage implements FilmDao {
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "WHERE fg2.genre_id = ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), genreId);
-        return films;
+        return getFilmsList(sql, genreId);
     }
 
     @Override
@@ -269,9 +256,7 @@ public class FilmDbStorage implements FilmDao {
                                 "WHERE fg2.genre_id = ? " +
                                 "LIMIT ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), genreId, count);
-        return films;
+        return getFilmsList(sql, genreId, count);
     }
 
     @Override
@@ -297,9 +282,7 @@ public class FilmDbStorage implements FilmDao {
                                 "WHERE EXTRACT(YEAR FROM f2.releasedate) = ? " +
                                 "AND fg2.genre_id = ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), year, genreId);
-        return films;
+        return getFilmsList(sql, year, genreId);
     }
 
     @Override
@@ -326,9 +309,7 @@ public class FilmDbStorage implements FilmDao {
                                 "AND fg2.genre_id = ? " +
                                 "LIMIT ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), year, genreId, count);
-        return films;
+        return getFilmsList(sql, year, genreId, count);
     }
 
     @Override
@@ -353,9 +334,7 @@ public class FilmDbStorage implements FilmDao {
                                                 "WHERE user_id = ? " +
                                                 "AND mark > 5)) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), userId, friendId);
-        return films;
+        return getFilmsList(sql, userId, friendId);
     }
 
     @Override
@@ -380,9 +359,7 @@ public class FilmDbStorage implements FilmDao {
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "WHERE df2.director_id = ?) " +
                 "ORDER BY f.releasedate";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), directorId);
-        return films;
+        return getFilmsList(sql, directorId);
     }
 
     @Override
@@ -407,9 +384,7 @@ public class FilmDbStorage implements FilmDao {
                                             "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
                                 "WHERE df2.director_id = ?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), directorId);
-        return films;
+        return getFilmsList(sql, directorId);
     }
 
     @Override
@@ -428,9 +403,7 @@ public class FilmDbStorage implements FilmDao {
                 "WHERE UPPER (f.name) LIKE UPPER (?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
         String param = "%" + query + "%";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), param);
-        return films;
+        return getFilmsList(sql, param);
     }
 
     @Override
@@ -450,9 +423,7 @@ public class FilmDbStorage implements FilmDao {
                 "OR UPPER (d.director_name) LIKE UPPER (?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
         String param = "%" + query + "%";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), param, param);
-        return films;
+        return getFilmsList(sql, param, param);
     }
 
     @Override
@@ -471,9 +442,7 @@ public class FilmDbStorage implements FilmDao {
                 "WHERE UPPER (d.director_name) LIKE UPPER (?) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST";
         String param = "%" + query + "%";
-        List<Film> films = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(films), param);
-        return films;
+        return getFilmsList(sql, param);
     }
 
     private Film getNewFilm(ResultSet rs) throws SQLException {
@@ -581,5 +550,11 @@ public class FilmDbStorage implements FilmDao {
                 return directors.size();
             }
         });
+    }
+
+    private List<Film> getFilmsList(String sql, @Nullable Object... args) {
+        List<Film> films = new ArrayList<>();
+        jdbcTemplate.query(sql, filmListRowMapper(films), args);
+        return films;
     }
 }

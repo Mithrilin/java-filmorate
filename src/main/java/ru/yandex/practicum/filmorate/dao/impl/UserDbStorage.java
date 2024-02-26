@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository("userDbStorage")
 public class UserDbStorage implements UserDao {
@@ -23,26 +24,6 @@ public class UserDbStorage implements UserDao {
                                   "WHERE m2.film_id IN (SELECT m3.film_id " +
                                                         "FROM marks AS m3 " +
                                                         "WHERE m3.user_id = ?))";
-    private static final String RECOMMENDED_FILMS_SQL =
-            "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, d.*, mk.rating_count " +
-            "FROM films AS f " +
-            "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
-            "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
-            "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
-            "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
-            "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
-            "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
-                        "FROM marks " +
-                        "GROUP BY film_id " +
-                        "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
-            "WHERE f.id IN (SELECT mk2.film_id " +
-                            "FROM marks AS mk2 " +
-                            "WHERE mk2.user_id = ? " +
-                            "AND mk2.mark > 5 " +
-                            "AND NOT mk2.film_id IN (SELECT film_id " +
-                                                     "FROM marks " +
-                                                     "WHERE user_id = ?)) " +
-            "ORDER BY mk.rating_count DESC NULLS LAST";
     private final JdbcTemplate jdbcTemplate;
 
     public UserDbStorage(JdbcTemplate jdbcTemplate) {
@@ -154,18 +135,42 @@ public class UserDbStorage implements UserDao {
         return users;
     }
 
+//    @Override
+//    public Map<Integer, HashMap<Integer, Integer>> getUserIdToFilmIdWithMark(int requesterId) {
+//        Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = new HashMap<>();
+//        jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(userIdToFilmIdWithMark), requesterId);
+//        return userIdToFilmIdWithMark;
+//    }
+
     @Override
     public Map<Integer, HashMap<Integer, Integer>> getUserIdToFilmIdWithMark(int requesterId) {
-        Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = new HashMap<>();
-        jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(userIdToFilmIdWithMark), requesterId);
-//        Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark =
+        Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark =
+                jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(), requesterId).stream()
+                        .collect(Collectors.groupingBy());
+
+        jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(), requesterId);
         return userIdToFilmIdWithMark;
     }
 
     @Override
-    public List<Film> getRecommendations(int requesterId, Integer userIdWithMinDiff) {
+    public List<Film> getRecommendations(int requesterId, List<Integer> filmIdsForRecommendation) {
+        String sql = String.format(
+                "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, d.*, mk.rating_count " +
+                "FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "WHERE f.id IN (%s) " +
+                "ORDER BY mk.rating_count DESC NULLS LAST",
+                String.join(",", Collections.nCopies(filmIdsForRecommendation.size(), "?")));
         List<Film> recommendations = new ArrayList<>();
-        jdbcTemplate.query(RECOMMENDED_FILMS_SQL, filmListRowMapper(recommendations), userIdWithMinDiff, requesterId);
+        jdbcTemplate.query(sql, filmListRowMapper(recommendations), filmIdsForRecommendation.toArray());
         return recommendations;
     }
 
@@ -206,18 +211,30 @@ public class UserDbStorage implements UserDao {
         };
     }
 
-    private RowMapper<Film> marksRowMapper(Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark) {
+//    private RowMapper<Film> marksRowMapper(Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark) {
+//        return (rs, rowNum) -> {
+//            int userId = rs.getInt("user_id");
+//            int filmId = rs.getInt("film_id");
+//            int mark = rs.getInt("mark");
+//            if (!userIdToFilmIdWithMark.containsKey(userId)) {
+//                userIdToFilmIdWithMark.put(userId, new HashMap<>());
+//            }
+//            if (!userIdToFilmIdWithMark.get(userId).containsKey(filmId)) {
+//                userIdToFilmIdWithMark.get(userId).put(filmId, mark);
+//            }
+//            return null;
+//        };
+//    }
+
+    private RowMapper<Map<Integer, HashMap<Integer, Integer>>> marksRowMapper() {
         return (rs, rowNum) -> {
+            Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = new HashMap<>();
             int userId = rs.getInt("user_id");
             int filmId = rs.getInt("film_id");
             int mark = rs.getInt("mark");
-            if (!userIdToFilmIdWithMark.containsKey(userId)) {
-                userIdToFilmIdWithMark.put(userId, new HashMap<>());
-            }
-            if (!userIdToFilmIdWithMark.get(userId).containsKey(filmId)) {
-                userIdToFilmIdWithMark.get(userId).put(filmId, mark);
-            }
-            return null;
+            userIdToFilmIdWithMark.put(userId, new HashMap<>());
+            userIdToFilmIdWithMark.get(userId).put(filmId, mark);
+            return userIdToFilmIdWithMark;
         };
     }
 

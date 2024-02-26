@@ -28,5 +28,5 @@ public interface UserDao {
 
     Map<Integer, HashMap<Integer, Integer>> getUserIdToFilmIdWithMark(int id);
 
-    List<Film> getRecommendations(int requesterId, Integer userIdWithMinDiff);
+    List<Film> getRecommendations(int requesterId, List<Integer> userIdWithMinDiff);
 }

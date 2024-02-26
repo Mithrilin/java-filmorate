@@ -14,6 +14,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.event.EventService;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -134,17 +135,19 @@ public class UserServiceImpl implements UserService {
         Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = userDao.getUserIdToFilmIdWithMark(requesterId);
         Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithDiff = new HashMap<>();
         Map<Integer, Integer> userIdToMatch = new HashMap<>();
-        RecommendationsParams params = new RecommendationsParams(userIdToFilmIdWithDiff,
+        RecommendationsParams params = new RecommendationsParams(
+                userIdToFilmIdWithDiff,
                 userIdToFilmIdWithMark,
                 userIdToMatch,
-                requesterId);
+                requesterId
+        );
         calculateDifferencesAndMatchesBetweenUsers(params);
-        Integer userIdWithMinDiff = getUserIdWithMinDiff(params);
+        List<Integer> filmIdsForRecommendations = getFilmIdsForRecommendations(params);
         List<Film> recommendations;
-        if (userIdWithMinDiff == null) {
+        if (filmIdsForRecommendations.isEmpty()) {
             recommendations = filmDao.getPopularFilmsWithLimit(STANDARD_LIMIT_COUNT);
         } else {
-            recommendations = userDao.getRecommendations(requesterId, userIdWithMinDiff);
+            recommendations = userDao.getRecommendations(requesterId, filmIdsForRecommendations);
         }
         log.info("Список рекомендаций для пользователя с id {} возвращён.", requesterId);
         return recommendations;
@@ -152,32 +155,32 @@ public class UserServiceImpl implements UserService {
 
     private void calculateDifferencesAndMatchesBetweenUsers(RecommendationsParams params) {
         for (Map.Entry<Integer, HashMap<Integer, Integer>> currentUserIdToFilmIdWithMark : params.getUserIdToFilmIdWithMark().entrySet()) {
-            if (currentUserIdToFilmIdWithMark.getKey() == params.getRequesterId()) {
-                continue;
+            if (currentUserIdToFilmIdWithMark.getKey() != params.getRequesterId()) {
+                enrichDifferencesAndMatches(currentUserIdToFilmIdWithMark, params);
             }
-            enrichDifferencesAndMatches(currentUserIdToFilmIdWithMark, params);
         }
     }
 
-    private Integer getUserIdWithMinDiff(RecommendationsParams params) {
+    private List<Integer> getFilmIdsForRecommendations(RecommendationsParams params) {
         double minDiffCount = Double.MAX_VALUE;
         Integer userIdWithMinDiff = null;
+        List<Integer> filmIdsForRecommendations = new ArrayList<>();
         for (Map.Entry<Integer, HashMap<Integer, Integer>> checkedUserIdToFilmIdWithDiff : params.getUserIdToFilmIdWithDiff().entrySet()) {
             int checkedUserId = checkedUserIdToFilmIdWithDiff.getKey();
-            if (params.getUserIdToMatch().get(checkedUserId) == 0
-                    || isUserHaveNotFilmsForRecommendations(params.getUserIdToFilmIdWithMark(), params.getRequesterId(), checkedUserId)) {
+            List<Integer> filmIdsWithPositiveMark = getFilmIdsWithPositiveMark(params, checkedUserId);
+            if (params.getUserIdToMatch().get(checkedUserId) == 0 || filmIdsWithPositiveMark.isEmpty()) {
                 continue;
             }
             int sumDiff = checkedUserIdToFilmIdWithDiff.getValue().values().stream().mapToInt(e -> e).sum();
             double diffCount = (sumDiff + CORRECTION_COEFFICIENT) / params.getUserIdToMatch().get(checkedUserId);
-
             if ((diffCount < minDiffCount)
                     || ((diffCount == minDiffCount) && (params.getUserIdToMatch().get(checkedUserId) > params.getUserIdToMatch().get(userIdWithMinDiff)))) {
                 minDiffCount = diffCount;
                 userIdWithMinDiff = checkedUserId;
+                filmIdsForRecommendations = filmIdsWithPositiveMark;
             }
         }
-        return userIdWithMinDiff;
+        return filmIdsForRecommendations;
     }
 
     private void enrichDifferencesAndMatches(Map.Entry<Integer, HashMap<Integer, Integer>> currentUserIdToFilmIdWithMark,
@@ -199,17 +202,15 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private boolean isUserHaveNotFilmsForRecommendations(Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark,
-                                                         int requesterId,
-                                                         int checkedUserId) {
-        Map<Integer, Integer> requesterMarksMap = userIdToFilmIdWithMark.get(requesterId);
-        Map<Integer, Integer> checkedUserMarksMap = userIdToFilmIdWithMark.get(checkedUserId);
-        List<Integer> filmsIdWithPositiveMark = checkedUserMarksMap.entrySet().stream()
+    private List<Integer> getFilmIdsWithPositiveMark(RecommendationsParams params, int checkedUserId) {
+        int requesterId = params.getRequesterId();
+        Map<Integer, Integer> requesterMarksMap = params.getUserIdToFilmIdWithMark().get(requesterId);
+        Map<Integer, Integer> checkedUserMarksMap = params.getUserIdToFilmIdWithMark().get(checkedUserId);
+        return checkedUserMarksMap.entrySet().stream()
                 .filter(filmIdToMarkMap -> !requesterMarksMap.containsKey(filmIdToMarkMap.getKey())
                         && filmIdToMarkMap.getValue() > MAX_NEGATIVE_MARK_COUNT)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
-        return filmsIdWithPositiveMark.isEmpty();
     }
 
     @Override

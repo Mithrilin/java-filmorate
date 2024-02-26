@@ -12,7 +12,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Repository("userDbStorage")
 public class UserDbStorage implements UserDao {
@@ -135,20 +134,19 @@ public class UserDbStorage implements UserDao {
         return users;
     }
 
-//    @Override
-//    public Map<Integer, HashMap<Integer, Integer>> getUserIdToFilmIdWithMark(int requesterId) {
-//        Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = new HashMap<>();
-//        jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(userIdToFilmIdWithMark), requesterId);
-//        return userIdToFilmIdWithMark;
-//    }
-
     @Override
     public Map<Integer, HashMap<Integer, Integer>> getUserIdToFilmIdWithMark(int requesterId) {
-        Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark =
-                jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(), requesterId).stream()
-                        .collect(Collectors.groupingBy());
-
-        jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(), requesterId);
+        List<Map<String, Integer>> columnNameToCountList = jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(), requesterId);
+        Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = new HashMap<>();
+        for (Map<String, Integer> e : columnNameToCountList) {
+            int userId = e.get("user_id");
+            int filmId = e.get("film_id");
+            int mark = e.get("mark");
+            if (!userIdToFilmIdWithMark.containsKey(userId)) {
+                userIdToFilmIdWithMark.put(userId, new HashMap<>());
+            }
+            userIdToFilmIdWithMark.get(userId).put(filmId, mark);
+        }
         return userIdToFilmIdWithMark;
     }
 
@@ -211,30 +209,13 @@ public class UserDbStorage implements UserDao {
         };
     }
 
-//    private RowMapper<Film> marksRowMapper(Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark) {
-//        return (rs, rowNum) -> {
-//            int userId = rs.getInt("user_id");
-//            int filmId = rs.getInt("film_id");
-//            int mark = rs.getInt("mark");
-//            if (!userIdToFilmIdWithMark.containsKey(userId)) {
-//                userIdToFilmIdWithMark.put(userId, new HashMap<>());
-//            }
-//            if (!userIdToFilmIdWithMark.get(userId).containsKey(filmId)) {
-//                userIdToFilmIdWithMark.get(userId).put(filmId, mark);
-//            }
-//            return null;
-//        };
-//    }
-
-    private RowMapper<Map<Integer, HashMap<Integer, Integer>>> marksRowMapper() {
+    private RowMapper<Map<String, Integer>> marksRowMapper() {
         return (rs, rowNum) -> {
-            Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = new HashMap<>();
-            int userId = rs.getInt("user_id");
-            int filmId = rs.getInt("film_id");
-            int mark = rs.getInt("mark");
-            userIdToFilmIdWithMark.put(userId, new HashMap<>());
-            userIdToFilmIdWithMark.get(userId).put(filmId, mark);
-            return userIdToFilmIdWithMark;
+            Map<String, Integer> columnNameToCount = new HashMap<>();
+            columnNameToCount.put("user_id", rs.getInt("user_id"));
+            columnNameToCount.put("film_id", rs.getInt("film_id"));
+            columnNameToCount.put("mark", rs.getInt("mark"));
+            return columnNameToCount;
         };
     }
 

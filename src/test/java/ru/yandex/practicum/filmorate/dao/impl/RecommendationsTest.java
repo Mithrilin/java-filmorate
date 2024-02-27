@@ -33,13 +33,15 @@ public class RecommendationsTest {
     private UserDbStorage userDbStorage;
     private UserServiceImpl userServiceImpl;
     private FilmDbStorage filmDbStorage;
+    private MarkDbStorage markDbStorage;
     private final JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() {
         userDbStorage = new UserDbStorage(jdbcTemplate);
         filmDbStorage = new FilmDbStorage(jdbcTemplate);
-        userServiceImpl = new UserServiceImpl(userDbStorage, filmDbStorage, new EventServiceImpl(new EventDbStorage(jdbcTemplate)));
+        markDbStorage = new MarkDbStorage(jdbcTemplate);
+        userServiceImpl = new UserServiceImpl(userDbStorage, filmDbStorage, markDbStorage, new EventServiceImpl(new EventDbStorage(jdbcTemplate)));
     }
 
     @Test

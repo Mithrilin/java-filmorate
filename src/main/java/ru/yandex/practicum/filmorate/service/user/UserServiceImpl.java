@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
+import ru.yandex.practicum.filmorate.dao.MarkDao;
 import ru.yandex.practicum.filmorate.dao.UserDao;
 import ru.yandex.practicum.filmorate.dto.params.RecommendationsParams;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
@@ -26,14 +27,17 @@ public class UserServiceImpl implements UserService {
     private static final double CORRECTION_COEFFICIENT = 10;
     private final UserDao userDao;
     private final FilmDao filmDao;
+    private final MarkDao markDao;
     private final EventService eventService;
 
     public UserServiceImpl(@Qualifier("userDbStorage") UserDao userStorage,
                            @Qualifier("filmDbStorage") FilmDao filmDao,
+                           MarkDao markDao,
                            EventService eventService) {
         this.userDao = userStorage;
         this.eventService = eventService;
         this.filmDao = filmDao;
+        this.markDao = markDao;
     }
 
     @Override
@@ -130,7 +134,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public List<Film> getRecommendations(int requesterId) {
-        Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = userDao.getUserIdToFilmIdWithMark(requesterId);
+        Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = markDao.getUserIdToFilmIdWithMark(requesterId);
         Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithDiff = new HashMap<>();
         Map<Integer, Integer> userIdToMatch = new HashMap<>();
         RecommendationsParams params = new RecommendationsParams(

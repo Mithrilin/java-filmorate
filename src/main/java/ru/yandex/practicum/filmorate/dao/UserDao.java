@@ -28,8 +28,6 @@ public interface UserDao {
 
     List<User> getAllCommonFriends(int id, int otherId);
 
-    Map<Integer, HashMap<Integer, Integer>> getUserIdToFilmIdWithMark(int id);
-
     List<Film> getRecommendations(List<Integer> userIdWithMinDiff);
 
     Map<Integer, List<Genre>> getFilmIdToGenres(List<Integer> filmIdsForRecommendations);

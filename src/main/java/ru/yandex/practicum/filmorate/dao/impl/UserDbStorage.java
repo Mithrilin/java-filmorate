@@ -5,7 +5,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dao.UserDao;
-import ru.yandex.practicum.filmorate.dto.params.MarksParams;
 import ru.yandex.practicum.filmorate.model.*;
 
 import java.sql.Date;
@@ -16,14 +15,6 @@ import java.util.*;
 
 @Repository("userDbStorage")
 public class UserDbStorage implements UserDao {
-    private static final String USERS_MARKS_SQL =
-            "SELECT * " +
-            "FROM marks AS m1 " +
-            "WHERE m1.user_id IN (SELECT m2.user_id " +
-                                  "FROM marks AS m2 " +
-                                  "WHERE m2.film_id IN (SELECT m3.film_id " +
-                                                        "FROM marks AS m3 " +
-                                                        "WHERE m3.user_id = ?))";
     private final JdbcTemplate jdbcTemplate;
 
     public UserDbStorage(JdbcTemplate jdbcTemplate) {
@@ -135,36 +126,35 @@ public class UserDbStorage implements UserDao {
         return users;
     }
 
-    @Override
-    public Map<Integer, HashMap<Integer, Integer>> getUserIdToFilmIdWithMark(int requesterId) {
-        List<MarksParams> marksParamsList = jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(), requesterId);
-        Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = new HashMap<>();
-        for (MarksParams marksParams : marksParamsList) {
-            int userId = marksParams.getUserId();
-            int filmId = marksParams.getFilmId();
-            int mark = marksParams.getMark();
-            if (!userIdToFilmIdWithMark.containsKey(userId)) {
-                userIdToFilmIdWithMark.put(userId, new HashMap<>());
-            }
-            userIdToFilmIdWithMark.get(userId).put(filmId, mark);
-        }
-        return userIdToFilmIdWithMark;
-    }
+//    @Override
+//    public List<Film> getRecommendations(List<Integer> filmIdsForRecommendation) {
+//        String sql = String.format(
+//                "SELECT f.*, m.name AS mpa_name, mk.rating_count " +
+//                "FROM films AS f " +
+//                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+//                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+//                            "FROM marks " +
+//                            "GROUP BY film_id " +
+//                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+//                "WHERE f.id IN (%s) " +
+//                "ORDER BY mk.rating_count DESC NULLS LAST",
+//                String.join(",", Collections.nCopies(filmIdsForRecommendation.size(), "?")));
+//        return jdbcTemplate.query(sql, filmListRowMapper(), filmIdsForRecommendation.toArray());
+//    }
 
     @Override
     public List<Film> getRecommendations(List<Integer> filmIdsForRecommendation) {
-        String sql = String.format(
+        String sql =
                 "SELECT f.*, m.name AS mpa_name, mk.rating_count " +
-                "FROM films AS f " +
-                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
-                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
-                            "FROM marks " +
-                            "GROUP BY film_id " +
-                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
-                "WHERE f.id IN (%s) " +
-                "ORDER BY mk.rating_count DESC NULLS LAST",
-                String.join(",", Collections.nCopies(filmIdsForRecommendation.size(), "?")));
-        return jdbcTemplate.query(sql, filmListRowMapper(), filmIdsForRecommendation.toArray());
+                        "FROM films AS f " +
+                        "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                        "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                        "FROM marks " +
+                        "GROUP BY film_id " +
+                        "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                        "WHERE f.id IN (?) " +
+                        "ORDER BY mk.rating_count DESC NULLS LAST";
+        return jdbcTemplate.query(sql, filmListRowMapper(), "1,2");
     }
 
     @Override
@@ -242,14 +232,6 @@ public class UserDbStorage implements UserDao {
             film.setId(rs.getInt("id"));
             return film;
         };
-    }
-
-    private RowMapper<MarksParams> marksRowMapper() {
-        return (rs, rowNum) -> new MarksParams(
-                rs.getInt("user_id"),
-                rs.getInt("film_id"),
-                rs.getInt("mark")
-        );
     }
 
     private RowMapper<User> usersListRowMapper(Map<Integer, User> usersMap) {

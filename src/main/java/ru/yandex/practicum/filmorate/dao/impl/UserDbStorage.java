@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dao.UserDao;
+import ru.yandex.practicum.filmorate.dto.params.MarksParams;
 import ru.yandex.practicum.filmorate.model.*;
 
 import java.sql.Date;
@@ -136,12 +137,12 @@ public class UserDbStorage implements UserDao {
 
     @Override
     public Map<Integer, HashMap<Integer, Integer>> getUserIdToFilmIdWithMark(int requesterId) {
-        List<Map<String, Integer>> columnNameToCountList = jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(), requesterId);
+        List<MarksParams> marksParamsList = jdbcTemplate.query(USERS_MARKS_SQL, marksRowMapper(), requesterId);
         Map<Integer, HashMap<Integer, Integer>> userIdToFilmIdWithMark = new HashMap<>();
-        for (Map<String, Integer> e : columnNameToCountList) {
-            int userId = e.get("user_id");
-            int filmId = e.get("film_id");
-            int mark = e.get("mark");
+        for (MarksParams marksParams : marksParamsList) {
+            int userId = marksParams.getUserId();
+            int filmId = marksParams.getFilmId();
+            int mark = marksParams.getMark();
             if (!userIdToFilmIdWithMark.containsKey(userId)) {
                 userIdToFilmIdWithMark.put(userId, new HashMap<>());
             }
@@ -151,15 +152,11 @@ public class UserDbStorage implements UserDao {
     }
 
     @Override
-    public List<Film> getRecommendations(int requesterId, List<Integer> filmIdsForRecommendation) {
+    public List<Film> getRecommendations(List<Integer> filmIdsForRecommendation) {
         String sql = String.format(
-                "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, d.*, mk.rating_count " +
+                "SELECT f.*, m.name AS mpa_name, mk.rating_count " +
                 "FROM films AS f " +
                 "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
-                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
-                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
-                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
-                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
                 "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
                             "FROM marks " +
                             "GROUP BY film_id " +
@@ -167,56 +164,92 @@ public class UserDbStorage implements UserDao {
                 "WHERE f.id IN (%s) " +
                 "ORDER BY mk.rating_count DESC NULLS LAST",
                 String.join(",", Collections.nCopies(filmIdsForRecommendation.size(), "?")));
-        List<Film> recommendations = new ArrayList<>();
-        jdbcTemplate.query(sql, filmListRowMapper(recommendations), filmIdsForRecommendation.toArray());
-        return recommendations;
+        return jdbcTemplate.query(sql, filmListRowMapper(), filmIdsForRecommendation.toArray());
     }
 
-    private RowMapper<Film> filmListRowMapper(List<Film> films) {
-        Map<Integer, Film> filmMap = new HashMap<>();
-        Map<Integer, HashMap<Integer, Genre>> filmIdToGenreMap = new HashMap<>();
-        Map<Integer, HashMap<Integer, Director>> filmIdToDirectorMap = new HashMap<>();
+    @Override
+    public Map<Integer, List<Genre>> getFilmIdToGenres(List<Integer> filmIdsForRecommendations) {
+        String sql = String.format(
+                "SELECT fg.film_id, fg.genre_id, g.name " +
+                "FROM film_genres AS fg " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "WHERE fg.film_id IN (%s) " +
+                "ORDER BY fg.film_id",
+                String.join(",", Collections.nCopies(filmIdsForRecommendations.size(), "?")));
+        List<Map<Integer, Genre>> filmIdToGenreList = jdbcTemplate.query(sql, genresRowMapper(), filmIdsForRecommendations.toArray());
+        Map<Integer, List<Genre>> filmIdToGenres = new HashMap<>();
+        for (Map<Integer, Genre> filmIdToGenre : filmIdToGenreList) {
+            for (Map.Entry<Integer, Genre> e : filmIdToGenre.entrySet()) {
+                if (!filmIdToGenres.containsKey(e.getKey())) {
+                    filmIdToGenres.put(e.getKey(), new ArrayList<>());
+                }
+                filmIdToGenres.get(e.getKey()).add(e.getValue());
+            }
+        }
+        return filmIdToGenres;
+    }
+
+    @Override
+    public Map<Integer, List<Director>> getFilmIdToDirectors(List<Integer> filmIdsForRecommendations) {
+        String sql = String.format(
+                "SELECT df.film_id, df.director_id, d.director_name " +
+                "FROM directors_film AS df " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "WHERE df.film_id IN (%s) " +
+                "ORDER BY df.film_id",
+                String.join(",", Collections.nCopies(filmIdsForRecommendations.size(), "?")));
+        List<Map<Integer, Director>> filmIdToDirectorList = jdbcTemplate.query(sql, directorsRowMapper(), filmIdsForRecommendations.toArray());
+        Map<Integer, List<Director>> filmIdToDirectors = new HashMap<>();
+        for (Map<Integer, Director> filmIdToDirector : filmIdToDirectorList) {
+            for (Map.Entry<Integer, Director> e : filmIdToDirector.entrySet()) {
+                if (!filmIdToDirectors.containsKey(e.getKey())) {
+                    filmIdToDirectors.put(e.getKey(), new ArrayList<>());
+                }
+                filmIdToDirectors.get(e.getKey()).add(e.getValue());
+            }
+        }
+        return filmIdToDirectors;
+    }
+
+    private RowMapper<Map<Integer, Director>> directorsRowMapper() {
         return (rs, rowNum) -> {
-            int filmId = rs.getInt("id");
-            if (!filmMap.containsKey(filmId)) {
-                Film film = new Film(
-                        rs.getString("name"),
-                        rs.getString("description"),
-                        rs.getDate("releasedate").toLocalDate(),
-                        rs.getInt("duration"),
-                        new Mpa(rs.getInt("mpa_id"),
-                                rs.getString("mpa_name")));
-                film.setRating(rs.getDouble("rating_count"));
-                film.setId(filmId);
-                filmMap.put(filmId, film);
-                films.add(film);
-                filmIdToGenreMap.put(filmId, new HashMap<>());
-                filmIdToDirectorMap.put(filmId, new HashMap<>());
-            }
-            int genreId = rs.getInt("genre_id");
-            if (genreId != 0 && !filmIdToGenreMap.get(filmId).containsKey(genreId)) {
-                Genre genre = new Genre(genreId, rs.getString("genre_name"));
-                filmIdToGenreMap.get(filmId).put(genreId, genre);
-                filmMap.get(filmId).getGenres().add(genre);
-            }
-            int directorId = rs.getInt("director_id");
-            if (directorId != 0 && !filmIdToDirectorMap.get(filmId).containsKey(directorId)) {
-                Director director = new Director(directorId, rs.getString("director_name"));
-                filmIdToDirectorMap.get(filmId).put(directorId, director);
-                filmMap.get(filmId).getDirectors().add(director);
-            }
-            return null;
+            Map<Integer, Director> filmIdToDirector = new HashMap<>();
+            Director director = new Director(rs.getInt("director_id"), rs.getString("director_name"));
+            filmIdToDirector.put(rs.getInt("film_id"), director);
+            return filmIdToDirector;
         };
     }
 
-    private RowMapper<Map<String, Integer>> marksRowMapper() {
+    private RowMapper<Map<Integer, Genre>> genresRowMapper() {
         return (rs, rowNum) -> {
-            Map<String, Integer> columnNameToCount = new HashMap<>();
-            columnNameToCount.put("user_id", rs.getInt("user_id"));
-            columnNameToCount.put("film_id", rs.getInt("film_id"));
-            columnNameToCount.put("mark", rs.getInt("mark"));
-            return columnNameToCount;
+            Map<Integer, Genre> filmIdToGenre = new HashMap<>();
+            Genre genre = new Genre(rs.getInt("genre_id"), rs.getString("name"));
+            filmIdToGenre.put(rs.getInt("film_id"), genre);
+            return filmIdToGenre;
         };
+    }
+
+    private RowMapper<Film> filmListRowMapper() {
+        return (rs, rowNum) -> {
+            Film film = new Film(
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getDate("releasedate").toLocalDate(),
+                    rs.getInt("duration"),
+                    new Mpa(rs.getInt("mpa_id"),
+                            rs.getString("mpa_name")));
+            film.setRating(rs.getDouble("rating_count"));
+            film.setId(rs.getInt("id"));
+            return film;
+        };
+    }
+
+    private RowMapper<MarksParams> marksRowMapper() {
+        return (rs, rowNum) -> new MarksParams(
+                rs.getInt("user_id"),
+                rs.getInt("film_id"),
+                rs.getInt("mark")
+        );
     }
 
     private RowMapper<User> usersListRowMapper(Map<Integer, User> usersMap) {

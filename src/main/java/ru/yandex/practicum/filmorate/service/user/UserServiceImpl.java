@@ -6,12 +6,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.dao.UserDao;
-import ru.yandex.practicum.filmorate.dto.RecommendationsParams;
+import ru.yandex.practicum.filmorate.dto.params.RecommendationsParams;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.Event;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.service.event.EventService;
 
 import java.util.ArrayList;
@@ -147,7 +145,13 @@ public class UserServiceImpl implements UserService {
         if (filmIdsForRecommendations.isEmpty()) {
             recommendations = filmDao.getPopularFilmsWithLimit(STANDARD_LIMIT_COUNT);
         } else {
-            recommendations = userDao.getRecommendations(requesterId, filmIdsForRecommendations);
+            recommendations = userDao.getRecommendations(filmIdsForRecommendations);
+            Map<Integer, List<Genre>> filmIdToGenreList = userDao.getFilmIdToGenres(filmIdsForRecommendations);
+            Map<Integer, List<Director>> filmIdToDirectorList = userDao.getFilmIdToDirectors(filmIdsForRecommendations);
+            for (Film film : recommendations) {
+                film.setGenres(filmIdToGenreList.get(film.getId()));
+                film.setDirectors(filmIdToDirectorList.get(film.getId()));
+            }
         }
         log.info("Список рекомендаций для пользователя с id {} возвращён.", requesterId);
         return recommendations;

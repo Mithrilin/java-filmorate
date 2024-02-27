@@ -1,6 +1,8 @@
 package ru.yandex.practicum.filmorate.dao;
 
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.HashMap;
@@ -28,5 +30,9 @@ public interface UserDao {
 
     Map<Integer, HashMap<Integer, Integer>> getUserIdToFilmIdWithMark(int id);
 
-    List<Film> getRecommendations(int requesterId, List<Integer> userIdWithMinDiff);
+    List<Film> getRecommendations(List<Integer> userIdWithMinDiff);
+
+    Map<Integer, List<Genre>> getFilmIdToGenres(List<Integer> filmIdsForRecommendations);
+
+    Map<Integer, List<Director>> getFilmIdToDirectors(List<Integer> filmIdsForRecommendations);
 }

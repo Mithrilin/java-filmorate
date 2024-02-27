@@ -149,9 +149,9 @@ public class UserServiceImpl implements UserService {
         if (filmIdsForRecommendations.isEmpty()) {
             recommendations = filmDao.getPopularFilmsWithLimit(STANDARD_LIMIT_COUNT);
         } else {
-            recommendations = userDao.getRecommendations(filmIdsForRecommendations);
-            Map<Integer, List<Genre>> filmIdToGenreList = userDao.getFilmIdToGenres(filmIdsForRecommendations);
-            Map<Integer, List<Director>> filmIdToDirectorList = userDao.getFilmIdToDirectors(filmIdsForRecommendations);
+            recommendations = filmDao.getRecommendations(filmIdsForRecommendations);
+            Map<Integer, List<Genre>> filmIdToGenreList = filmDao.getFilmIdToGenres(filmIdsForRecommendations);
+            Map<Integer, List<Director>> filmIdToDirectorList = filmDao.getFilmIdToDirectors(filmIdsForRecommendations);
             for (Film film : recommendations) {
                 film.setGenres(filmIdToGenreList.get(film.getId()));
                 film.setDirectors(filmIdToDirectorList.get(film.getId()));

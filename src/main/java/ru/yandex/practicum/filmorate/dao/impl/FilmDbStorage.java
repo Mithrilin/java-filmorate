@@ -3,6 +3,9 @@ package ru.yandex.practicum.filmorate.dao.impl;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
@@ -21,9 +24,11 @@ import java.util.*;
 @Repository("filmDbStorage")
 public class FilmDbStorage implements FilmDao {
     private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedJdbcTemplate;
 
     public FilmDbStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.namedJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
     }
 
     @Override
@@ -443,6 +448,99 @@ public class FilmDbStorage implements FilmDao {
                 "ORDER BY mk.rating_count DESC NULLS LAST";
         String param = "%" + query + "%";
         return getFilmsList(sql, param);
+    }
+
+    @Override
+    public List<Film> getRecommendations(List<Integer> filmIdsForRecommendation) {
+        String sql =
+                "SELECT f.*, m.name AS mpa_name, mk.rating_count " +
+                        "FROM films AS f " +
+                        "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                        "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                        "FROM marks " +
+                        "GROUP BY film_id " +
+                        "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                        "WHERE f.id IN (:filmIdsForRecommendation) " +
+                        "ORDER BY mk.rating_count DESC NULLS LAST";
+        SqlParameterSource parameters = new MapSqlParameterSource("filmIdsForRecommendation", filmIdsForRecommendation);
+        return namedJdbcTemplate.query(sql, parameters, filmsRowMapper());
+    }
+
+    @Override
+    public Map<Integer, List<Genre>> getFilmIdToGenres(List<Integer> filmIdsForRecommendation) {
+        String sql =
+                "SELECT fg.film_id, fg.genre_id, g.name " +
+                        "FROM film_genres AS fg " +
+                        "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                        "WHERE fg.film_id IN (:filmIdsForRecommendation) " +
+                        "ORDER BY fg.film_id";
+        SqlParameterSource parameters = new MapSqlParameterSource("filmIdsForRecommendation", filmIdsForRecommendation);
+        List<Map<Integer, Genre>> filmIdToGenreList = namedJdbcTemplate.query(sql, parameters, genresRowMapper());
+        Map<Integer, List<Genre>> filmIdToGenres = new HashMap<>();
+        for (Map<Integer, Genre> filmIdToGenre : filmIdToGenreList) {
+            for (Map.Entry<Integer, Genre> e : filmIdToGenre.entrySet()) {
+                if (!filmIdToGenres.containsKey(e.getKey())) {
+                    filmIdToGenres.put(e.getKey(), new ArrayList<>());
+                }
+                filmIdToGenres.get(e.getKey()).add(e.getValue());
+            }
+        }
+        return filmIdToGenres;
+    }
+
+    @Override
+    public Map<Integer, List<Director>> getFilmIdToDirectors(List<Integer> filmIdsForRecommendation) {
+        String sql =
+                "SELECT df.film_id, df.director_id, d.director_name " +
+                        "FROM directors_film AS df " +
+                        "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                        "WHERE df.film_id IN (:filmIdsForRecommendation) " +
+                        "ORDER BY df.film_id";
+        SqlParameterSource parameters = new MapSqlParameterSource("filmIdsForRecommendation", filmIdsForRecommendation);
+        List<Map<Integer, Director>> filmIdToDirectorList = namedJdbcTemplate.query(sql, parameters, directorsRowMapper());
+        Map<Integer, List<Director>> filmIdToDirectors = new HashMap<>();
+        for (Map<Integer, Director> filmIdToDirector : filmIdToDirectorList) {
+            for (Map.Entry<Integer, Director> e : filmIdToDirector.entrySet()) {
+                if (!filmIdToDirectors.containsKey(e.getKey())) {
+                    filmIdToDirectors.put(e.getKey(), new ArrayList<>());
+                }
+                filmIdToDirectors.get(e.getKey()).add(e.getValue());
+            }
+        }
+        return filmIdToDirectors;
+    }
+
+    private RowMapper<Film> filmsRowMapper() {
+        return (rs, rowNum) -> {
+            Film film = new Film(
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getDate("releasedate").toLocalDate(),
+                    rs.getInt("duration"),
+                    new Mpa(rs.getInt("mpa_id"),
+                            rs.getString("mpa_name")));
+            film.setRating(rs.getDouble("rating_count"));
+            film.setId(rs.getInt("id"));
+            return film;
+        };
+    }
+
+    private RowMapper<Map<Integer, Genre>> genresRowMapper() {
+        return (rs, rowNum) -> {
+            Map<Integer, Genre> filmIdToGenre = new HashMap<>();
+            Genre genre = new Genre(rs.getInt("genre_id"), rs.getString("name"));
+            filmIdToGenre.put(rs.getInt("film_id"), genre);
+            return filmIdToGenre;
+        };
+    }
+
+    private RowMapper<Map<Integer, Director>> directorsRowMapper() {
+        return (rs, rowNum) -> {
+            Map<Integer, Director> filmIdToDirector = new HashMap<>();
+            Director director = new Director(rs.getInt("director_id"), rs.getString("director_name"));
+            filmIdToDirector.put(rs.getInt("film_id"), director);
+            return filmIdToDirector;
+        };
     }
 
     private Film getNewFilm(ResultSet rs) throws SQLException {

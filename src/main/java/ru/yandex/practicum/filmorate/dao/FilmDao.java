@@ -1,8 +1,11 @@
 package ru.yandex.practicum.filmorate.dao;
 
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.util.List;
+import java.util.Map;
 
 public interface FilmDao {
     Film addFilm(Film film);
@@ -47,4 +50,9 @@ public interface FilmDao {
 
     List<Film> getFilmsByTitleAndDirectorSearch(String query);
 
+    List<Film> getRecommendations(List<Integer> filmIdsForRecommendation);
+
+    Map<Integer, List<Genre>> getFilmIdToGenres(List<Integer> filmIdsForRecommendation);
+
+    Map<Integer, List<Director>> getFilmIdToDirectors(List<Integer> filmIdsForRecommendation);
 }

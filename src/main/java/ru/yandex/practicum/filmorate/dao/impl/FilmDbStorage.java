@@ -478,8 +478,10 @@ public class FilmDbStorage implements FilmDao {
         SqlParameterSource parameters = new MapSqlParameterSource("filmIdsForRecommendation", filmIdsForRecommendation);
         List<Map<Integer, Genre>> filmIdToGenreList = namedJdbcTemplate.query(sql, parameters, genresRowMapper());
         return filmIdToGenreList.stream()
-                .collect(Collectors.groupingBy(e -> e.keySet().stream().findFirst().orElseThrow(),
-                        Collectors.mapping(e -> e.get(e.keySet().stream().findFirst().orElseThrow()), Collectors.toList())));
+                .map(Map::entrySet)
+                .flatMap(Set::stream)
+                .collect(Collectors.groupingBy(Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
     }
 
     @Override
@@ -493,8 +495,10 @@ public class FilmDbStorage implements FilmDao {
         SqlParameterSource parameters = new MapSqlParameterSource("filmIdsForRecommendation", filmIdsForRecommendation);
         List<Map<Integer, Director>> filmIdToDirectorList = namedJdbcTemplate.query(sql, parameters, directorsRowMapper());
         return filmIdToDirectorList.stream()
-                .collect(Collectors.groupingBy(e -> e.keySet().stream().findFirst().orElseThrow(),
-                        Collectors.mapping(e -> e.get(e.keySet().stream().findFirst().orElseThrow()), Collectors.toList())));
+                .map(Map::entrySet)
+                .flatMap(Set::stream)
+                .collect(Collectors.groupingBy(Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
     }
 
     private RowMapper<Film> filmsRowMapper() {

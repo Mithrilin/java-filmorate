@@ -8,9 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.service.event.EventServiceImpl;
 import ru.yandex.practicum.filmorate.service.user.UserServiceImpl;
 
@@ -34,6 +32,7 @@ public class RecommendationsTest {
     private UserServiceImpl userServiceImpl;
     private FilmDbStorage filmDbStorage;
     private MarkDbStorage markDbStorage;
+    private DirectorDbStorage directorDbStorage;
     private final JdbcTemplate jdbcTemplate;
 
     @BeforeEach
@@ -41,6 +40,7 @@ public class RecommendationsTest {
         userDbStorage = new UserDbStorage(jdbcTemplate);
         filmDbStorage = new FilmDbStorage(jdbcTemplate);
         markDbStorage = new MarkDbStorage(jdbcTemplate);
+        directorDbStorage = new DirectorDbStorage(jdbcTemplate);
         userServiceImpl = new UserServiceImpl(userDbStorage, filmDbStorage, markDbStorage, new EventServiceImpl(new EventDbStorage(jdbcTemplate)));
     }
 
@@ -49,6 +49,19 @@ public class RecommendationsTest {
     void testGetRecommendations_ShouldBeEquals() {
         List<User> users = usersBuilder();
         List<Film> films = filmsBuilder();
+        List<Genre> genres = new ArrayList<>();
+        genres.add(new Genre(1, "Комедия"));
+        genres.add(new Genre(2, "Драма"));
+        genres.add(new Genre(3, "Мультфильм"));
+        films.get(10).setGenres(genres);
+        films.get(11).setGenres(genres);
+        List<Director> directors = new ArrayList<>();
+        directors.add(new Director(1, "Director111"));
+        directors.add(new Director(2, "Director222"));
+        films.get(10).setDirectors(directors);
+        films.get(11).setDirectors(directors);
+        directorDbStorage.addDirector(directors.get(0));
+        directorDbStorage.addDirector(directors.get(1));
 
         List<Integer> usersId = users.stream()
                 .map(user -> userDbStorage.addUser(user).getId())
@@ -138,6 +151,9 @@ public class RecommendationsTest {
         assertEquals(2, recommendations.size());
         assertEquals(filmsId.get(10), recommendations.get(0).getId());
         assertEquals(filmsId.get(11), recommendations.get(1).getId());
+        assertEquals(3, recommendations.get(0).getGenres().size());
+        assertEquals(2, recommendations.get(0).getDirectors().size());
+        assertEquals(directors, recommendations.get(0).getDirectors());
     }
 
     @Test

@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository("filmDbStorage")
 public class FilmDbStorage implements FilmDao {
@@ -476,16 +477,9 @@ public class FilmDbStorage implements FilmDao {
                         "ORDER BY fg.film_id";
         SqlParameterSource parameters = new MapSqlParameterSource("filmIdsForRecommendation", filmIdsForRecommendation);
         List<Map<Integer, Genre>> filmIdToGenreList = namedJdbcTemplate.query(sql, parameters, genresRowMapper());
-        Map<Integer, List<Genre>> filmIdToGenres = new HashMap<>();
-        for (Map<Integer, Genre> filmIdToGenre : filmIdToGenreList) {
-            for (Map.Entry<Integer, Genre> e : filmIdToGenre.entrySet()) {
-                if (!filmIdToGenres.containsKey(e.getKey())) {
-                    filmIdToGenres.put(e.getKey(), new ArrayList<>());
-                }
-                filmIdToGenres.get(e.getKey()).add(e.getValue());
-            }
-        }
-        return filmIdToGenres;
+        return filmIdToGenreList.stream()
+                .collect(Collectors.groupingBy(e -> e.keySet().stream().findFirst().orElseThrow(),
+                        Collectors.mapping(e -> e.get(e.keySet().stream().findFirst().orElseThrow()), Collectors.toList())));
     }
 
     @Override
@@ -498,16 +492,9 @@ public class FilmDbStorage implements FilmDao {
                         "ORDER BY df.film_id";
         SqlParameterSource parameters = new MapSqlParameterSource("filmIdsForRecommendation", filmIdsForRecommendation);
         List<Map<Integer, Director>> filmIdToDirectorList = namedJdbcTemplate.query(sql, parameters, directorsRowMapper());
-        Map<Integer, List<Director>> filmIdToDirectors = new HashMap<>();
-        for (Map<Integer, Director> filmIdToDirector : filmIdToDirectorList) {
-            for (Map.Entry<Integer, Director> e : filmIdToDirector.entrySet()) {
-                if (!filmIdToDirectors.containsKey(e.getKey())) {
-                    filmIdToDirectors.put(e.getKey(), new ArrayList<>());
-                }
-                filmIdToDirectors.get(e.getKey()).add(e.getValue());
-            }
-        }
-        return filmIdToDirectors;
+        return filmIdToDirectorList.stream()
+                .collect(Collectors.groupingBy(e -> e.keySet().stream().findFirst().orElseThrow(),
+                        Collectors.mapping(e -> e.get(e.keySet().stream().findFirst().orElseThrow()), Collectors.toList())));
     }
 
     private RowMapper<Film> filmsRowMapper() {

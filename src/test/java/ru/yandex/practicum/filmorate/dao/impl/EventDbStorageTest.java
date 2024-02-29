@@ -83,7 +83,7 @@ public class EventDbStorageTest {
                 .isEqualTo(List.of());
 
         eventDbStorage.addEvent(new Event(user1.getId(), "FRIEND", "ADD", user2.getId()));
-        eventDbStorage.addEvent(new Event(user1.getId(), "LIKE", "ADD", film1.getId()));
+        eventDbStorage.addEvent(new Event(user1.getId(), "MARK", "ADD", film1.getId()));
 
         List<Event> user1Events = eventDbStorage.getUserEvents(user1.getId());
 
@@ -96,7 +96,7 @@ public class EventDbStorageTest {
                 .isEqualTo("FRIEND");
 
         assertThat(user1Events.get(1).getEventType())
-                .isEqualTo("LIKE");
+                .isEqualTo("MARK");
     }
 
     @Test

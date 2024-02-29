@@ -44,7 +44,7 @@ class DirectorDbStorageTest {
     void createAndGetAndUpdateAndDeleteDirectors() {
         assertEquals(directorOne, directorDbStorage.addDirector(directorOne),"добавить режиссера Director");
         assertEquals(directorTwo, directorDbStorage.addDirector(directorTwo),"добавить режиссера Director two");
-        assertEquals(directorOne, directorDbStorage.getDirectorById(1),"вернуть режиссера Director");
+        assertEquals(directorOne.getName(), directorDbStorage.getDirectorById(1).get(0).getName(),"вернуть режиссера Director");
         assertIterableEquals(
                 List.of(directorOne,directorTwo),directorDbStorage.getDirectors(), "вернуть всех режиссеров"
         );

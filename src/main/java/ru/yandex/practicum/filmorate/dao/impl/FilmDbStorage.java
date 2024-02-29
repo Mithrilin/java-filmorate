@@ -1,12 +1,15 @@
 package ru.yandex.practicum.filmorate.dao.impl;
 
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
-import org.springframework.jdbc.support.rowset.SqlRowSet;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -22,9 +25,11 @@ import java.util.stream.Collectors;
 @Repository("filmDbStorage")
 public class FilmDbStorage implements FilmDao {
     private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedJdbcTemplate;
 
     public FilmDbStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.namedJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
     }
 
     @Override
@@ -39,17 +44,22 @@ public class FilmDbStorage implements FilmDao {
                 "duration", film.getDuration().toString(),
                 "mpa_id", film.getMpa().getId().toString());
         film.setId(simpleJdbcInsert.executeAndReturnKey(params).intValue());
-
         //добавить связи фильм - директор
-        addDirectorsFromFilm(film);
-
-        return addGenresFromFilm(film);
+        addDirectorsToFilm(film);
+        return addGenresToFilm(film);
     }
 
     @Override
     public Film updateFilm(Film film) {
-        String sql = "update films set name = ?, releaseDate = ?, description = ?, " +
-                "duration = ?, mpa_id = ?  where id = ?;";
+        String sql =
+                "UPDATE films " +
+                        "SET " +
+                        "name = ?, " +
+                        "releaseDate = ?, " +
+                        "description = ?, " +
+                        "duration = ?, " +
+                        "mpa_id = ?  " +
+                        "where id = ?;";
         int result = jdbcTemplate.update(con -> {
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setString(1, film.getName());
@@ -62,460 +72,578 @@ public class FilmDbStorage implements FilmDao {
         });
         // Проверка на наличие фильма в БД
         if (result == 0) {
-            throw new NotFoundException("Фильм с id " + film.getId() + " не найден.");
+            return null;
         }
-        jdbcTemplate.update("delete from film_genres where film_id = ?;", film.getId());
-
         //добавить связи фильм - директор
-        addDirectorsFromFilm(film);
-
-        return addGenresFromFilm(film);
+        addDirectorsToFilm(film);
+        return addGenresToFilm(film);
     }
 
     @Override
     public List<Film> getFilmById(int id) {
-        String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
-                "m.name as mpa_name, fg.genre_id, g.name as genre_name " +
-                "from films f " +
-                "left outer join mpa m on f.mpa_id = m.id " +
-                "left outer join film_genres fg on f.id = fg.film_id " +
-                "left outer join genres g on fg.genre_id = g.id " +
-                "where f.id = ?;";
-        List<Film> films = jdbcTemplate.query(sql, filmRowMapper(), id);
-        // Проверка на наличие фильма в БД
-        if (films.size() == 0) {
-            return films;
-        }
-        // Добавление в фильм количество лайков
-        jdbcTemplate.query("select count(user_id) from likes where film_id = ?;", (RowMapper<Film>) (rs, rowNum) -> {
-            films.get(0).setLike(rs.getInt("count(user_id)"));
-            return null;
-        }, id);
-        return films;
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
+                "FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "WHERE f.id = ?";
+        return getFilmsList(sql, id);
     }
 
     @Override
     public List<Film> getAllFilms() {
-        String sql = "select f.id, f.name, f.releasedate, f.description, f.duration, f.mpa_id, " +
-                "m.name as mpa_name, " +
-                "g.id as genre_id, g.name as genre_name " +
-                "from films f " +
-                "left outer join mpa m on f.mpa_id = m.id " +
-                "left outer join film_genres fg on f.id = fg.film_id " +
-                "left outer join genres g on fg.genre_id = g.id " +
-                "order by f.id;";
-        // Сборка всех фильмов в мапу
-        Map<Integer, Film> filmMap = getFilmMap(sql);
-        // Добавление в фильм количество лайков
-        jdbcTemplate.query("select film_id, count(user_id) from likes group by film_id order by film_id;",
-                (RowMapper<Film>) (rs, rowNum) -> {
-                    do {
-                        filmMap.get(rs.getInt("film_id")).setLike(rs.getInt("count(user_id)"));
-                    } while (rs.next());
-                    return null;
-                });
-        return new ArrayList<>(filmMap.values());
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
+                "FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
+        return getFilmsList(sql);
     }
 
     @Override
-    public void addLike(int id, int userId) {
-        String sql = "merge into likes as l1 " +
-                "using (values(?, ?)) as l2 (user_id, film_id) " +
-                "ON l1.user_id=l2.user_id and l1.FILM_ID=l2.film_id " +
-                "when matched then update set l1.USER_ID=l2.user_id and l1.FILM_ID=l2.film_id " +
-                "when not matched then insert (user_id, film_id) values(l2.user_id, l2.film_id);";
-        jdbcTemplate.update(con -> {
-            PreparedStatement statement = con.prepareStatement(sql);
-            statement.setInt(1, userId);
-            statement.setInt(2, id);
-            return statement;
-        });
+    public void addMark(int filmId, int userId, int mark) {
+        String sql = "INSERT INTO marks (user_id, film_id, mark) VALUES (?, ?, ?);";
+        jdbcTemplate.update(sql, userId, filmId, mark);
     }
 
     @Override
-    public Integer deleteLike(int id, int userId) {
-        String sql = "delete from likes where user_id = ? and film_id = ?;";
-        return jdbcTemplate.update(con -> {
-            PreparedStatement statement = con.prepareStatement(sql);
-            statement.setInt(1, userId);
-            statement.setInt(2, id);
-            return statement;
-        });
+    public Integer deleteMark(int filmId, int userId) {
+        String sql = "DELETE FROM marks WHERE user_id = ? AND film_id = ?;";
+        return jdbcTemplate.update(sql, userId, filmId);
     }
 
     @Override
     public Integer deleteFilm(int id) {
-        return jdbcTemplate.update("delete from films where id = ?;", id);
+        return jdbcTemplate.update("DELETE FROM films WHERE id = ?;", id);
     }
 
     @Override
-    public List<Film> getPopularFilms(Integer count) {
-        List<Film> films;
-        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+    public List<Film> getPopularFilms() {
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
-                "JOIN mpa AS m ON f.mpa_id = m.id " +
-                "LEFT JOIN likes AS l ON l.film_id = f.id " +
-                "GROUP BY f.id " +
-                "ORDER BY film_likes DESC";
-        if (count != null) {
-            sql = sql + " LIMIT " + count;
-        }
-        films = jdbcTemplate.query(sql, this::filmRowWithLikes);
-        return insertGenresAndDirectorsIntoFilms(films);
-    }
-
-    @Override
-    public List<Film> getPopularFilmsByYear(Integer count, Integer year) {
-        List<Film> films;
-        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
-                "FROM films AS f " +
-                "JOIN mpa AS m ON f.mpa_id = m.id " +
-                "LEFT JOIN likes AS l ON l.film_id = f.id " +
-                "WHERE YEAR(f.releasedate) = ? " +
-                "GROUP BY f.id " +
-                "ORDER BY film_likes DESC";
-        if (count != null) {
-            sql = sql + " LIMIT " + count;
-        }
-        films = jdbcTemplate.query(sql, this::filmRowWithLikes, year);
-        return insertGenresAndDirectorsIntoFilms(films);
-    }
-
-    @Override
-    public List<Film> getPopularFilmsByGenre(Integer count, Integer genreId) {
-        List<Film> films;
-        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
-                "FROM films AS f " +
-                "JOIN mpa AS m ON f.mpa_id = m.id " +
-                "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
-                "WHERE fg.genre_id = ? " +
-                "GROUP BY f.id " +
-                "ORDER BY film_likes DESC";
-        if (count != null) {
-            sql = sql + " LIMIT " + count;
-        }
-        films = jdbcTemplate.query(sql, this::filmRowWithLikes, genreId);
-        return insertGenresAndDirectorsIntoFilms(films);
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
+        return getFilmsList(sql);
     }
 
     @Override
-    public List<Film> getPopularFilmsByYearAndGenre(Integer count, Integer genreId, Integer year) {
-        List<Film> films;
-        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+    public List<Film> getPopularFilmsWithLimit(Integer count) {
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
-                "JOIN mpa AS m ON f.mpa_id = m.id " +
-                "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
                 "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
-                "WHERE fg.genre_id = ? AND YEAR(f.releasedate) = ? " +
-                "GROUP BY f.id " +
-                "ORDER BY film_likes DESC";
-        if (count != null) {
-            sql = sql + " LIMIT " + count;
-        }
-        films = jdbcTemplate.query(sql, this::filmRowWithLikes, genreId, year);
-        return insertGenresAndDirectorsIntoFilms(films);
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "WHERE f.id IN (SELECT f2.id " +
+                                "FROM films AS f2 " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                                            "FROM marks " +
+                                            "GROUP BY film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
+                                "LIMIT ?) " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
+        return getFilmsList(sql, count);
+    }
+
+    @Override
+    public List<Film> getPopularFilmsByYear(Integer year) {
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
+                "FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "WHERE EXTRACT(YEAR FROM f.releasedate) = ? " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
+        return getFilmsList(sql, year);
+    }
+
+    @Override
+    public List<Film> getPopularFilmsByYearWithLimit(Integer count, Integer year) {
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
+                "FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "WHERE f.id IN (SELECT f2.id " +
+                                "FROM films AS f2 " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                                            "FROM marks " +
+                                            "GROUP BY film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
+                                "WHERE EXTRACT(YEAR FROM f2.releasedate) = ? " +
+                                "LIMIT ?) " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
+        return getFilmsList(sql, year, count);
+    }
+
+    @Override
+    public List<Film> getPopularFilmsByGenre(Integer genreId) {
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
+                "FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "WHERE f.id IN (SELECT f2.id " +
+                                "FROM films AS f2 " +
+                                "LEFT JOIN film_genres AS fg2 ON f2.id = fg2.film_id " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                                            "FROM marks " +
+                                            "GROUP BY film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
+                                "WHERE fg2.genre_id = ?) " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
+        return getFilmsList(sql, genreId);
+    }
+
+    @Override
+    public List<Film> getPopularFilmsByGenreWithLimit(Integer count, Integer genreId) {
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
+                "FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "WHERE f.id IN (SELECT f2.id " +
+                                "FROM films AS f2 " +
+                                "LEFT JOIN film_genres AS fg2 ON f2.id = fg2.film_id " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                                            "FROM marks " +
+                                            "GROUP BY film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
+                                "WHERE fg2.genre_id = ? " +
+                                "LIMIT ?) " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
+        return getFilmsList(sql, genreId, count);
+    }
+
+    @Override
+    public List<Film> getPopularFilmsByYearAndGenre(Integer genreId, Integer year) {
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
+                "FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "WHERE f.id IN (SELECT f2.id " +
+                                "FROM films AS f2 " +
+                                "LEFT JOIN film_genres AS fg2 ON f2.id = fg2.film_id " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                                            "FROM marks " +
+                                            "GROUP BY film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
+                                "WHERE EXTRACT(YEAR FROM f2.releasedate) = ? " +
+                                "AND fg2.genre_id = ?) " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
+        return getFilmsList(sql, year, genreId);
+    }
+
+    @Override
+    public List<Film> getPopularFilmsByYearAndGenreWithLimit(Integer count, Integer genreId, Integer year) {
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
+                "FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "WHERE f.id IN (SELECT f2.id " +
+                                "FROM films AS f2 " +
+                                "LEFT JOIN film_genres AS fg2 ON f2.id = fg2.film_id " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                                            "FROM marks " +
+                                            "GROUP BY film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
+                                "WHERE EXTRACT(YEAR FROM f2.releasedate) = ? " +
+                                "AND fg2.genre_id = ? " +
+                                "LIMIT ?) " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
+        return getFilmsList(sql, year, genreId, count);
     }
 
     @Override
     public List<Film> getCommonFilms(int userId, int friendId) {
-        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
-                "JOIN mpa AS m ON f.mpa_id = m.id " +
-                "JOIN likes AS l ON l.film_id = f.id " +
-                "WHERE f.id IN (" +
-                "SELECT l.film_id FROM likes AS l " +
-                "WHERE l.user_id = ? AND l.film_id IN (" +
-                "SELECT l.film_id FROM likes AS l " +
-                "WHERE l.user_id = ?)) " +
-                "GROUP BY f.id " +
-                "ORDER BY film_likes DESC";
-        List<Film> commonFilms = jdbcTemplate.query(sql, this::filmRowWithLikes, userId, friendId);
-        if (commonFilms.isEmpty()) return new ArrayList<>();
-        return insertGenresAndDirectorsIntoFilms(commonFilms);
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "WHERE f.id IN (SELECT mk2.film_id " +
+                                "FROM marks AS mk2 " +
+                                "WHERE mk2.user_id = ? " +
+                                "AND mk2.mark > 5 " +
+                                "AND mk2.film_id IN (SELECT film_id " +
+                                                "FROM marks " +
+                                                "WHERE user_id = ? " +
+                                                "AND mark > 5)) " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
+        return getFilmsList(sql, userId, friendId);
     }
-
 
     @Override
     public List<Film> getFilmsByDirectorIdSortByYear(int directorId) {
-        String sqlSortYear = "select df.film_id " +
-                "from directors_film df " +
-                "join films f on df.film_id = f.id " +
-                "where df.director_id = ? " +
-                "order by extract(year from cast(f.releasedate as date));";
-
-        List<Integer> filmsId = jdbcTemplate.queryForList(sqlSortYear, Integer.class, directorId);
-
-        return filmsId.stream().map(fId -> getFilmById(fId).get(0)).collect(Collectors.toList());
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
+                "FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "WHERE f.id IN (SELECT f2.id " +
+                                "FROM films AS f2 " +
+                                "LEFT JOIN directors_film AS df2 ON f2.id = df2.film_id " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                                            "FROM marks " +
+                                            "GROUP BY film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
+                                "WHERE df2.director_id = ?) " +
+                "ORDER BY f.releasedate";
+        return getFilmsList(sql, directorId);
     }
 
     @Override
     public List<Film> getFilmsByDirectorIdSortByLikes(int directorId) {
-        //проверка на наличие режиссера
-        if (jdbcTemplate.queryForList(
-                "select director_id from directors where director_id = ?;", Integer.class, directorId).isEmpty()
-        ) {
-            throw new NotFoundException(String.format("Режиссер под id = %s не найден", directorId));
-        }
-
-        String sqlSortLikes = "select df.film_id " +
-                "from directors_film df " +
-                "left join likes l on df.film_id = l.film_id " +
-                "where df.director_id = ? " +
-                "group by df.film_id " +
-                "order by count(l.user_id);";
-
-        List<Integer> filmsId = jdbcTemplate.queryForList(sqlSortLikes, Integer.class, directorId);
-
-        return filmsId.stream().map(fId -> getFilmById(fId).get(0)).collect(Collectors.toList());
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
+                "FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "WHERE f.id IN (SELECT f2.id " +
+                                "FROM films AS f2 " +
+                                "LEFT JOIN directors_film AS df2 ON f2.id = df2.film_id " +
+                                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                                            "FROM marks " +
+                                            "GROUP BY film_id " +
+                                            "ORDER BY rating_count DESC) AS mk ON f2.id = mk.film_id " +
+                                "WHERE df2.director_id = ?) " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
+        return getFilmsList(sql, directorId);
     }
 
     @Override
     public List<Film> getFilmsByTitleSearch(String query) {
-        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
-                "JOIN mpa AS m ON f.mpa_id = m.id " +
-                "LEFT JOIN likes AS l ON l.film_id = f.id " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE UPPER (f.name) LIKE UPPER (?) " +
-                "GROUP BY f.id " +
-                "ORDER BY film_likes DESC";
-        List<Film> movies = jdbcTemplate.query(sql, this::filmRowWithLikes, "%" + query + "%");
-        if (movies.isEmpty()) return new ArrayList<>();
-        return insertGenresAndDirectorsIntoFilms(movies);
+                "ORDER BY mk.rating_count DESC NULLS LAST";
+        String param = "%" + query + "%";
+        return getFilmsList(sql, param);
     }
 
     @Override
     public List<Film> getFilmsByTitleAndDirectorSearch(String query) {
-        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
-                "JOIN mpa AS m ON f.mpa_id = m.id " +
-                "LEFT JOIN likes AS l ON l.film_id = f.id " +
-                "LEFT JOIN directors_film AS df ON df.film_id = f.id " +
-                "LEFT JOIN directors AS d ON d.director_id = df.director_id " +
-                "WHERE UPPER (f.name) LIKE UPPER (?) OR UPPER (d.director_name) LIKE UPPER (?) " +
-                "GROUP BY f.id " +
-                "ORDER BY film_likes DESC";
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                "WHERE UPPER (f.name) LIKE UPPER (?) " +
+                "OR UPPER (d.director_name) LIKE UPPER (?) " +
+                "ORDER BY mk.rating_count DESC NULLS LAST";
         String param = "%" + query + "%";
-        List<Film> movies = jdbcTemplate.query(sql, this::filmRowWithLikes, param, param);
-        if (movies.isEmpty()) return new ArrayList<>();
-        return insertGenresAndDirectorsIntoFilms(movies);
+        return getFilmsList(sql, param, param);
     }
 
     @Override
     public List<Film> getFilmsByDirectorSearch(String query) {
-        String sql = "SELECT f.*, m.id AS mpaId, m.name AS mpaName, COUNT (l.user_id) AS film_likes " +
+        String sql = "SELECT f.*, m.name AS mpa_name, fg.genre_id, g.name AS genre_name, df.director_id, d.director_name, mk.rating_count " +
                 "FROM films AS f " +
-                "JOIN mpa AS m ON f.mpa_id = m.id " +
-                "LEFT JOIN likes AS l ON l.film_id = f.id " +
-                "LEFT JOIN directors_film AS df ON df.film_id = f.id " +
-                "LEFT JOIN directors AS d ON d.director_id = df.director_id " +
+                "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_genres AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                "LEFT JOIN directors_film AS df ON f.id = df.film_id " +
+                "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                            "FROM marks " +
+                            "GROUP BY film_id " +
+                            "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
                 "WHERE UPPER (d.director_name) LIKE UPPER (?) " +
-                "GROUP BY f.id " +
-                "ORDER BY film_likes DESC";
-        List<Film> movies = jdbcTemplate.query(sql, this::filmRowWithLikes, "%" + query + "%");
-        if (movies.isEmpty()) return new ArrayList<>();
-        return insertGenresAndDirectorsIntoFilms(movies);
+                "ORDER BY mk.rating_count DESC NULLS LAST";
+        String param = "%" + query + "%";
+        return getFilmsList(sql, param);
     }
 
-    private RowMapper<Film> filmRowMapper() {
+    @Override
+    public List<Film> getRecommendations(List<Integer> filmIdsForRecommendation) {
+        String sql =
+                "SELECT f.*, m.name AS mpa_name, mk.rating_count " +
+                        "FROM films AS f " +
+                        "LEFT JOIN mpa AS m ON f.mpa_id = m.id " +
+                        "LEFT JOIN (SELECT film_id, CAST(sum(mark) AS DECIMAL(3,1))/CAST(count(film_id) AS DECIMAL(3,1)) AS rating_count " +
+                        "FROM marks " +
+                        "GROUP BY film_id " +
+                        "ORDER BY rating_count DESC) AS mk ON f.id = mk.film_id " +
+                        "WHERE f.id IN (:filmIdsForRecommendation) " +
+                        "ORDER BY mk.rating_count DESC NULLS LAST";
+        SqlParameterSource parameters = new MapSqlParameterSource("filmIdsForRecommendation", filmIdsForRecommendation);
+        return namedJdbcTemplate.query(sql, parameters, filmsRowMapper());
+    }
+
+    @Override
+    public Map<Integer, List<Genre>> getFilmIdToGenres(List<Integer> filmIdsForRecommendation) {
+        String sql =
+                "SELECT fg.film_id, fg.genre_id, g.name " +
+                        "FROM film_genres AS fg " +
+                        "LEFT JOIN genres AS g ON fg.genre_id = g.id " +
+                        "WHERE fg.film_id IN (:filmIdsForRecommendation) " +
+                        "ORDER BY fg.film_id";
+        SqlParameterSource parameters = new MapSqlParameterSource("filmIdsForRecommendation", filmIdsForRecommendation);
+        List<Map<Integer, Genre>> filmIdToGenreList = namedJdbcTemplate.query(sql, parameters, genresRowMapper());
+        return filmIdToGenreList.stream()
+                .map(Map::entrySet)
+                .flatMap(Set::stream)
+                .collect(Collectors.groupingBy(Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+    }
+
+    @Override
+    public Map<Integer, List<Director>> getFilmIdToDirectors(List<Integer> filmIdsForRecommendation) {
+        String sql =
+                "SELECT df.film_id, df.director_id, d.director_name " +
+                        "FROM directors_film AS df " +
+                        "LEFT JOIN directors AS d ON df.director_id = d.director_id " +
+                        "WHERE df.film_id IN (:filmIdsForRecommendation) " +
+                        "ORDER BY df.film_id";
+        SqlParameterSource parameters = new MapSqlParameterSource("filmIdsForRecommendation", filmIdsForRecommendation);
+        List<Map<Integer, Director>> filmIdToDirectorList = namedJdbcTemplate.query(sql, parameters, directorsRowMapper());
+        return filmIdToDirectorList.stream()
+                .map(Map::entrySet)
+                .flatMap(Set::stream)
+                .collect(Collectors.groupingBy(Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+    }
+
+    private RowMapper<Film> filmsRowMapper() {
         return (rs, rowNum) -> {
-            Film film = getNewFilm(rs);
+            Film film = new Film(
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getDate("releasedate").toLocalDate(),
+                    rs.getInt("duration"),
+                    new Mpa(rs.getInt("mpa_id"),
+                            rs.getString("mpa_name")));
+            film.setRating(rs.getDouble("rating_count"));
             film.setId(rs.getInt("id"));
-            do {
-                Genre genre = new Genre(
-                        rs.getInt("genre_id"),
-                        rs.getString("genre_name"));
-                if (genre.getId() != 0) {
-                    film.getGenres().add(genre);
-                }
-            } while (rs.next());
-
-            //добавить режиссеров в фильм
-            film.setDirectors(getDirectorsFilm(film.getId()));
-
             return film;
         };
     }
 
-    //для добавления режиссеров к объекту фильма
-    private Set<Director> getDirectorsFilm(int filmId) {
+    private RowMapper<Map<Integer, Genre>> genresRowMapper() {
+        return (rs, rowNum) -> {
+            Map<Integer, Genre> filmIdToGenre = new HashMap<>();
+            Genre genre = new Genre(rs.getInt("genre_id"), rs.getString("name"));
+            filmIdToGenre.put(rs.getInt("film_id"), genre);
+            return filmIdToGenre;
+        };
+    }
 
-        Set<Director> setDirectors = new HashSet<>(1);
-
-        SqlRowSet directors = jdbcTemplate.queryForRowSet(
-                "select d.director_id, d.director_name " +
-                        "from public.directors_film df " +
-                        "join directors d on df.director_id = d.director_id " +
-                        "where df.film_id = " + filmId + ";"
-        );
-
-        while (directors.next()) {
-            Director director = new Director(
-                    directors.getInt("director_id"),
-                    directors.getString("director_name")
-            );
-            setDirectors.add(director);
-        }
-
-        return setDirectors;
+    private RowMapper<Map<Integer, Director>> directorsRowMapper() {
+        return (rs, rowNum) -> {
+            Map<Integer, Director> filmIdToDirector = new HashMap<>();
+            Director director = new Director(rs.getInt("director_id"), rs.getString("director_name"));
+            filmIdToDirector.put(rs.getInt("film_id"), director);
+            return filmIdToDirector;
+        };
     }
 
     private Film getNewFilm(ResultSet rs) throws SQLException {
-        return new Film(
+        Film film = new Film(
                 rs.getString("name"),
                 rs.getString("description"),
                 rs.getDate("releasedate").toLocalDate(),
                 rs.getInt("duration"),
                 new Mpa(rs.getInt("mpa_id"),
-                        rs.getString("mpa_name"))
-        );
+                        rs.getString("mpa_name")));
+        film.setRating(rs.getDouble("rating_count"));
+        return film;
     }
 
-    // Метод сборки всех фильмов в мапу с записью жанров
-    private Map<Integer, Film> getFilmMap(String sql) {
+    private RowMapper<Film> filmListRowMapper(List<Film> films) {
         Map<Integer, Film> filmMap = new HashMap<>();
-        jdbcTemplate.query(sql, (rs, rowNum) -> {
+        Map<Integer, HashMap<Integer, Genre>> filmGenreMap = new HashMap<>();
+        Map<Integer, HashMap<Integer, Director>> filmDirectorMap = new HashMap<>();
+        return (rs, rowNum) -> {
             int filmId = rs.getInt("id");
             if (!filmMap.containsKey(filmId)) {
-                Film film = getNewFilm(rs);
+                Film film = FilmDbStorage.this.getNewFilm(rs);
                 film.setId(filmId);
                 filmMap.put(filmId, film);
+                films.add(film);
+                filmGenreMap.put(filmId, new HashMap<>());
+                filmDirectorMap.put(filmId, new HashMap<>());
             }
-            Genre genre = new Genre(
-                    rs.getInt("genre_id"),
-                    rs.getString("genre_name"));
-            if (genre.getId() != 0) {
+            int genreId = rs.getInt("genre_id");
+            if (genreId != 0 && !filmGenreMap.get(filmId).containsKey(genreId)) {
+                Genre genre = new Genre(genreId, rs.getString("genre_name"));
+                filmGenreMap.get(filmId).put(genreId, genre);
                 filmMap.get(filmId).getGenres().add(genre);
             }
-            //добавить режиссеров в фильм
-            filmMap.get(filmId).setDirectors(getDirectorsFilm(filmId));
-            return null;
-        });
-        return filmMap;
+            int directorId = rs.getInt("director_id");
+            if (directorId != 0 && !filmDirectorMap.get(filmId).containsKey(directorId)) {
+                Director director = new Director(directorId, rs.getString("director_name"));
+                filmDirectorMap.get(filmId).put(directorId, director);
+                filmMap.get(filmId).getDirectors().add(director);
+            }
+            return filmMap.get(filmId);
+        };
     }
 
     // Метод добавления жанров в фильмы
-    private Film addGenresFromFilm(Film film) {
+    private Film addGenresToFilm(Film film) {
+        jdbcTemplate.update("DELETE FROM film_genres WHERE film_id = ?;", film.getId());
         // Проверка, что у фильма есть жанры
         if (film.getGenres().isEmpty()) {
             return film;
         }
-        // Проверка на дубликаты жанров
+        // Проверка на дубликаты жанров во входящем фильме
         Map<Integer, Genre> genresMap = new HashMap<>();
+        List<Genre> genres = new ArrayList<>();
         for (Genre genre : film.getGenres()) {
             if (!genresMap.containsKey(genre.getId())) {
                 genresMap.put(genre.getId(), genre);
+                genres.add(genre);
             }
         }
-        film.setGenres(new ArrayList<>(genresMap.values()));
-        StringBuilder sql = new StringBuilder("insert into film_genres values");
-        sql.append(" (?, ?),".repeat(film.getGenres().size()));
-        sql.deleteCharAt(sql.lastIndexOf(",")).append(";");
-        jdbcTemplate.update(con -> {
-            PreparedStatement statement = con.prepareStatement(sql.toString());
-            int questionMarkNumber = 0;
-            for (int i = 0; i < film.getGenres().size(); i++) {
-                statement.setInt(questionMarkNumber + 1, film.getId());
-                statement.setInt(questionMarkNumber + 2, film.getGenres().get(i).getId());
-                questionMarkNumber += 2;
+        film.setGenres(genres);
+        String sql = "INSERT INTO film_genres VALUES (?, ?)";
+        jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                ps.setInt(1, film.getId());
+                ps.setInt(2, genres.get(i).getId());
             }
-            return statement;
+
+            @Override
+            public int getBatchSize() {
+                return genres.size();
+            }
         });
         return film;
     }
 
-    private void addDirectorsFromFilm(Film film) {
+    private void addDirectorsToFilm(Film film) {
         int filmId = film.getId();
-
+        jdbcTemplate.update("delete from directors_film where film_id = ?;", filmId);
         // Проверка, что у фильма есть режиссеры
         if (film.getDirectors().isEmpty()) {
-            //удалить все связи фильм - режиссер если они были
-            jdbcTemplate.update("delete from directors_film where film_id = " + filmId + ";");
             return;
         }
+        // Проверка на дубликаты жанров во входящем фильме
+        Map<Integer, Director> directorsMap = new HashMap<>();
+        List<Director> directors = new ArrayList<>();
+        for (Director director : film.getDirectors()) {
+            if (!directorsMap.containsKey(director.getId())) {
+                directorsMap.put(director.getId(), director);
+                directors.add(director);
+            }
+        }
+        film.setDirectors(directors);
+        String sql = "INSERT INTO directors_film VALUES (?, ?)";
+        jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                ps.setInt(1, film.getId());
+                ps.setInt(2, directors.get(i).getId());
+            }
 
-        //проверить что режиссер такой есть в базе возвращает сет из id режиссеров
-        String values = isDirector(film).stream()
-                .map(dId -> String.format("(%s, %s)", filmId, dId))
-                .collect(Collectors.joining(","));
-
-        //удалить все связи фильм - режиссер
-        jdbcTemplate.update("delete from directors_film where film_id = " + filmId + ";");
-
-        //добавить связь межу режиссерами и фильмом
-        jdbcTemplate.update("insert into directors_film (film_id, director_id) values " + values + ";");
-
+            @Override
+            public int getBatchSize() {
+                return directors.size();
+            }
+        });
     }
 
-    //проверка есть ли режиссеры в базе
-    private Set<Integer> isDirector(Film film) {
-
-        List<Integer> directorsId = jdbcTemplate.queryForList("select director_id from directors", Integer.class);
-        return film.getDirectors().stream()
-                .map(Director::getId)
-                .map(dId -> {
-                    if (!directorsId.contains(dId)) {
-                        throw new NotFoundException("Не найден режиссер под id = " + dId);
-                    }
-                    return dId;
-                }).collect(Collectors.toSet());
-    }
-
-    private List<Film> insertGenresAndDirectorsIntoFilms(List<Film> films) {
-        List<Integer> filmsId = films.stream().map(Film::getId).collect(Collectors.toList());
-        String inSql = String.join(",", Collections.nCopies(filmsId.size(), "?"));
-        String sqlGenres = String.format("SELECT fg.film_id AS filmId, g.id AS genreId, g.name AS genreName " +
-                "FROM film_genres AS fg " +
-                "JOIN genres AS g ON fg.genre_id = g.id " +
-                "WHERE fg.film_id IN (%s)", inSql);
-        String sqlDirectors = String.format("SELECT df.film_id AS filmId, d.director_id AS directorId, " +
-                "d.director_name AS directorName " +
-                "FROM directors_film AS df " +
-                "JOIN directors AS d ON df.director_id = d.director_id " +
-                "WHERE df.film_id IN (%s)", inSql);
-        SqlRowSet sqlRowSetGenres = jdbcTemplate.queryForRowSet(sqlGenres, filmsId.toArray());
-        SqlRowSet sqlRowSetDirectors = jdbcTemplate.queryForRowSet(sqlDirectors, filmsId.toArray());
-        Map<Integer, List<Genre>> genresMap = new HashMap<>();
-        Map<Integer, Set<Director>> directorsMap = new HashMap<>();
-
-        while (sqlRowSetGenres.next()) {
-            int filmId = sqlRowSetGenres.getInt("FILMID");
-            int genreId = sqlRowSetGenres.getInt("GENREID");
-            String genreName = sqlRowSetGenres.getString("GENRENAME");
-            Genre genre = new Genre(genreId, genreName);
-            if (!genresMap.containsKey(filmId)) {
-                genresMap.put(filmId, new ArrayList<>());
-            }
-            genresMap.get(filmId).add(genre);
-        }
-        while (sqlRowSetDirectors.next()) {
-            int filmId = sqlRowSetDirectors.getInt("FILMID");
-            int directorId = sqlRowSetDirectors.getInt("DIRECTORID");
-            String directorName = sqlRowSetDirectors.getString("DIRECTORNAME");
-            Director director = new Director(directorId, directorName);
-            if (!directorsMap.containsKey(filmId)) {
-                directorsMap.put(filmId, new HashSet<>());
-            }
-            directorsMap.get(filmId).add(director);
-        }
-
-        for (Film film : films) {
-            if (genresMap.containsKey(film.getId())) {
-                film.setGenres(genresMap.get(film.getId()));
-            }
-            if (directorsMap.containsKey(film.getId())) {
-                film.setDirectors(directorsMap.get(film.getId()));
-            }
-        }
+    private List<Film> getFilmsList(String sql, @Nullable Object... args) {
+        List<Film> films = new ArrayList<>();
+        jdbcTemplate.query(sql, filmListRowMapper(films), args);
         return films;
-    }
-
-    private Film filmRowWithLikes(ResultSet rs, int rowNum) throws SQLException {
-        Film film = new Film(rs.getString("name"), rs.getString("description"),
-                rs.getDate("releaseDate").toLocalDate(), rs.getInt("duration"),
-                new Mpa(rs.getInt("mpaId"), rs.getString("mpaName")));
-        film.setId((rs.getInt("id")));
-        film.setLike(rs.getInt(("film_likes")));
-        return film;
     }
 }

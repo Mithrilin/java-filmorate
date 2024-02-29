@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import javax.validation.ConstraintViolationException;
 import java.util.Map;
 
 @Slf4j
@@ -15,7 +14,7 @@ import java.util.Map;
 @RestControllerAdvice
 public class ErrorHandler {
     // Отлавливаем все ValidationException
-    @ExceptionHandler({ValidationException.class, ConstraintViolationException.class})
+    @ExceptionHandler({ValidationException.class, SearchParameterException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleNotValid(final Exception e) {
         log.error("Получен статус 400 Bad Request. {}", e.getMessage(), e);
